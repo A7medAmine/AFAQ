@@ -1,0 +1,74 @@
+{
+  "hero": {
+    "badge": "AFAQ club",
+    "slogan": "Where Technology and Joy Meet",
+    "slogan1": "Where Technology  and  Joy Meet",
+    "subtitle": "A student club at the University of Akli Mohand Oulhadj — Bouira, pushing the boundaries of electronics, robotics, and creative technology.",
+    "cta1": "Join Our Community",
+    "cta2": "Discover Our Projects"
+  },
+  "intro": {
+    "title": "Who We Are",
+    "description": "AFAQ is a student club where technology, electronics, creativity, innovation, and teamwork come together. We provide a space for students to learn, build, and grow through hands-on projects and collaborative events."
+  },
+  "activities": {
+    "title": "Our Activities",
+    "sub": "From electronics to software, we cover the full spectrum of modern technology.",
+    "workshops": {
+      "title": "Workshops",
+      "desc": "Hands-on learning sessions on Arduino, programming, electronics, and more."
+    },
+    "robotics": {
+      "title": "Robotics",
+      "desc": "Design, build, and program robots for competitions and research."
+    },
+    "hackathons": {
+      "title": "Hackathons",
+      "desc": "Intense coding and innovation challenges to solve real problems."
+    },
+    "competitions": {
+      "title": "Competitions",
+      "desc": "Friendly tech competitions to showcase skills and win prizes."
+    },
+    "training": {
+      "title": "Training",
+      "desc": "Expert-led workshops and technical training sessions for all levels."
+    },
+    "software": {
+      "title": "Software Dev",
+      "desc": "Web, mobile, and systems programming projects with modern tools."
+    }
+  },
+  "upcomingEvents": {
+    "title": "Upcoming Events",
+    "viewAll": "View All Events",
+    "upcoming": "Upcoming",
+    "noEvents": "No upcoming events at the moment. Stay tuned!"
+  },
+  "projects": {
+    "title": "Featured Projects",
+    "viewAll": "View All Projects"
+  },
+  "stats": {
+    "title": "AFAQ in Numbers",
+    "subtitle": "Our growing impact in the university and beyond.",
+    "members": { "value": "50+", "label": "Active Members" },
+    "projects": { "value": "25+", "label": "Projects Completed" },
+    "events": { "value": "15+", "label": "Events Organized" },
+    "workshops": { "value": "30+", "label": "Workshops Held" }
+  },
+  "heroStats": {
+    "members": "Active Members",
+    "workshops": "Workshops",
+    "projects": "Projects",
+    "competitions": "Competitions"
+  },
+  "gallery": {
+    "title": "Our Gallery",
+    "viewAll": "View Full Gallery"
+  },
+  "cta": {
+    "title": "Ready to Build the Future?",
+    "sub": "Join AFAQ and be part of a community where ideas come to life."
+  }
+}

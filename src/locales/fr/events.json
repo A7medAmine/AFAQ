@@ -1,0 +1,41 @@
+{
+  "hero": {
+    "title": "Événements",
+    "subtitle": "Suivez nos événements passés et à venir."
+  },
+  "upcoming": "Événements à Venir",
+  "past": "Événements Passés",
+  "noUpcoming": "Aucun événement à venir. Revenez bientôt !",
+  "register": "S'inscrire à cet Événement",
+  "details": "Détails de l'Événement",
+  "event1": {
+    "title": "Atelier Arduino",
+    "desc": "Un atelier pratique sur la programmation Arduino et l'électronique pour débutants.",
+    "date": "15 Juin 2026",
+    "location": "Salle 201, Bloc Sciences"
+  },
+  "event2": {
+    "title": "Compétition de Robotique",
+    "desc": "Compétition annuelle de robotique où les équipes s'affrontent sur divers défis.",
+    "date": "10 Juillet 2026",
+    "location": "Amphithéâtre de l'Université"
+  },
+  "event3": {
+    "title": "Hackathon Tech",
+    "desc": "Un hackathon de 24h pour construire des solutions innovantes aux problèmes réels.",
+    "date": "5 Août 2026",
+    "location": "Lab d'Innovation"
+  },
+  "pastevent1": {
+    "title": "Introduction à l'IoT",
+    "desc": "Une session d'introduction aux concepts et applications de l'Internet des Objets.",
+    "date": "20 Mars 2026",
+    "location": "Salle 105, Bloc Ingénierie"
+  },
+  "pastevent2": {
+    "title": "Bootcamp Python",
+    "desc": "Un bootcamp intensif de trois jours sur les fondamentaux de la programmation Python.",
+    "date": "10 Février 2026",
+    "location": "Lab Informatique 3"
+  }
+}

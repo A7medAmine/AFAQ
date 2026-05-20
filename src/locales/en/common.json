@@ -1,0 +1,40 @@
+{
+  "siteName": "AFAQ Scientific Club",
+  "nav": {
+    "home": "Home",
+    "about": "About Us",
+    "projects": "Projects",
+    "events": "Events",
+    "gallery": "Gallery",
+    "register": "Join Us",
+    "contact": "Contact"
+  },
+  "theme": {
+    "light": "Light Mode",
+    "dark": "Dark Mode"
+  },
+  "language": {
+    "en": "English",
+    "ar": "العربية",
+    "fr": "Français"
+  },
+  "footer": {
+    "description": "Where technology, electronics, creativity, innovation, and teamwork meet.",
+    "quickLinks": "Quick Links",
+    "followUs": "Follow Us",
+    "connect": "Connect",
+    "contactUs": "Contact Us",
+    "rights": "All rights reserved.",
+    "university": "University of Akli Mohand Oulhadj — Bouira, Algeria"
+  },
+  "buttons": {
+    "learnMore": "Learn More",
+    "joinUs": "Join Us",
+    "explore": "Explore",
+    "viewAll": "View All",
+    "register": "Register Now",
+    "submit": "Submit",
+    "sending": "Sending...",
+    "close": "Close"
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "hero": {
+    "title": "About AFAQ",
+    "subtitle": "Discover our story, mission, and what makes us unique."
+  },
+  "story": {
+    "title": "Our Story",
+    "paragraph1": "AFAQ Scientific Club was founded by a group of passionate students at the University of Akli Mohand Oulhadj in Bouira, driven by a shared vision to create a space where technology and creativity intersect.",
+    "paragraph2": "The name 'AFAQ' comes from the Arabic word 'آفاق', meaning 'bright future' or 'horizons' — reflecting our commitment to exploring new frontiers in science and technology."
+  },
+  "mission": {
+    "title": "Our Mission",
+    "text": "To empower students with practical skills in technology and electronics, foster innovation and teamwork, and create a vibrant community of future engineers and creators."
+  },
+  "vision": {
+    "title": "Our Vision",
+    "text": "To become a leading student club that inspires technological innovation and prepares students for the challenges of tomorrow."
+  },
+  "values": {
+    "title": "Our Values",
+    "innovation": { "title": "Innovation", "desc": "We encourage creative thinking and novel solutions." },
+    "teamwork": { "title": "Teamwork", "desc": "We believe in the power of collaboration and shared knowledge." },
+    "excellence": { "title": "Excellence", "desc": "We strive for the highest quality in everything we do." },
+    "integrity": { "title": "Integrity", "desc": "We act with honesty, transparency, and respect." }
+  },
+  "special": {
+    "title": "What Makes AFAQ Special",
+    "items": [
+      "Hands-on project-based learning approach",
+      "Cross-disciplinary teams from all departments",
+      "Access to a fully equipped electronics and coding lab",
+      "Mentorship from industry professionals",
+      "Regular participation in national competitions",
+      "A welcoming community for all skill levels"
+    ],
+    "point1": "Hands-on learning approach with real projects",
+    "point2": "Multidisciplinary team from various departments",
+    "point3": "Strong connection with industry and alumni",
+    "point4": "Supportive and inclusive community",
+    "point5": "Regular workshops and events"
+  }
+}

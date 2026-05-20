@@ -1,0 +1,56 @@
+{
+  "hero": {
+    "title": "Rejoindre AFAQ",
+    "subtitle": "Faites partie d'une communauté où la technologie rencontre l'innovation."
+  },
+  "form": {
+    "title": "Formulaire d'Inscription",
+    "fullName": "Nom Complet",
+    "email": "Adresse Email",
+    "phone": "Numéro de Téléphone",
+    "department": "Département",
+    "studyYear": "Année d'Étude",
+    "interests": "Centres d'Intérêt",
+    "skills": "Vos Compétences",
+    "motivation": "Pourquoi voulez-vous rejoindre ?",
+    "submit": "Soumettre la Candidature",
+    "success": "Merci de votre inscription ! Nous vous contacterons bientôt.",
+    "error": "Une erreur s'est produite. Veuillez réessayer.",
+    "validation": {
+      "required": "Ce champ est requis",
+      "email": "Veuillez entrer une adresse email valide"
+    }
+  },
+  "departments": {
+    "cs": "Informatique",
+    "ee": "Génie Électrique",
+    "me": "Génie Mécanique",
+    "ce": "Génie Civil",
+    "other": "Autre"
+  },
+  "years": {
+    "1": "1ère Année",
+    "2": "2ème Année",
+    "3": "3ème Année",
+    "4": "4ème Année",
+    "5": "5ème Année"
+  },
+  "interestOptions": {
+    "robotics": "Robotique",
+    "programming": "Programmation",
+    "electronics": "Électronique",
+    "iot": "IoT",
+    "ai": "Intelligence Artificielle",
+    "web": "Développement Web"
+  },
+  "skillOptions": {
+    "programming": "Programmation",
+    "circuitDesign": "Conception de Circuits",
+    "cad": "Conception CAO",
+    "soldering": "Soudure",
+    "publicSpeaking": "Prise de Parole",
+    "leadership": "Leadership",
+    "writing": "Rédaction Technique",
+    "design": "Design Graphique"
+  }
+}

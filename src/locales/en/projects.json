@@ -1,0 +1,43 @@
+{
+  "hero": {
+    "title": "Our Projects",
+    "subtitle": "Explore the innovative projects built by our members."
+  },
+  "filters": {
+    "all": "All",
+    "robotics": "Robotics",
+    "electronics": "Electronics",
+    "software": "Software",
+    "iot": "IoT"
+  },
+  "card": {
+    "technologies": "Technologies",
+    "team": "Team",
+    "members": "members"
+  },
+  "noProjects": "No projects found in this category.",
+  "project1": {
+    "title": "Smart Irrigation System",
+    "desc": "An IoT-based automated irrigation system that monitors soil moisture and weather conditions to optimize water usage."
+  },
+  "project2": {
+    "title": "Line Follower Robot",
+    "desc": "A high-speed line-following robot built for robotics competitions using Arduino and IR sensors."
+  },
+  "project3": {
+    "title": "Campus Navigation App",
+    "desc": "A mobile application that helps students navigate the university campus with interactive maps."
+  },
+  "project4": {
+    "title": "Solar Tracker",
+    "desc": "A dual-axis solar tracking system that maximizes solar panel efficiency by following the sun's path."
+  },
+  "project5": {
+    "title": "Voice Assistant Device",
+    "desc": "A custom voice-controlled assistant built with Raspberry Pi for home automation tasks."
+  },
+  "project6": {
+    "title": "Weather Station",
+    "desc": "An IoT weather station that collects and displays real-time environmental data."
+  }
+}

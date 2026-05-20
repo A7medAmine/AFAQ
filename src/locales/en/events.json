@@ -1,0 +1,41 @@
+{
+  "hero": {
+    "title": "Events",
+    "subtitle": "Stay up to date with our past and upcoming events."
+  },
+  "upcoming": "Upcoming Events",
+  "past": "Past Events",
+  "noUpcoming": "No upcoming events scheduled. Check back soon!",
+  "register": "Register for this Event",
+  "details": "Event Details",
+  "event1": {
+    "title": "Arduino Workshop",
+    "desc": "A hands-on workshop on Arduino programming and electronics for beginners.",
+    "date": "June 15, 2026",
+    "location": "Room 201, Science Block"
+  },
+  "event2": {
+    "title": "Robotics Competition",
+    "desc": "Annual robotics competition where teams compete in various challenges.",
+    "date": "July 10, 2026",
+    "location": "University Auditorium"
+  },
+  "event3": {
+    "title": "Tech Hackathon",
+    "desc": "A 24-hour hackathon to build innovative solutions for real-world problems.",
+    "date": "August 5, 2026",
+    "location": "Innovation Lab"
+  },
+  "pastevent1": {
+    "title": "Introduction to IoT",
+    "desc": "An introductory session on Internet of Things concepts and applications.",
+    "date": "March 20, 2026",
+    "location": "Room 105, Engineering Block"
+  },
+  "pastevent2": {
+    "title": "Python Programming Bootcamp",
+    "desc": "A three-day intensive bootcamp on Python programming fundamentals.",
+    "date": "February 10, 2026",
+    "location": "Computer Lab 3"
+  }
+}

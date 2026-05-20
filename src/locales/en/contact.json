@@ -1,0 +1,22 @@
+{
+  "hero": {
+    "title": "Contact Us",
+    "subtitle": "We'd love to hear from you. Get in touch with us."
+  },
+  "form": {
+    "title": "Send Us a Message",
+    "name": "Your Name",
+    "email": "Your Email",
+    "subject": "Subject",
+    "message": "Your Message",
+    "submit": "Send Message",
+    "success": "Message sent successfully! We'll get back to you soon.",
+    "error": "Failed to send message. Please try again."
+  },
+  "info": {
+    "title": "Contact Information",
+    "email": "afaq.club@univ-bouira.dz",
+    "phone": "+213 555 123 456",
+    "location": "University of Akli Mohand Oulhadj, Bouira, Algeria"
+  }
+}

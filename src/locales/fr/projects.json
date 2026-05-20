@@ -1,0 +1,42 @@
+{
+  "hero": {
+    "title": "Nos Projets",
+    "subtitle": "Explorez les projets innovants réalisés par nos membres."
+  },
+  "filters": {
+    "all": "Tous",
+    "robotics": "Robotique",
+    "electronics": "Électronique",
+    "software": "Logiciel",
+    "iot": "IoT"
+  },
+  "card": {
+    "technologies": "Technologies",
+    "team": "Équipe"
+  },
+  "noProjects": "Aucun projet trouvé dans cette catégorie.",
+  "project1": {
+    "title": "Système d'Irrigation Intelligent",
+    "desc": "Un système d'irrigation automatisé basé sur l'IoT qui surveille l'humidité du sol."
+  },
+  "project2": {
+    "title": "Robot Suiveur de Ligne",
+    "desc": "Un robot suiveur de ligne à grande vitesse pour compétitions avec Arduino."
+  },
+  "project3": {
+    "title": "App de Navigation du Campus",
+    "desc": "Une application mobile pour naviguer sur le campus avec des cartes interactives."
+  },
+  "project4": {
+    "title": "Tracker Solaire",
+    "desc": "Système de suivi solaire bi-axial pour maximiser l'efficacité des panneaux."
+  },
+  "project5": {
+    "title": "Assistant Vocal",
+    "desc": "Assistant vocal personnalisé avec Raspberry Pi pour la domotique."
+  },
+  "project6": {
+    "title": "Station Météo",
+    "desc": "Station météo IoT qui collecte et affiche des données environnementales en temps réel."
+  }
+}
