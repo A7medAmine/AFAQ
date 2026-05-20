@@ -2,6 +2,7 @@ import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import { Cpu, Rocket, Code, Trophy, BookOpen, Radio } from 'lucide-react'
 import SectionHeader from '../shared/SectionHeader'
+import SideImage from '../shared/SideImage'
 
 const spring = { type: 'spring', damping: 28, stiffness: 120 }
 
@@ -29,7 +30,8 @@ export default function FeaturedActivities() {
   const { t } = useTranslation('home')
 
   return (
-    <section className="py-16 md:py-20" style={{ background: 'var(--color-accent-soft)' }}>
+    <section className="py-16 md:py-20 relative z-0" style={{ background: 'var(--color-bg)' }}>
+        <SideImage side="right" />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <SectionHeader title={t('activities.title')} subtitle={t('activities.sub')} />
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -63,7 +65,7 @@ export default function FeaturedActivities() {
                   />
                   <Icon
                     size={40}
-                    style={{ color: 'rgba(59, 130, 246, 0.7)', position: 'relative', zIndex: 1 }}
+                    style={{ color: 'rgba(255, 255, 255, 0.5)', position: 'relative', zIndex: 1 }}
                   />
                 </div>
                 <div className="flex items-start gap-4 p-5">

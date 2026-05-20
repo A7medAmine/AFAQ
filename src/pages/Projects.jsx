@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import { Users } from 'lucide-react'
 import Card from '../components/shared/Card'
+import SideImage from '../components/shared/SideImage'
 import { projects } from '../data'
 
 const spring = { type: 'spring', damping: 28, stiffness: 120 }
@@ -50,7 +51,8 @@ export default function Projects() {
         </div>
       </section>
 
-      <section className="py-16 md:py-20 -mt-12">
+      <section className="py-16 md:py-20 -mt-12 relative z-0">
+        <SideImage side="right" />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-wrap justify-center gap-2 mb-12">
             {categories.map(c => (

@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import { Send, Check, User, BookOpen, Heart, ArrowLeft, ArrowRight } from 'lucide-react'
 import { supabase } from '../lib/supabase'
+import SideImage from '../components/shared/SideImage'
+// import Lanyard from '../components/shared/Lanyard'
 
 const spring = { type: 'spring', damping: 28, stiffness: 120 }
 
@@ -96,7 +98,10 @@ export default function Registration() {
   })
 
   return (
-    <>
+    <div className="relative">
+      {/* <div className="fixed right-2 sm:right-4 top-1/2 -translate-y-1/2 z-50 w-[120px] h-[160px] sm:w-[250px] sm:h-[330px] md:w-[320px] md:h-[420px] lg:w-[380px] lg:h-[500px]">
+        <Lanyard position={[0, 0, 15]} gravity={[0, -40, 0]} fov={20} transparent />
+      </div> */}
       <section
         className="pt-24 pb-16 md:pt-32 md:pb-20"
         style={{ background: 'var(--color-bg-alt)' }}
@@ -130,7 +135,8 @@ export default function Registration() {
         </div>
       </section>
 
-      <section className="py-16 md:py-20 -mt-12">
+      <section className="py-16 md:py-20 -mt-12 relative z-0">
+        <SideImage side="right" />
         <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="card-pro p-8 md:p-10">
             {status === 'success' ? (
@@ -380,6 +386,6 @@ export default function Registration() {
           </div>
         </div>
       </section>
-    </>
+    </div>
   )
 }

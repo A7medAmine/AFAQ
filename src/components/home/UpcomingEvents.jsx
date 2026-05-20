@@ -6,6 +6,7 @@ import SectionHeader from '../shared/SectionHeader'
 
 const spring = { type: 'spring', damping: 28, stiffness: 120 }
 import Card from '../shared/Card'
+import SideImage from '../shared/SideImage'
 import { events as allEvents } from '../../data'
 
 export default function UpcomingEvents() {
@@ -21,7 +22,8 @@ export default function UpcomingEvents() {
   }
 
   return (
-    <section className="py-16 md:py-20" style={{ background: 'var(--color-accent-soft)' }}>
+    <section className="py-16 md:py-20 relative z-0" style={{ background: 'var(--color-bg)' }}>
+        <SideImage side="left" />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <SectionHeader title={t('upcomingEvents.title')} subtitle="" />
 
@@ -68,8 +70,8 @@ export default function UpcomingEvents() {
                       </div>
                       <Link
                         to="/register"
-                        className="inline-flex items-center justify-center px-5 py-2.5 rounded-[100px] font-semibold text-sm transition-all duration-200"
-                        style={{ background: 'var(--color-accent)', color: '#fff', alignSelf: 'flex-start' }}
+                        className="inline-flex items-center justify-center px-5 py-2.5 rounded-2xl font-semibold text-sm transition-all duration-200"
+                        style={{ background: '#0F172A', color: '#fff', alignSelf: 'flex-start' }}
                       >
                         {t('upcomingEvents.upcoming')} <ChevronRight size={14} />
                       </Link>
@@ -127,8 +129,8 @@ export default function UpcomingEvents() {
         >
           <Link
             to="/events"
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-[100px] font-semibold text-sm transition-all duration-200"
-            style={{ background: 'transparent', color: 'var(--color-accent)', border: '1.5px solid var(--color-accent)' }}
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl font-semibold text-sm transition-all duration-200"
+            style={{ background: '#fff', color: '#0F172A', border: '2px solid #0F172A' }}
           >
             {t('upcomingEvents.viewAll')} <ChevronRight size={15} />
           </Link>

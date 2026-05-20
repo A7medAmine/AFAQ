@@ -5,6 +5,7 @@ import { motion } from 'framer-motion'
 import { ChevronRight, Search } from 'lucide-react'
 import SectionHeader from '../shared/SectionHeader'
 import Lightbox from '../shared/Lightbox'
+import SideImage from '../shared/SideImage'
 import { galleryImages } from '../../data'
 
 const spring = { type: 'spring', damping: 28, stiffness: 120 }
@@ -18,7 +19,8 @@ export default function GalleryPreview() {
   const showNext = () => setLightboxIndex(i => i < galleryImages.length - 1 ? i + 1 : 0)
 
   return (
-    <section className="py-16 md:py-20" style={{ background: 'var(--color-accent-soft)' }}>
+    <section className="py-16 md:py-20 relative z-0" style={{ background: 'var(--color-bg)' }}>
+        <SideImage side="right" />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <SectionHeader title={t('gallery.title')} />
 
@@ -50,8 +52,8 @@ export default function GalleryPreview() {
         <div className="text-center mt-10">
           <Link
             to="/gallery"
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-[100px] font-semibold text-sm transition-all duration-200"
-            style={{ background: 'transparent', color: 'var(--color-accent)', border: '1.5px solid var(--color-accent)' }}
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl font-semibold text-sm transition-all duration-200"
+            style={{ background: '#fff', color: '#0F172A', border: '2px solid #0F172A' }}
           >
             {t('gallery.viewAll')} <ChevronRight size={15} />
           </Link>

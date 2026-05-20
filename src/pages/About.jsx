@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import { Lightbulb, Users, Target, Shield } from 'lucide-react'
+import SideImage from '../components/shared/SideImage'
 
 const spring = { type: 'spring', damping: 28, stiffness: 120 }
 
@@ -57,7 +58,8 @@ export default function About() {
         </div>
       </section>
 
-      <section className="py-16 md:py-20">
+      <section className="py-16 md:py-20 relative z-0">
+        <SideImage side="right" />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
@@ -98,7 +100,8 @@ export default function About() {
 
       <div className="divider-custom" />
 
-      <section className="py-16 md:py-20" style={{ background: 'var(--color-bg-alt)' }}>
+      <section className="py-16 md:py-20 relative z-0" style={{ background: 'var(--color-bg-alt)' }}>
+        <SideImage side="left" />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -156,7 +159,8 @@ export default function About() {
         </div>
       </section>
 
-      <section className="py-16 md:py-20">
+      <section className="py-16 md:py-20 relative z-0">
+        <SideImage side="right" />
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.h2
             initial={{ opacity: 0, y: 30 }}

@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import { Search } from 'lucide-react'
 import Lightbox from '../components/shared/Lightbox'
+import SideImage from '../components/shared/SideImage'
 import { galleryImages } from '../data'
 
 const spring = { type: 'spring', damping: 28, stiffness: 120 }
@@ -54,7 +55,8 @@ export default function Gallery() {
         </div>
       </section>
 
-      <section className="py-16 md:py-20">
+      <section className="py-16 md:py-20 relative z-0">
+        <SideImage side="right" />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div
             className="gallery-masonry"

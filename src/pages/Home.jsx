@@ -8,13 +8,15 @@ import StatisticsSection from '../components/home/StatisticsSection'
 import GalleryPreview from '../components/home/GalleryPreview'
 import { useTranslation } from 'react-i18next'
 import { ArrowRight } from 'lucide-react'
+import SideImage from '../components/shared/SideImage'
 
 const spring = { type: 'spring', damping: 28, stiffness: 120 }
 
 function CTASection() {
   const { t } = useTranslation('home')
   return (
-    <section className="py-16 md:py-20">
+    <section className="py-16 md:py-20 relative z-0">
+      <SideImage side="left" />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="blue-highlight text-center">
           <motion.div

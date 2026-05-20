@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import { Mail, MapPin, Send } from 'lucide-react'
 import SocialIcons from '../components/shared/SocialIcons'
+import SideImage from '../components/shared/SideImage'
 
 const spring = { type: 'spring', damping: 28, stiffness: 120 }
 
@@ -56,7 +57,8 @@ export default function Contact() {
         </div>
       </section>
 
-      <section className="py-16 md:py-20 -mt-12">
+      <section className="py-16 md:py-20 -mt-12 relative z-0">
+        <SideImage side="right" />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-12 items-start">
             <motion.div

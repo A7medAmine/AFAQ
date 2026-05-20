@@ -9,15 +9,20 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@react-three/drei": "^10.7.7",
+    "@react-three/fiber": "^9.6.1",
+    "@react-three/rapier": "^2.2.0",
     "@supabase/supabase-js": "^2.106.0",
     "framer-motion": "^12.39.0",
     "i18next": "^24.2.3",
     "i18next-browser-languagedetector": "^8.2.1",
     "lucide-react": "^1.16.0",
+    "meshline": "^3.3.1",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
     "react-i18next": "^15.7.4",
-    "react-router-dom": "^7.15.1"
+    "react-router-dom": "^7.15.1",
+    "three": "^0.184.0"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.0",
