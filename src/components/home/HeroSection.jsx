@@ -11,7 +11,7 @@ import {
   Wrench,
 } from "lucide-react";
 import { Button } from "../shared/Button";
-
+// import Lightning from "../shared/Lightning";
 
 function Img({ src, alt, className, style }) {
   const [failed, setFailed] = useState(false);
@@ -55,12 +55,19 @@ function HeroLeft() {
   const lines = t("hero.slogan1").split("\n");
 
   return (
-    <div className="flex-1 text-center lg:text-left">
-      <div className="hero-fade-up text-blue-500 text-sm font-semibold tracking-[0.15em] uppercase mb-5">
+    <div className="flex-1 text-center lg:text-left relative">
+      <div
+        className="absolute inset-0 z-0 md:hidden animate-glow"
+        style={{
+          background: 'radial-gradient(ellipse at center, rgba(59,130,246,0.35) 0%, transparent 70%)',
+          borderRadius: 'inherit',
+        }}
+      />
+      <div className="relative z-10 hero-fade-up text-blue-500 text-sm font-semibold tracking-[0.15em] uppercase mb-5">
         {t("hero.badge")}
       </div>
 
-      <h1 className="hero-fade-up-d2 font-ko-black font-black text-5xl sm:text-6xl lg:text-7xl leading-tight text-[#0F172A] mb-6">
+      <h1 className="relative z-10 hero-fade-up-d2 font-ko-black font-black text-5xl sm:text-6xl lg:text-7xl leading-tight text-[#0F172A] mb-6">
         {lines.map((line, li) => (
           <div key={li}>
             {line.split(" ").map((word, i, arr) => {
@@ -82,7 +89,7 @@ function HeroLeft() {
         ))}
       </h1>
 
-      <p className="hero-fade-up-d3 text-slate-500 text-base sm:text-lg leading-relaxed max-w-lg mb-4 mx-auto lg:mx-0">
+      <p className="relative z-10 hero-fade-up-d3 text-slate-500 text-base sm:text-lg leading-relaxed max-w-lg mb-4 mx-auto lg:mx-0">
         {(() => {
           const words = t("hero.subtitle").split(" ");
           if (words.length < 2) return t("hero.subtitle");
@@ -96,7 +103,7 @@ function HeroLeft() {
         })()}
       </p>
 
-      <div className="hero-fade-up-d4 mt-8 flex gap-4 flex-wrap justify-center lg:justify-start">
+      <div className="relative z-10 hero-fade-up-d4 mt-8 flex gap-4 flex-wrap justify-center lg:justify-start">
         <Button to="/register" variant="primary" icon="arrow">
           {t("hero.cta1")}
         </Button>
@@ -153,7 +160,7 @@ function HeroRight() {
     });
 
   return (
-    <div className="flex-1 relative w-full max-w-[280px] sm:max-w-sm lg:max-w-none h-[320px] sm:h-[400px] lg:h-[520px] xl:h-[600px]">
+    <div className="hidden lg:block flex-1 relative w-full max-w-[280px] sm:max-w-sm lg:max-w-none h-[320px] sm:h-[400px] lg:h-[520px] xl:h-[600px]">
       <Img
         src="/images/hero/bolt.png"
         alt="Bolt"

@@ -58,7 +58,7 @@
 
 html {
   scroll-behavior: smooth;
-  overflow-x: hidden;
+  overflow-y: scroll;
 }
 
 body {
@@ -380,6 +380,14 @@ h5,
   );
   background-size: 200% 100%;
   animation: shimmer 2s infinite;
+}
+
+@keyframes breatheGlow {
+  0%, 100% { opacity: 0.4; transform: scale(1); }
+  50% { opacity: 0.9; transform: scale(1.05); }
+}
+.animate-glow {
+  animation: breatheGlow 3s ease-in-out infinite;
 }
 
 .d1 {
