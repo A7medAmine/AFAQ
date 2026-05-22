@@ -22,11 +22,15 @@
     }
   },
   "departments": {
-    "cs": "Computer Science",
-    "ee": "Electrical Engineering",
-    "me": "Mechanical Engineering",
-    "ce": "Civil Engineering",
-    "other": "Other"
+    "fsas": "Faculty of Sciences and Applied Sciences",
+    "fnlses": "Faculty of Natural and Life Sciences and Earth Sciences",
+    "flps": "Faculty of Law and Political Science",
+    "fecms": "Faculty of Economic, Commercial and Management Sciences",
+    "fshs": "Faculty of Social and Human Sciences",
+    "fll": "Faculty of Letters and Languages",
+    "istaps": "Institute of Physical Education and Sports Sciences and Techniques (ISTAPS)",
+    "iot": "Institute of Technology",
+    "fes": "Faculty of Exact Sciences"
   },
   "years": {
     "1": "1st Year",

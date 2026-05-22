@@ -22,11 +22,15 @@
     }
   },
   "departments": {
-    "cs": "Informatique",
-    "ee": "Génie Électrique",
-    "me": "Génie Mécanique",
-    "ce": "Génie Civil",
-    "other": "Autre"
+    "fsas": "Faculté des Sciences et Sciences Appliquées",
+    "fnlses": "Faculté des Sciences de la Nature et de la Vie et Sciences de la Terre",
+    "flps": "Faculté de Droit et des Sciences Politiques",
+    "fecms": "Faculté des Sciences Économiques, Commerciales et des Sciences de Gestion",
+    "fshs": "Faculté des Sciences Sociales et Humaines",
+    "fll": "Faculté des Lettres et des Langues",
+    "istaps": "Institut d'Éducation Physique et des Sciences et Techniques des Sports (ISTAPS)",
+    "iot": "Institut de Technologie",
+    "fes": "Faculté des Sciences Exactes"
   },
   "years": {
     "1": "1ère Année",

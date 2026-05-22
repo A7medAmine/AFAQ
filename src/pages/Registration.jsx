@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import { Send, Check, User, BookOpen, Heart, ArrowLeft, ArrowRight } from 'lucide-react'
@@ -6,7 +6,8 @@ import { supabase } from '../lib/supabase'
 import SideImage from '../components/shared/SideImage'
 // import Lanyard from '../components/shared/Lanyard'
 
-const spring = { type: 'spring', damping: 28, stiffness: 120 }
+const spring = { type: 'spring', damping: 22, stiffness: 200 }
+const fastSpring = { type: 'spring', damping: 16, stiffness: 300 }
 
 const steps = ['personal', 'academic', 'interests']
 const stepIcons = [User, BookOpen, Heart]
@@ -22,18 +23,14 @@ const initialForm = {
   motivation: '',
 }
 
-const containerVariants = {
-  hidden: { opacity: 0, x: 20 },
-  visible: { opacity: 1, x: 0, transition: spring },
-  exit: { opacity: 0, x: -20, transition: { type: 'spring', damping: 28, stiffness: 120 } },
-}
-
 export default function Registration() {
   const { t } = useTranslation('register')
   const [step, setStep] = useState(0)
   const [form, setForm] = useState(initialForm)
   const [status, setStatus] = useState('idle')
   const [errors, setErrors] = useState({})
+  const [shaking, setShaking] = useState(null)
+  const inputRefs = useRef({})
 
   const validate = () => {
     const errs = {}
@@ -48,6 +45,11 @@ export default function Registration() {
       if (!form.motivation.trim()) errs.motivation = t('form.validation.required')
     }
     setErrors(errs)
+    if (Object.keys(errs).length > 0) {
+      const firstField = Object.keys(errs)[0]
+      setShaking(firstField)
+      setTimeout(() => setShaking(null), 500)
+    }
     return Object.keys(errs).length === 0
   }
 
@@ -57,6 +59,11 @@ export default function Registration() {
   }
 
   const prevStep = () => setStep(s => Math.max(s - 1, 0))
+
+  useEffect(() => {
+    const firstInput = inputRefs.current[`step-${step}`]
+    if (firstInput) firstInput.focus()
+  }, [step])
 
   const handleSubmit = async () => {
     if (!validate()) return
@@ -94,14 +101,15 @@ export default function Registration() {
     color: 'var(--color-text)',
     width: '100%',
     outline: 'none',
-    transition: 'all 0.2s',
+    transition: 'border-color 0.2s, box-shadow 0.2s',
   })
+
+  const setInputRef = (stepIdx, el) => {
+    inputRefs.current[`step-${stepIdx}`] = el
+  }
 
   return (
     <div className="relative">
-      {/* <div className="fixed right-2 sm:right-4 top-1/2 -translate-y-1/2 z-50 w-[120px] h-[160px] sm:w-[250px] sm:h-[330px] md:w-[320px] md:h-[420px] lg:w-[380px] lg:h-[500px]">
-        <Lanyard position={[0, 0, 15]} gravity={[0, -40, 0]} fov={20} transparent />
-      </div> */}
       <section
         className="pt-24 pb-16 md:pt-32 md:pb-20"
         style={{ background: 'var(--color-bg-alt)' }}
@@ -149,7 +157,7 @@ export default function Registration() {
                 <motion.div
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
-                  transition={{ ...spring, delay: 0.2 }}
+                  transition={{ ...fastSpring, delay: 0.2 }}
                   className="inline-flex items-center justify-center mb-6"
                   style={{
                     width: 72,
@@ -161,9 +169,7 @@ export default function Registration() {
                 >
                   <Check size={36} style={{ strokeWidth: 3 }} />
                 </motion.div>
-                <h3
-                  className="text-2xl font-bold mb-3"
-                >
+                <h3 className="text-2xl font-bold mb-3">
                   {t('form.success')}
                 </h3>
               </motion.div>
@@ -175,36 +181,55 @@ export default function Registration() {
                     const isActive = step === i
                     const isDone = step > i
                     return (
-                      <>
-                        <div
+                      <motion.div key={s} layout="position" transition={spring} style={{ display: 'flex', alignItems: 'center' }}>
+                        <motion.div
+                          animate={{ scale: isActive ? 1.15 : 1 }}
+                          transition={fastSpring}
                           className={`step-circle ${isActive ? 'active' : ''} ${isDone ? 'done' : ''}`}
                         >
                           {isDone ? <Check size={16} /> : <StepIcon size={16} />}
-                        </div>
+                        </motion.div>
                         {i < steps.length - 1 && (
-                          <div className={`step-line ${isDone || (isActive && step < steps.length - 1) ? 'active' : ''} ${isDone ? 'done' : ''}`} />
+                          <motion.div
+                            animate={{ scaleX: isDone || (isActive && step < steps.length - 1) ? 1 : 0.3 }}
+                            transition={spring}
+                            className={`step-line ${isDone || (isActive && step < steps.length - 1) ? 'active' : ''} ${isDone ? 'done' : ''}`}
+                          />
                         )}
-                      </>
+                      </motion.div>
                     )
                   })}
                 </div>
 
                 <div className="text-center mb-8">
-                  <p className="text-xs font-semibold" style={{ color: 'var(--color-text-muted)', letterSpacing: '0.05em' }}>
+                  <motion.p
+                    key={`step-${step}`}
+                    initial={{ opacity: 0, y: -8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={spring}
+                    className="text-xs font-semibold"
+                    style={{ color: 'var(--color-text-muted)', letterSpacing: '0.05em' }}
+                  >
                     Step {step + 1} of 3
-                  </p>
-                  <p className="text-sm font-bold mt-1">
+                  </motion.p>
+                  <motion.p
+                    key={`label-${step}`}
+                    initial={{ opacity: 0, y: -6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ ...spring, delay: 0.05 }}
+                    className="text-sm font-bold mt-1"
+                  >
                     {step === 0 ? t('form.fullName') : step === 1 ? t('form.department') : t('form.interests')}
-                  </p>
+                  </motion.p>
                 </div>
 
                 <AnimatePresence mode="wait">
                   <motion.div
                     key={step}
-                    variants={containerVariants}
-                    initial="hidden"
-                    animate="visible"
-                    exit="exit"
+                    initial={{ opacity: 0, scale: 0.96, y: 10 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.96, y: -10 }}
+                    transition={{ ...spring, duration: 0.3 }}
                   >
                     {step === 0 && (
                       <div className="space-y-5">
@@ -212,26 +237,43 @@ export default function Registration() {
                           <label className="block text-xs font-semibold mb-2" style={{ color: 'var(--color-text-muted)', letterSpacing: '0.03em', textTransform: 'uppercase' }}>
                             {t('form.fullName')} *
                           </label>
-                          <input
-                            style={inputStyle('full_name')}
-                            value={form.full_name}
-                            onChange={e => setForm({...form, full_name: e.target.value})}
-                            placeholder="Ahmed Mansouri"
-                          />
-                          {errors.full_name && <p className="text-xs mt-1.5" style={{ color: '#EF4444' }}>{errors.full_name}</p>}
+                          <motion.div animate={{ x: shaking === 'full_name' ? [0, -6, 6, -6, 6, 0] : 0 }} transition={{ duration: 0.4 }}>
+                            <input
+                              ref={el => setInputRef(0, el)}
+                              style={inputStyle('full_name')}
+                              value={form.full_name}
+                              onChange={e => setForm({...form, full_name: e.target.value})}
+                              onFocus={e => { e.target.style.boxShadow = '0 0 0 3px rgba(36,96,231,0.15)'; e.target.style.borderColor = 'var(--color-accent)' }}
+                              onBlur={e => { e.target.style.boxShadow = 'none'; e.target.style.borderColor = 'var(--color-border-light)' }}
+                              placeholder="Ahmed Mansouri"
+                            />
+                          </motion.div>
+                          <AnimatePresence>
+                            {errors.full_name && (
+                              <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="text-xs mt-1.5" style={{ color: '#EF4444' }}>{errors.full_name}</motion.p>
+                            )}
+                          </AnimatePresence>
                         </div>
                         <div>
                           <label className="block text-xs font-semibold mb-2" style={{ color: 'var(--color-text-muted)', letterSpacing: '0.03em', textTransform: 'uppercase' }}>
                             {t('form.email')} *
                           </label>
-                          <input
-                            style={inputStyle('email')}
-                            type="email"
-                            value={form.email}
-                            onChange={e => setForm({...form, email: e.target.value})}
-                            placeholder="ahmed@univ-bouira.dz"
-                          />
-                          {errors.email && <p className="text-xs mt-1.5" style={{ color: '#EF4444' }}>{errors.email}</p>}
+                          <motion.div animate={{ x: shaking === 'email' ? [0, -6, 6, -6, 6, 0] : 0 }} transition={{ duration: 0.4 }}>
+                            <input
+                              style={inputStyle('email')}
+                              type="email"
+                              value={form.email}
+                              onChange={e => setForm({...form, email: e.target.value})}
+                              onFocus={e => { e.target.style.boxShadow = '0 0 0 3px rgba(36,96,231,0.15)'; e.target.style.borderColor = 'var(--color-accent)' }}
+                              onBlur={e => { e.target.style.boxShadow = 'none'; e.target.style.borderColor = 'var(--color-border-light)' }}
+                              placeholder="ahmed@univ-bouira.dz"
+                            />
+                          </motion.div>
+                          <AnimatePresence>
+                            {errors.email && (
+                              <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="text-xs mt-1.5" style={{ color: '#EF4444' }}>{errors.email}</motion.p>
+                            )}
+                          </AnimatePresence>
                         </div>
                         <div>
                           <label className="block text-xs font-semibold mb-2" style={{ color: 'var(--color-text-muted)', letterSpacing: '0.03em', textTransform: 'uppercase' }}>
@@ -241,6 +283,8 @@ export default function Registration() {
                             style={inputStyle('phone')}
                             value={form.phone}
                             onChange={e => setForm({...form, phone: e.target.value})}
+                            onFocus={e => { e.target.style.boxShadow = '0 0 0 3px rgba(36,96,231,0.15)'; e.target.style.borderColor = 'var(--color-accent)' }}
+                            onBlur={e => { e.target.style.boxShadow = 'none'; e.target.style.borderColor = 'var(--color-border-light)' }}
                             placeholder="+213 6XX XXX XXX"
                           />
                         </div>
@@ -253,25 +297,50 @@ export default function Registration() {
                           <label className="block text-xs font-semibold mb-2" style={{ color: 'var(--color-text-muted)', letterSpacing: '0.03em', textTransform: 'uppercase' }}>
                             {t('form.department')} *
                           </label>
-                          <select style={inputStyle('department')} value={form.department} onChange={e => setForm({...form, department: e.target.value})}>
-                            <option value="">—</option>
-                            {departments.map(d => (
-                              <option key={d} value={d}>{t(`departments.${d}`)}</option>
-                            ))}
-                          </select>
-                          {errors.department && <p className="text-xs mt-1.5" style={{ color: '#EF4444' }}>{errors.department}</p>}
+                          <motion.div animate={{ x: shaking === 'department' ? [0, -6, 6, -6, 6, 0] : 0 }} transition={{ duration: 0.4 }}>
+                            <select
+                              ref={el => setInputRef(1, el)}
+                              style={inputStyle('department')}
+                              value={form.department}
+                              onChange={e => setForm({...form, department: e.target.value})}
+                              onFocus={e => { e.target.style.boxShadow = '0 0 0 3px rgba(36,96,231,0.15)'; e.target.style.borderColor = 'var(--color-accent)' }}
+                              onBlur={e => { e.target.style.boxShadow = 'none'; e.target.style.borderColor = 'var(--color-border-light)' }}
+                            >
+                              <option value="">—</option>
+                              {departments.map(d => (
+                                <option key={d} value={d}>{t(`departments.${d}`)}</option>
+                              ))}
+                            </select>
+                          </motion.div>
+                          <AnimatePresence>
+                            {errors.department && (
+                              <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="text-xs mt-1.5" style={{ color: '#EF4444' }}>{errors.department}</motion.p>
+                            )}
+                          </AnimatePresence>
                         </div>
                         <div>
                           <label className="block text-xs font-semibold mb-2" style={{ color: 'var(--color-text-muted)', letterSpacing: '0.03em', textTransform: 'uppercase' }}>
                             {t('form.studyYear')} *
                           </label>
-                          <select style={inputStyle('study_year')} value={form.study_year} onChange={e => setForm({...form, study_year: e.target.value})}>
-                            <option value="">—</option>
-                            {years.map(y => (
-                              <option key={y} value={y}>{t(`years.${y}`)}</option>
-                            ))}
-                          </select>
-                          {errors.study_year && <p className="text-xs mt-1.5" style={{ color: '#EF4444' }}>{errors.study_year}</p>}
+                          <motion.div animate={{ x: shaking === 'study_year' ? [0, -6, 6, -6, 6, 0] : 0 }} transition={{ duration: 0.4 }}>
+                            <select
+                              style={inputStyle('study_year')}
+                              value={form.study_year}
+                              onChange={e => setForm({...form, study_year: e.target.value})}
+                              onFocus={e => { e.target.style.boxShadow = '0 0 0 3px rgba(36,96,231,0.15)'; e.target.style.borderColor = 'var(--color-accent)' }}
+                              onBlur={e => { e.target.style.boxShadow = 'none'; e.target.style.borderColor = 'var(--color-border-light)' }}
+                            >
+                              <option value="">—</option>
+                              {years.map(y => (
+                                <option key={y} value={y}>{t(`years.${y}`)}</option>
+                              ))}
+                            </select>
+                          </motion.div>
+                          <AnimatePresence>
+                            {errors.study_year && (
+                              <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="text-xs mt-1.5" style={{ color: '#EF4444' }}>{errors.study_year}</motion.p>
+                            )}
+                          </AnimatePresence>
                         </div>
                       </div>
                     )}
@@ -284,15 +353,16 @@ export default function Registration() {
                           </label>
                           <div className="flex flex-wrap gap-2">
                             {interests.map(i => (
-                              <button
+                              <motion.button
                                 key={i}
                                 type="button"
+                                whileTap={{ scale: 0.92 }}
                                 onClick={() => toggleArray('interests', i)}
                                 className={`pill ${form.interests.includes(i) ? 'active' : ''}`}
                               >
                                 {form.interests.includes(i) && <Check size={12} />}
                                 {t(`interestOptions.${i}`)}
-                              </button>
+                              </motion.button>
                             ))}
                           </div>
                         </div>
@@ -302,15 +372,16 @@ export default function Registration() {
                           </label>
                           <div className="flex flex-wrap gap-2">
                             {skillOpts.map(s => (
-                              <button
+                              <motion.button
                                 key={s}
                                 type="button"
+                                whileTap={{ scale: 0.92 }}
                                 onClick={() => toggleArray('skills', s)}
                                 className={`pill ${form.skills.includes(s) ? 'active' : ''}`}
                               >
                                 {form.skills.includes(s) && <Check size={12} />}
                                 {t(`skillOptions.${s}`)}
-                              </button>
+                              </motion.button>
                             ))}
                           </div>
                         </div>
@@ -318,28 +389,40 @@ export default function Registration() {
                           <label className="block text-xs font-semibold mb-2" style={{ color: 'var(--color-text-muted)', letterSpacing: '0.03em', textTransform: 'uppercase' }}>
                             {t('form.motivation')} *
                           </label>
-                          <textarea
-                            style={{ ...inputStyle('motivation'), borderRadius: 20, minHeight: 120, resize: 'vertical' }}
-                            rows={4}
-                            value={form.motivation}
-                            onChange={e => setForm({...form, motivation: e.target.value})}
-                            placeholder={t('form.motivationPlaceholder')}
-                          />
-                          {errors.motivation && <p className="text-xs mt-1.5" style={{ color: '#EF4444' }}>{errors.motivation}</p>}
+                          <motion.div animate={{ x: shaking === 'motivation' ? [0, -6, 6, -6, 6, 0] : 0 }} transition={{ duration: 0.4 }}>
+                            <textarea
+                              ref={el => setInputRef(2, el)}
+                              style={{ ...inputStyle('motivation'), borderRadius: 20, minHeight: 120, resize: 'vertical' }}
+                              rows={4}
+                              value={form.motivation}
+                              onChange={e => setForm({...form, motivation: e.target.value})}
+                              onFocus={e => { e.target.style.boxShadow = '0 0 0 3px rgba(36,96,231,0.15)'; e.target.style.borderColor = 'var(--color-accent)' }}
+                              onBlur={e => { e.target.style.boxShadow = 'none'; e.target.style.borderColor = 'var(--color-border-light)' }}
+                              placeholder={t('form.motivationPlaceholder')}
+                            />
+                          </motion.div>
+                          <AnimatePresence>
+                            {errors.motivation && (
+                              <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="text-xs mt-1.5" style={{ color: '#EF4444' }}>{errors.motivation}</motion.p>
+                            )}
+                          </AnimatePresence>
                         </div>
                       </div>
                     )}
                   </motion.div>
                 </AnimatePresence>
 
-                {status === 'error' && (
-                  <p className="text-sm text-center mt-4" style={{ color: '#EF4444' }}>{t('form.error')}</p>
-                )}
+                <AnimatePresence>
+                  {status === 'error' && (
+                    <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="text-sm text-center mt-4" style={{ color: '#EF4444' }}>{t('form.error')}</motion.p>
+                  )}
+                </AnimatePresence>
 
                 <div className="flex items-center justify-between mt-8 gap-4">
-                  <button
+                  <motion.button
                     onClick={prevStep}
                     disabled={step === 0}
+                    whileTap={step !== 0 ? { scale: 0.95 } : {}}
                     className="inline-flex items-center gap-2 px-5 py-2.5 rounded-[100px] font-semibold text-sm transition-all duration-200"
                     style={{
                       background: 'transparent',
@@ -351,20 +434,24 @@ export default function Registration() {
                   >
                     <ArrowLeft size={14} />
                     Back
-                  </button>
+                  </motion.button>
 
                   {step < 2 ? (
-                    <button
+                    <motion.button
                       onClick={nextStep}
+                      whileHover={{ scale: 1.03 }}
+                      whileTap={{ scale: 0.95 }}
                       className="inline-flex items-center gap-2 px-6 py-2.5 rounded-[100px] font-semibold text-sm transition-all duration-200"
                       style={{ background: 'var(--color-accent)', color: '#fff' }}
                     >
                       Next <ArrowRight size={14} />
-                    </button>
+                    </motion.button>
                   ) : (
-                    <button
+                    <motion.button
                       onClick={handleSubmit}
                       disabled={status === 'loading'}
+                      whileHover={status !== 'loading' ? { scale: 1.03 } : {}}
+                      whileTap={status !== 'loading' ? { scale: 0.95 } : {}}
                       className="inline-flex items-center gap-2 px-6 py-2.5 rounded-[100px] font-semibold text-sm transition-all duration-200"
                       style={{
                         background: status === 'loading' ? 'var(--color-accent-dark)' : 'var(--color-accent)',
@@ -373,12 +460,16 @@ export default function Registration() {
                       }}
                     >
                       {status === 'loading' ? (
-                        <div style={{ width: 16, height: 16, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%', animation: 'spin .6s linear infinite' }} />
+                        <motion.div
+                          animate={{ rotate: 360 }}
+                          transition={{ repeat: Infinity, duration: 0.6, ease: 'linear' }}
+                          style={{ width: 16, height: 16, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%' }}
+                        />
                       ) : (
                         <Send size={14} />
                       )}
                       {status === 'loading' ? 'Submitting...' : t('form.submit')}
-                    </button>
+                    </motion.button>
                   )}
                 </div>
               </>

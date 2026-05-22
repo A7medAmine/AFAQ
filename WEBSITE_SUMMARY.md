@@ -181,7 +181,7 @@ In index.css, add:
 ```css
 @font-face {
   font-family: "KOMediaBlack";
-  src: url("/fonts/KOMediaBlack.otf") format("opentype");
+  src: url("/fonts/") format("opentype");
   font-weight: 900;
   font-display: swap;
 }
