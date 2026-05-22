@@ -13,7 +13,7 @@ export default function SectionHeader({ title, subtitle, light = false, center =
         <div
           className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 select-none pointer-events-none"
           style={{
-            fontFamily: "'DM Sans', 'Inter', sans-serif",
+            fontFamily: "'Minecraft', sans-serif",
             fontWeight: 900,
             fontSize: 'clamp(100px, 20vw, 220px)',
             color: 'var(--color-accent)',

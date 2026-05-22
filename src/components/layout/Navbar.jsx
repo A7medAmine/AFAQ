@@ -57,7 +57,7 @@ export default function Navbar() {
             </div>
             <span
               className="font-bold text-base tracking-tight text-slate-800"
-              style={{ fontFamily: "'DM Sans', 'Inter', sans-serif", fontWeight: 700 }}
+              style={{ fontFamily: "'Minecraft', sans-serif", fontWeight: 700 }}
             >
               AFAQ
             </span>
@@ -122,7 +122,7 @@ export default function Navbar() {
                   className="flex items-center gap-2"
                 >
                   <Logo size={32} />
-                  <span style={{ fontFamily: "'DM Sans', 'Inter', sans-serif", fontWeight: 700, fontSize: 16 }}>AFAQ</span>
+                  <span style={{ fontFamily: "'Minecraft', sans-serif", fontWeight: 700, fontSize: 16 }}>AFAQ</span>
                 </motion.div>
                 <motion.button
                   initial={{ opacity: 0, rotate: -90 }}

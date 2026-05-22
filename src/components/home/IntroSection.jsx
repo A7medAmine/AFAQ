@@ -90,7 +90,7 @@ export default function IntroSection() {
                 className="text-lg md:text-xl font-semibold tracking-wide"
                 style={{
                   color: "rgba(255, 255, 255, 0.6)",
-                  fontFamily: "'DM Sans', 'Inter', sans-serif",
+                  fontFamily: "'Minecraft', sans-serif",
                   letterSpacing: "0.15em",
                 }}
               >

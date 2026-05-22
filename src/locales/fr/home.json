@@ -1,31 +1,49 @@
 {
   "hero": {
-    "badge": "Club Universitaire d'Innovation · Bouira, Algérie",
-    "slogan": "Là où la Technologie Rencontre l'Innovation",
-    "slogan1": "Là où la Technologie\nRencontre l'Avenir",
-    "subtitle": "Un club étudiant à l'Université Akli Mohand Oulhadj — Bouira, repoussant les limites de l'électronique, de la robotique et de la technologie créative.",
-    "cta1": "Rejoignez Notre Communauté",
-    "cta2": "Découvrez Nos Projets"
+    "badge": "Club Universitaire d'Innovation · Bouira, Algerie",
+    "slogan": "la ou la Technologie Rencontre l'Innovation",
+    "slogan1": "la ou la Technologie\nRencontre l'Avenir",
+    "subtitle": "Un club etudiant a l'Universite Akli Mohand Oulhadj — Bouira, repoussant les limites de l'electronique, de la robotique et de la technologie creative.",
+    "cta1": "Rejoignez Notre Communaute",
+    "cta2": "Decouvrez Nos Projets"
   },
   "intro": {
     "title": "Qui Sommes-Nous",
-    "description": "AFAQ est un club étudiant où la technologie, l'électronique, la créativité, l'innovation et le travail d'équipe se rencontrent. Nous offrons un espace pour apprendre, construire et grandir à travers des projets pratiques et des événements collaboratifs."
+    "description": "AFAQ est un club etudiant ou la technologie, l'electronique, la creativite, l'innovation et le travail d'equipe se rencontrent. Nous offrons un espace pour apprendre, construire et grandir a travers des projets pratiques et des evenements collaboratifs."
   },
   "activities": {
-    "title": "Nos Activités",
-    "sub": "De l'électronique au logiciel, nous couvrons tout le spectre de la technologie moderne.",
-    "workshops": { "title": "Ateliers", "desc": "Sessions pratiques sur Arduino, programmation, électronique et plus." },
-    "robotics": { "title": "Robotique", "desc": "Concevoir, construire et programmer des robots pour des compétitions." },
-    "hackathons": { "title": "Hackathons", "desc": "Défis intenses de codage et d'innovation pour résoudre des problèmes réels." },
-    "competitions": { "title": "Compétitions", "desc": "Compétitions tech amicales pour montrer vos talents et gagner des prix." },
-    "training": { "title": "Formation", "desc": "Ateliers animés par des experts et sessions de formation technique." },
-    "software": { "title": "Développement Logiciel", "desc": "Projets web, mobile et systèmes avec des outils modernes." }
+    "title": "Nos Activites",
+    "sub": "De l'electronique au logiciel, nous couvrons tout le spectre de la technologie moderne.",
+    "workshops": {
+      "title": "Ateliers",
+      "desc": "Sessions pratiques sur Arduino, programmation, electronique et plus."
+    },
+    "robotics": {
+      "title": "Robotique",
+      "desc": "Concevoir, construire et programmer des robots pour des competitions."
+    },
+    "hackathons": {
+      "title": "Hackathons",
+      "desc": "Defis intenses de codage et d'innovation pour resoudre des problèmes reels."
+    },
+    "competitions": {
+      "title": "Competitions",
+      "desc": "Competitions tech amicales pour montrer vos talents et gagner des prix."
+    },
+    "training": {
+      "title": "Formation",
+      "desc": "Ateliers animes par des experts et sessions de formation technique."
+    },
+    "software": {
+      "title": "Developpement logiciel",
+      "desc": "Projets web, mobile et systèmes avec des outils modernes."
+    }
   },
   "upcomingEvents": {
-    "title": "Événements à Venir",
-    "viewAll": "Voir Tous les Événements",
+    "title": "Évenements a Venir",
+    "viewAll": "Voir Tous les Évenements",
     "upcoming": "À venir",
-    "noEvents": "Aucun événement à venir pour le moment. Restez à l'écoute !"
+    "noEvents": "Aucun evenement a venir pour le moment. Restez a l'ecoute !"
   },
   "projects": {
     "title": "Projets Vedettes",
@@ -33,24 +51,24 @@
   },
   "stats": {
     "title": "AFAQ en Chiffres",
-    "subtitle": "Notre impact croissant à l'université et au-delà.",
+    "subtitle": "Notre impact croissant a l'universite et au-dela.",
     "members": { "value": "50+", "label": "Membres Actifs" },
-    "projects": { "value": "25+", "label": "Projets Réalisés" },
-    "events": { "value": "15+", "label": "Événements Organisés" },
-    "workshops": { "value": "30+", "label": "Ateliers Animés" }
+    "projects": { "value": "25+", "label": "Projets Realises" },
+    "events": { "value": "15+", "label": "Évenements Organises" },
+    "workshops": { "value": "30+", "label": "Ateliers Animes" }
   },
   "heroStats": {
     "members": "Membres Actifs",
     "workshops": "Ateliers",
     "projects": "Projets",
-    "competitions": "Compétitions"
+    "competitions": "Competitions"
   },
   "gallery": {
     "title": "Notre Galerie",
     "viewAll": "Voir Toute la Galerie"
   },
   "cta": {
-    "title": "Prêt à Construire l'Avenir ?",
-    "sub": "Rejoignez AFAQ et faites partie d'une communauté où les idées prennent vie."
+    "title": "Prêt a Construire l'Avenir ?",
+    "sub": "Rejoignez AFAQ et faites partie d'une communaute ou les idees prennent vie."
   }
 }

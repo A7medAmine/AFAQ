@@ -56,7 +56,7 @@ export default function UpcomingEvents() {
                     <div className="p-7 flex flex-col justify-center">
                       <h3
                         className="text-xl font-bold mb-3"
-                        style={{ fontFamily: "'DM Sans', 'Inter', sans-serif", fontWeight: 700 }}
+                        style={{ fontFamily: "'Minecraft', sans-serif", fontWeight: 700 }}
                       >
                         {t(`events:${e.key}.title`)}
                       </h3>
@@ -101,7 +101,7 @@ export default function UpcomingEvents() {
                       <div className="p-5 flex flex-col justify-center flex-1">
                         <h3
                           className="font-bold text-base mb-1.5"
-                          style={{ fontFamily: "'DM Sans', 'Inter', sans-serif", fontWeight: 700 }}
+                          style={{ fontFamily: "'Minecraft', sans-serif", fontWeight: 700 }}
                         >
                           {t(`events:${e.key}.title`)}
                         </h3>

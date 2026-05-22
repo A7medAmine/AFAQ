@@ -4,7 +4,7 @@ import IntroSection from '../components/home/IntroSection'
 import FeaturedActivities from '../components/home/FeaturedActivities'
 import UpcomingEvents from '../components/home/UpcomingEvents'
 import ProjectHighlights from '../components/home/ProjectHighlights'
-import StatisticsSection from '../components/home/StatisticsSection'
+{/* import StatisticsSection from '../components/home/StatisticsSection' */}
 import GalleryPreview from '../components/home/GalleryPreview'
 import { useTranslation } from 'react-i18next'
 import { ArrowRight } from 'lucide-react'
@@ -26,7 +26,7 @@ function CTASection() {
             transition={spring}
             style={{ position: 'relative', zIndex: 1, maxWidth: 640, margin: '0 auto' }}
           >
-            <h2 className="text-3xl md:text-5xl font-bold mb-5" style={{ fontFamily: "'DM Sans', 'Inter', sans-serif", fontWeight: 700, letterSpacing: '-0.02em' }}>
+            <h2 className="text-3xl md:text-5xl font-bold mb-5" style={{ fontFamily: "'Minecraft', sans-serif", fontWeight: 700, letterSpacing: '-0.02em' }}>
               {t('cta.title')}
             </h2>
             <p className="text-base md:text-lg mb-8 leading-relaxed" style={{ color: 'rgba(255,255,255,0.7)' }}>
@@ -54,7 +54,7 @@ export default function Home() {
       <FeaturedActivities />
       <UpcomingEvents />
       <ProjectHighlights />
-      <StatisticsSection />
+      {/* <StatisticsSection /> */}
       <GalleryPreview />
       <CTASection />
     </>

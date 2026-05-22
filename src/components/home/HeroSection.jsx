@@ -51,11 +51,12 @@ function Badge({ icon, label, className }) {
 }
 
 function HeroLeft() {
-  const { t } = useTranslation("home");
+  const { t, i18n } = useTranslation("home");
+  const isRTL = i18n.language === 'ar';
   const lines = t("hero.slogan1").split("\n");
 
   return (
-    <div className="flex-1 text-center lg:text-left relative">
+    <div className={`flex-1 text-center ${isRTL ? 'lg:text-right' : 'lg:text-left'} relative`}>
       <div
         className="absolute inset-0 z-0 md:hidden animate-glow"
         style={{
@@ -89,7 +90,7 @@ function HeroLeft() {
         ))}
       </h1>
 
-      <p className="relative z-10 hero-fade-up-d3 text-slate-500 text-base sm:text-lg leading-relaxed max-w-lg mb-4 mx-auto lg:mx-0">
+      <p className={`relative z-10 hero-fade-up-d3 text-slate-500 text-base sm:text-lg leading-relaxed max-w-lg mb-4 mx-auto ${isRTL ? 'lg:mr-0 lg:ml-auto' : 'lg:mx-0'}`}>
         {(() => {
           const words = t("hero.subtitle").split(" ");
           if (words.length < 2) return t("hero.subtitle");
@@ -116,6 +117,8 @@ function HeroLeft() {
 }
 
 function HeroRight() {
+  const { i18n } = useTranslation("home");
+  const isRTL = i18n.language === 'ar';
   const ringStyle = (tilt, radius, opts = {}) => ({
     width: radius * 2,
     height: radius * 2,
@@ -181,14 +184,31 @@ function HeroRight() {
           style={{ position: "absolute", inset: 0, "--speed": "22s" }}
         >
           <div style={{ ...ringStyle(65, 260) }} />
-          <div
-            style={{
-              ...ringStyle(65, 266, {
-                border: "1px solid rgba(59,130,246,0.1)",
-              }),
-            }}
-          />
-          {ringParticles(18, 260)}
+          {ringParticles(10, 260)}
+        </div>
+
+        <div
+          className="orbit-ring-reverse"
+          style={{ position: "absolute", inset: 0, "--speed": "28s" }}
+        >
+          <div style={{ ...ringStyle(-40, 220) }} />
+          {ringParticles(8, 220)}
+        </div>
+
+        <div
+          className="orbit-ring"
+          style={{ position: "absolute", inset: 0, "--speed": "35s" }}
+        >
+          <div style={{ ...ringStyle(80, 300) }} />
+          {ringParticles(12, 300)}
+        </div>
+
+        <div
+          className="orbit-particle"
+          style={{ position: "absolute", inset: 0, "--p-speed": "9s" }}
+        >
+          <div style={{ ...ringStyle(-55, 180) }} />
+          {ringParticles(6, 180)}
         </div>
 
         <div
@@ -239,46 +259,46 @@ function HeroRight() {
       <Badge
         icon={<Code size={16} className="text-blue-500" />}
         label="Arduino"
-        className="hidden sm:flex top-[3%] right-[3%] z-20"
+        className={`hidden sm:flex top-[3%] ${isRTL ? 'left-[3%]' : 'right-[3%]'} z-20`}
       />
       <Badge
         icon={<Cpu size={16} className="text-blue-500" />}
         label="Robotics"
-        className="hidden sm:flex top-[44%] left-[-1%] z-20"
+        className={`hidden sm:flex top-[44%] ${isRTL ? 'right-[-1%]' : 'left-[-1%]'} z-20`}
       />
       <Badge
         icon={<Zap size={16} className="text-blue-500" />}
         label="Electronics"
-        className="hidden sm:flex bottom-[3%] right-[3%] z-20"
+        className={`hidden sm:flex bottom-[3%] ${isRTL ? 'left-[3%]' : 'right-[3%]'} z-20`}
       />
 
       {/* Icon circles — hidden on mobile */}
-      <div className="hidden sm:flex absolute top-[12%] left-[0%] z-20 w-10 h-10 rounded-full shadow-md bg-white items-center justify-center text-blue-500">
+      <div className={`hidden sm:flex absolute top-[12%] ${isRTL ? 'right-[0%]' : 'left-[0%]'} z-20 w-10 h-10 rounded-full shadow-md bg-white items-center justify-center text-blue-500`}>
         <Lightbulb size={16} />
       </div>
-      <div className="hidden sm:flex absolute top-[2%] right-[20%] z-20 w-10 h-10 rounded-full shadow-md bg-white items-center justify-center text-blue-500">
+      <div className={`hidden sm:flex absolute top-[2%] ${isRTL ? 'left-[20%]' : 'right-[20%]'} z-20 w-10 h-10 rounded-full shadow-md bg-white items-center justify-center text-blue-500`}>
         <Rocket size={16} />
       </div>
-      <div className="hidden sm:flex absolute bottom-[40%] left-[-1%] z-20 w-10 h-10 rounded-full shadow-md bg-white items-center justify-center text-blue-500">
+      <div className={`hidden sm:flex absolute bottom-[40%] ${isRTL ? 'right-[-1%]' : 'left-[-1%]'} z-20 w-10 h-10 rounded-full shadow-md bg-white items-center justify-center text-blue-500`}>
         <Users size={16} />
       </div>
 
       <Img
         src="/images/hero/uno.png"
         alt="Arduino"
-        className="hidden sm:block absolute top-[5%] left-[15%] w-72 lg:w-80 -rotate-6 float-asset z-10"
+        className={`hidden sm:block absolute top-[5%] ${isRTL ? 'right-[15%]' : 'left-[15%]'} w-72 lg:w-80 -rotate-6 float-asset z-10`}
         style={{ filter: "drop-shadow(0 20px 40px rgba(59,130,246,0.4))" }}
       />
       <Img
         src="/images/hero/robocar.png"
         alt="Robocar"
-        className="hidden sm:block absolute bottom-[22%] right-[-5%] w-96 lg:w-[25rem] rotate-3 float-asset z-10"
+        className={`hidden sm:block absolute bottom-[22%] ${isRTL ? 'left-[-5%]' : 'right-[-5%]'} w-96 lg:w-[25rem] rotate-3 float-asset z-10`}
         style={{ filter: "drop-shadow(0 20px 40px rgba(59,130,246,0.4))" }}
       />
       <Img
         src="/images/hero/bord.png"
         alt="Breadboard"
-        className="hidden sm:block absolute bottom-[5%] left-[5%] w-44 lg:w-52 -rotate-3 float-asset z-10"
+        className={`hidden sm:block absolute bottom-[5%] ${isRTL ? 'right-[5%]' : 'left-[5%]'} w-44 lg:w-52 -rotate-3 float-asset z-10`}
         style={{ filter: "drop-shadow(0 20px 40px rgba(59,130,246,0.4))" }}
       />
     </div>

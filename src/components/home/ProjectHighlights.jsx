@@ -52,7 +52,7 @@ export default function ProjectHighlights() {
                 </div>
                 <h3
                   className="font-bold text-lg mb-2 leading-snug"
-                  style={{ fontFamily: "'DM Sans', 'Inter', sans-serif", fontWeight: 700 }}
+                  style={{ fontFamily: "'Minecraft', sans-serif", fontWeight: 700 }}
                 >
                   {t(`projects:${p.key}.title`)}
                 </h3>

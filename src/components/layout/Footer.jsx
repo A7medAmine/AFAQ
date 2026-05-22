@@ -35,7 +35,7 @@ export default function Footer() {
                 <div
                   className="text-lg tracking-tight"
                   style={{
-                    fontFamily: "'DM Sans', 'Inter', sans-serif",
+                    fontFamily: "'Minecraft', sans-serif",
                     fontWeight: 700,
                   }}
                 >
@@ -72,7 +72,7 @@ export default function Footer() {
               className="text-xs font-semibold tracking-widest uppercase mb-5"
               style={{
                 color: "var(--color-text-muted)",
-                fontFamily: "'Inter', sans-serif",
+                fontFamily: "'Minecraft', sans-serif",
               }}
             >
               {t("footer.quickLinks")}
@@ -102,7 +102,7 @@ export default function Footer() {
               className="text-xs font-semibold tracking-widest uppercase mb-5"
               style={{
                 color: "var(--color-text-muted)",
-                fontFamily: "'Inter', sans-serif",
+                fontFamily: "'Minecraft', sans-serif",
               }}
             >
               {t("footer.connect")}
