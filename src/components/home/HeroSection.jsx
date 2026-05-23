@@ -11,16 +11,14 @@ import {
   Wrench,
 } from "lucide-react";
 import { Button } from "../shared/Button";
-// import Lightning from "../shared/Lightning";
+import { supabase } from "../../lib/supabase";
 
 function Img({ src, alt, className, style }) {
   const [failed, setFailed] = useState(false);
   if (failed) {
     return (
       <div
-        className={`flex items-center justify-center bg-blue-100 border-2 border-blue-200 text-blue-400 text-sm rounded-2xl ${
-          className || ""
-        }`}
+        className={`flex items-center justify-center bg-blue-100 border-2 border-blue-200 text-blue-400 text-sm rounded-2xl ${className || ""}`}
         style={style}
       >
         {alt || "Image"}
@@ -105,7 +103,7 @@ function HeroLeft() {
       </p>
 
       <div className="relative z-10 hero-fade-up-d4 mt-8 flex gap-4 flex-wrap justify-center lg:justify-start">
-        <Button to="/register" variant="primary" icon="arrow">
+        <Button to="/join" variant="primary" icon="arrow">
           {t("hero.cta1")}
         </Button>
         <Button to="/projects" variant="outline">
@@ -255,7 +253,6 @@ function HeroRight() {
         </div>
       </div>
 
-      {/* Badges — hidden on mobile */}
       <Badge
         icon={<Code size={16} className="text-blue-500" />}
         label="Arduino"
@@ -272,7 +269,6 @@ function HeroRight() {
         className={`hidden sm:flex bottom-[3%] ${isRTL ? 'left-[3%]' : 'right-[3%]'} z-20`}
       />
 
-      {/* Icon circles — hidden on mobile */}
       <div className={`hidden sm:flex absolute top-[12%] ${isRTL ? 'right-[0%]' : 'left-[0%]'} z-20 w-10 h-10 rounded-full shadow-md bg-white items-center justify-center text-blue-500`}>
         <Lightbulb size={16} />
       </div>
@@ -307,12 +303,25 @@ function HeroRight() {
 
 function StatsBar() {
   const { t } = useTranslation("home");
+  const [eventCount, setEventCount] = useState(null);
+  const [projectCount, setProjectCount] = useState(null);
+  const [memberCount, setMemberCount] = useState(null);
   const [counts, setCounts] = useState({});
   const ref = useRef(null);
+
+  useEffect(() => {
+    supabase.from('events').select('*', { count: 'exact', head: true }).eq('is_published', true)
+      .then(({ count }) => setEventCount(count || 0))
+    supabase.from('projects').select('*', { count: 'exact', head: true }).eq('is_published', true)
+      .then(({ count }) => setProjectCount(count || 0))
+    supabase.from('event_registrations').select('*', { count: 'exact', head: true }).eq('status', 'approved')
+      .then(({ count }) => setMemberCount(count || 0))
+  }, [])
+
   const stats = [
     {
       icon: <Users size={24} className="text-blue-500" />,
-      number: "300+",
+      number: memberCount !== null ? `${memberCount}+` : "0+",
       labelKey: "heroStats.members",
     },
     {
@@ -322,7 +331,7 @@ function StatsBar() {
     },
     {
       icon: <Rocket size={24} className="text-blue-500" />,
-      number: "25+",
+      number: projectCount !== null ? `${projectCount}+` : "25+",
       labelKey: "heroStats.projects",
     },
     {
@@ -352,10 +361,7 @@ function StatsBar() {
                 current = val;
                 clearInterval(timer);
               }
-              setCounts((prev) => ({
-                ...prev,
-                [idx]: current + (s.number.includes("+") ? "+" : ""),
-              }));
+              setCounts((prev) => ({ ...prev, [idx]: current + (s.number.includes("+") ? "+" : "") }));
             }, 40);
           });
           observer.disconnect();
@@ -365,19 +371,13 @@ function StatsBar() {
     );
     observer.observe(el);
     return () => observer.disconnect();
-  }, []);
+  }, [eventCount, projectCount]);
 
   return (
-    <div
-      ref={ref}
-      className="w-full bg-[#F1F5F9] border-t border-slate-200 py-6 md:py-12"
-    >
+    <div ref={ref} className="w-full bg-[#F1F5F9] border-t border-slate-200 py-6 md:py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-8 lg:px-16 grid grid-cols-2 md:grid-cols-4 gap-4">
         {stats.map((s, i) => (
-          <div
-            key={i}
-            className="flex flex-col items-center justify-center text-center bg-white rounded-2xl shadow-sm border border-slate-100 px-4 py-6 md:py-8"
-          >
+          <div key={i} className="flex flex-col items-center justify-center text-center bg-white rounded-2xl shadow-sm border border-slate-100 px-4 py-6 md:py-8">
             <span className="text-blue-500 mb-3">{s.icon}</span>
             <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-[#0F172A] mb-1">
               {counts[i] || "0"}

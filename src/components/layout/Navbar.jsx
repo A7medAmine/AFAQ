@@ -18,6 +18,7 @@ const navLinks = [
   { key: 'projects', path: '/projects' },
   { key: 'events', path: '/events' },
   { key: 'gallery', path: '/gallery' },
+  { key: 'join', path: '/join' },
   { key: 'contact', path: '/contact' },
 ]
 
@@ -74,10 +75,10 @@ export default function Navbar() {
           <div className="flex items-center gap-2">
             <LanguageSwitcher />
             <Link
-              to="/register"
+              to="/join"
               className="hidden md:inline-flex items-center px-6 py-2.5 rounded-2xl font-semibold text-sm transition-all duration-200 bg-[#0F172A] text-white hover:bg-blue-700"
             >
-              {t('nav.register')}
+              {t('nav.join')}
             </Link>
             <button
               className="md:hidden w-10 h-10 rounded-xl flex items-center justify-center transition-colors bg-slate-100 border border-slate-200 text-slate-500"
@@ -167,10 +168,10 @@ export default function Navbar() {
                   style={{ borderTop: '1px solid var(--color-border-light)' }}
                 >
                   <Link
-                    to="/register"
+                    to="/join"
                     className="block w-full text-center px-4 py-3 rounded-2xl font-semibold text-sm transition-all bg-[#0F172A] text-white"
                   >
-                    {t('nav.register')}
+                    {t('nav.join')}
                   </Link>
                 </motion.div>
               </nav>

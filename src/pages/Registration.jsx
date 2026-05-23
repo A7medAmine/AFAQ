@@ -1,49 +1,48 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
-import { Send, Check, User, BookOpen, Heart, ArrowLeft, ArrowRight } from 'lucide-react'
+import { Send, Check } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import SideImage from '../components/shared/SideImage'
-// import Lanyard from '../components/shared/Lanyard'
 
 const spring = { type: 'spring', damping: 22, stiffness: 200 }
 const fastSpring = { type: 'spring', damping: 16, stiffness: 300 }
 
-const steps = ['personal', 'academic', 'interests']
-const stepIcons = [User, BookOpen, Heart]
-
 const initialForm = {
+  event_id: '',
   full_name: '',
   email: '',
   phone: '',
-  department: '',
-  study_year: '',
-  interests: [],
-  skills: [],
-  motivation: '',
+  agreed_to_policies: false,
 }
 
 export default function Registration() {
-  const { t } = useTranslation('register')
-  const [step, setStep] = useState(0)
+  const { t, i18n } = useTranslation('register')
   const [form, setForm] = useState(initialForm)
   const [status, setStatus] = useState('idle')
   const [errors, setErrors] = useState({})
   const [shaking, setShaking] = useState(null)
-  const inputRefs = useRef({})
+  const [events, setEvents] = useState([])
+
+  useEffect(() => {
+    const today = new Date().toISOString().split('T')[0]
+    supabase
+      .from('events')
+      .select('id, title_en, title_ar, title_fr, date')
+      .eq('is_published', true)
+      .eq('registration_open', true)
+      .gte('date', today)
+      .order('date', { ascending: true })
+      .then(({ data }) => setEvents(data || []))
+  }, [])
 
   const validate = () => {
     const errs = {}
-    if (step === 0) {
-      if (!form.full_name.trim()) errs.full_name = t('form.validation.required')
-      if (!form.email.trim()) errs.email = t('form.validation.required')
-      else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) errs.email = t('form.validation.email')
-    } else if (step === 1) {
-      if (!form.department) errs.department = t('form.validation.required')
-      if (!form.study_year) errs.study_year = t('form.validation.required')
-    } else if (step === 2) {
-      if (!form.motivation.trim()) errs.motivation = t('form.validation.required')
-    }
+    if (!form.event_id) errs.event_id = t('form.validation.required')
+    if (!form.full_name.trim()) errs.full_name = t('form.validation.required')
+    if (!form.email.trim()) errs.email = t('form.validation.required')
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) errs.email = t('form.validation.email')
+    if (!form.agreed_to_policies) errs.agreed_to_policies = t('form.validation.requiredPolicies')
     setErrors(errs)
     if (Object.keys(errs).length > 0) {
       const firstField = Object.keys(errs)[0]
@@ -53,22 +52,16 @@ export default function Registration() {
     return Object.keys(errs).length === 0
   }
 
-  const nextStep = () => {
-    if (!validate()) return
-    setStep(s => Math.min(s + 1, 2))
-  }
-
-  const prevStep = () => setStep(s => Math.max(s - 1, 0))
-
-  useEffect(() => {
-    const firstInput = inputRefs.current[`step-${step}`]
-    if (firstInput) firstInput.focus()
-  }, [step])
-
   const handleSubmit = async () => {
     if (!validate()) return
     setStatus('loading')
-    const { error } = await supabase.from('registrations').insert([form])
+    const { error } = await supabase.from('event_registrations').insert([{
+      event_id: form.event_id,
+      full_name: form.full_name,
+      email: form.email,
+      phone: form.phone || null,
+      agreed_to_policies: true,
+    }])
     if (error) {
       console.error(error)
       setStatus('error')
@@ -77,20 +70,6 @@ export default function Registration() {
       setForm(initialForm)
     }
   }
-
-  const toggleArray = (field, value) => {
-    setForm(prev => ({
-      ...prev,
-      [field]: prev[field].includes(value)
-        ? prev[field].filter(v => v !== value)
-        : [...prev[field], value],
-    }))
-  }
-
-  const interests = Object.keys(t('interestOptions', { returnObjects: true }))
-  const skillOpts = Object.keys(t('skillOptions', { returnObjects: true }))
-  const departments = Object.keys(t('departments', { returnObjects: true }))
-  const years = Object.keys(t('years', { returnObjects: true }))
 
   const inputStyle = (field) => ({
     background: 'var(--color-bg)',
@@ -103,10 +82,6 @@ export default function Registration() {
     outline: 'none',
     transition: 'border-color 0.2s, box-shadow 0.2s',
   })
-
-  const setInputRef = (stepIdx, el) => {
-    inputRefs.current[`step-${stepIdx}`] = el
-  }
 
   return (
     <div className="relative">
@@ -174,305 +149,157 @@ export default function Registration() {
                 </h3>
               </motion.div>
             ) : (
-              <>
-                <div className="step-indicator">
-                  {steps.map((s, i) => {
-                    const StepIcon = stepIcons[i]
-                    const isActive = step === i
-                    const isDone = step > i
-                    return (
-                      <motion.div key={s} layout="position" transition={spring} style={{ display: 'flex', alignItems: 'center' }}>
-                        <motion.div
-                          animate={{ scale: isActive ? 1.15 : 1 }}
-                          transition={fastSpring}
-                          className={`step-circle ${isActive ? 'active' : ''} ${isDone ? 'done' : ''}`}
-                        >
-                          {isDone ? <Check size={16} /> : <StepIcon size={16} />}
-                        </motion.div>
-                        {i < steps.length - 1 && (
-                          <motion.div
-                            animate={{ scaleX: isDone || (isActive && step < steps.length - 1) ? 1 : 0.3 }}
-                            transition={spring}
-                            className={`step-line ${isDone || (isActive && step < steps.length - 1) ? 'active' : ''} ${isDone ? 'done' : ''}`}
-                          />
-                        )}
-                      </motion.div>
-                    )
-                  })}
-                </div>
-
-                <div className="text-center mb-8">
-                  <motion.p
-                    key={`step-${step}`}
-                    initial={{ opacity: 0, y: -8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={spring}
-                    className="text-xs font-semibold"
-                    style={{ color: 'var(--color-text-muted)', letterSpacing: '0.05em' }}
-                  >
-                    Step {step + 1} of 3
-                  </motion.p>
-                  <motion.p
-                    key={`label-${step}`}
-                    initial={{ opacity: 0, y: -6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ ...spring, delay: 0.05 }}
-                    className="text-sm font-bold mt-1"
-                  >
-                    {step === 0 ? t('form.fullName') : step === 1 ? t('form.department') : t('form.interests')}
-                  </motion.p>
-                </div>
-
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={step}
-                    initial={{ opacity: 0, scale: 0.96, y: 10 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.96, y: -10 }}
-                    transition={{ ...spring, duration: 0.3 }}
-                  >
-                    {step === 0 && (
-                      <div className="space-y-5">
-                        <div>
-                          <label className="block text-xs font-semibold mb-2" style={{ color: 'var(--color-text-muted)', letterSpacing: '0.03em', textTransform: 'uppercase' }}>
-                            {t('form.fullName')} *
-                          </label>
-                          <motion.div animate={{ x: shaking === 'full_name' ? [0, -6, 6, -6, 6, 0] : 0 }} transition={{ duration: 0.4 }}>
-                            <input
-                              ref={el => setInputRef(0, el)}
-                              style={inputStyle('full_name')}
-                              value={form.full_name}
-                              onChange={e => setForm({...form, full_name: e.target.value})}
-                              onFocus={e => { e.target.style.boxShadow = '0 0 0 3px rgba(36,96,231,0.15)'; e.target.style.borderColor = 'var(--color-accent)' }}
-                              onBlur={e => { e.target.style.boxShadow = 'none'; e.target.style.borderColor = 'var(--color-border-light)' }}
-                              placeholder="Ahmed Mansouri"
-                            />
-                          </motion.div>
-                          <AnimatePresence>
-                            {errors.full_name && (
-                              <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="text-xs mt-1.5" style={{ color: '#EF4444' }}>{errors.full_name}</motion.p>
-                            )}
-                          </AnimatePresence>
-                        </div>
-                        <div>
-                          <label className="block text-xs font-semibold mb-2" style={{ color: 'var(--color-text-muted)', letterSpacing: '0.03em', textTransform: 'uppercase' }}>
-                            {t('form.email')} *
-                          </label>
-                          <motion.div animate={{ x: shaking === 'email' ? [0, -6, 6, -6, 6, 0] : 0 }} transition={{ duration: 0.4 }}>
-                            <input
-                              style={inputStyle('email')}
-                              type="email"
-                              value={form.email}
-                              onChange={e => setForm({...form, email: e.target.value})}
-                              onFocus={e => { e.target.style.boxShadow = '0 0 0 3px rgba(36,96,231,0.15)'; e.target.style.borderColor = 'var(--color-accent)' }}
-                              onBlur={e => { e.target.style.boxShadow = 'none'; e.target.style.borderColor = 'var(--color-border-light)' }}
-                              placeholder="ahmed@univ-bouira.dz"
-                            />
-                          </motion.div>
-                          <AnimatePresence>
-                            {errors.email && (
-                              <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="text-xs mt-1.5" style={{ color: '#EF4444' }}>{errors.email}</motion.p>
-                            )}
-                          </AnimatePresence>
-                        </div>
-                        <div>
-                          <label className="block text-xs font-semibold mb-2" style={{ color: 'var(--color-text-muted)', letterSpacing: '0.03em', textTransform: 'uppercase' }}>
-                            {t('form.phone')}
-                          </label>
-                          <input
-                            style={inputStyle('phone')}
-                            value={form.phone}
-                            onChange={e => setForm({...form, phone: e.target.value})}
-                            onFocus={e => { e.target.style.boxShadow = '0 0 0 3px rgba(36,96,231,0.15)'; e.target.style.borderColor = 'var(--color-accent)' }}
-                            onBlur={e => { e.target.style.boxShadow = 'none'; e.target.style.borderColor = 'var(--color-border-light)' }}
-                            placeholder="+213 6XX XXX XXX"
-                          />
-                        </div>
-                      </div>
-                    )}
-
-                    {step === 1 && (
-                      <div className="space-y-5">
-                        <div>
-                          <label className="block text-xs font-semibold mb-2" style={{ color: 'var(--color-text-muted)', letterSpacing: '0.03em', textTransform: 'uppercase' }}>
-                            {t('form.department')} *
-                          </label>
-                          <motion.div animate={{ x: shaking === 'department' ? [0, -6, 6, -6, 6, 0] : 0 }} transition={{ duration: 0.4 }}>
-                            <select
-                              ref={el => setInputRef(1, el)}
-                              style={inputStyle('department')}
-                              value={form.department}
-                              onChange={e => setForm({...form, department: e.target.value})}
-                              onFocus={e => { e.target.style.boxShadow = '0 0 0 3px rgba(36,96,231,0.15)'; e.target.style.borderColor = 'var(--color-accent)' }}
-                              onBlur={e => { e.target.style.boxShadow = 'none'; e.target.style.borderColor = 'var(--color-border-light)' }}
-                            >
-                              <option value="">—</option>
-                              {departments.map(d => (
-                                <option key={d} value={d}>{t(`departments.${d}`)}</option>
-                              ))}
-                            </select>
-                          </motion.div>
-                          <AnimatePresence>
-                            {errors.department && (
-                              <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="text-xs mt-1.5" style={{ color: '#EF4444' }}>{errors.department}</motion.p>
-                            )}
-                          </AnimatePresence>
-                        </div>
-                        <div>
-                          <label className="block text-xs font-semibold mb-2" style={{ color: 'var(--color-text-muted)', letterSpacing: '0.03em', textTransform: 'uppercase' }}>
-                            {t('form.studyYear')} *
-                          </label>
-                          <motion.div animate={{ x: shaking === 'study_year' ? [0, -6, 6, -6, 6, 0] : 0 }} transition={{ duration: 0.4 }}>
-                            <select
-                              style={inputStyle('study_year')}
-                              value={form.study_year}
-                              onChange={e => setForm({...form, study_year: e.target.value})}
-                              onFocus={e => { e.target.style.boxShadow = '0 0 0 3px rgba(36,96,231,0.15)'; e.target.style.borderColor = 'var(--color-accent)' }}
-                              onBlur={e => { e.target.style.boxShadow = 'none'; e.target.style.borderColor = 'var(--color-border-light)' }}
-                            >
-                              <option value="">—</option>
-                              {years.map(y => (
-                                <option key={y} value={y}>{t(`years.${y}`)}</option>
-                              ))}
-                            </select>
-                          </motion.div>
-                          <AnimatePresence>
-                            {errors.study_year && (
-                              <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="text-xs mt-1.5" style={{ color: '#EF4444' }}>{errors.study_year}</motion.p>
-                            )}
-                          </AnimatePresence>
-                        </div>
-                      </div>
-                    )}
-
-                    {step === 2 && (
-                      <div className="space-y-6">
-                        <div>
-                          <label className="block text-xs font-semibold mb-2" style={{ color: 'var(--color-text-muted)', letterSpacing: '0.03em', textTransform: 'uppercase' }}>
-                            {t('form.interests')}
-                          </label>
-                          <div className="flex flex-wrap gap-2">
-                            {interests.map(i => (
-                              <motion.button
-                                key={i}
-                                type="button"
-                                whileTap={{ scale: 0.92 }}
-                                onClick={() => toggleArray('interests', i)}
-                                className={`pill ${form.interests.includes(i) ? 'active' : ''}`}
-                              >
-                                {form.interests.includes(i) && <Check size={12} />}
-                                {t(`interestOptions.${i}`)}
-                              </motion.button>
-                            ))}
-                          </div>
-                        </div>
-                        <div>
-                          <label className="block text-xs font-semibold mb-2" style={{ color: 'var(--color-text-muted)', letterSpacing: '0.03em', textTransform: 'uppercase' }}>
-                            {t('form.skills')}
-                          </label>
-                          <div className="flex flex-wrap gap-2">
-                            {skillOpts.map(s => (
-                              <motion.button
-                                key={s}
-                                type="button"
-                                whileTap={{ scale: 0.92 }}
-                                onClick={() => toggleArray('skills', s)}
-                                className={`pill ${form.skills.includes(s) ? 'active' : ''}`}
-                              >
-                                {form.skills.includes(s) && <Check size={12} />}
-                                {t(`skillOptions.${s}`)}
-                              </motion.button>
-                            ))}
-                          </div>
-                        </div>
-                        <div>
-                          <label className="block text-xs font-semibold mb-2" style={{ color: 'var(--color-text-muted)', letterSpacing: '0.03em', textTransform: 'uppercase' }}>
-                            {t('form.motivation')} *
-                          </label>
-                          <motion.div animate={{ x: shaking === 'motivation' ? [0, -6, 6, -6, 6, 0] : 0 }} transition={{ duration: 0.4 }}>
-                            <textarea
-                              ref={el => setInputRef(2, el)}
-                              style={{ ...inputStyle('motivation'), borderRadius: 20, minHeight: 120, resize: 'vertical' }}
-                              rows={4}
-                              value={form.motivation}
-                              onChange={e => setForm({...form, motivation: e.target.value})}
-                              onFocus={e => { e.target.style.boxShadow = '0 0 0 3px rgba(36,96,231,0.15)'; e.target.style.borderColor = 'var(--color-accent)' }}
-                              onBlur={e => { e.target.style.boxShadow = 'none'; e.target.style.borderColor = 'var(--color-border-light)' }}
-                              placeholder={t('form.motivationPlaceholder')}
-                            />
-                          </motion.div>
-                          <AnimatePresence>
-                            {errors.motivation && (
-                              <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="text-xs mt-1.5" style={{ color: '#EF4444' }}>{errors.motivation}</motion.p>
-                            )}
-                          </AnimatePresence>
-                        </div>
-                      </div>
-                    )}
+              <div className="space-y-5">
+                <div>
+                  <label className="block text-xs font-semibold mb-2" style={{ color: 'var(--color-text-muted)', letterSpacing: '0.03em', textTransform: 'uppercase' }}>
+                    {t('form.event')} *
+                  </label>
+                  <motion.div animate={{ x: shaking === 'event_id' ? [0, -6, 6, -6, 6, 0] : 0 }} transition={{ duration: 0.4 }}>
+                    <select
+                      style={inputStyle('event_id')}
+                      value={form.event_id}
+                      onChange={e => setForm({...form, event_id: e.target.value})}
+                      onFocus={e => { e.target.style.boxShadow = '0 0 0 3px rgba(36,96,231,0.15)'; e.target.style.borderColor = 'var(--color-accent)' }}
+                      onBlur={e => { e.target.style.boxShadow = 'none'; e.target.style.borderColor = 'var(--color-border-light)' }}
+                    >
+                      <option value="">{t('form.selectEvent')}</option>
+                      {events.map(e => {
+                        const lang = i18n.language
+                        const title = e[`title_${lang}`] || e.title_en || ''
+                        const d = e.date ? new Date(e.date + 'T00:00:00').toLocaleDateString() : ''
+                        return (
+                          <option key={e.id} value={e.id}>
+                            {title} {d ? `(${d})` : ''}
+                          </option>
+                        )
+                      })}
+                    </select>
                   </motion.div>
-                </AnimatePresence>
+                  <AnimatePresence>
+                    {errors.event_id && (
+                      <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="text-xs mt-1.5" style={{ color: '#EF4444' }}>{errors.event_id}</motion.p>
+                    )}
+                  </AnimatePresence>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold mb-2" style={{ color: 'var(--color-text-muted)', letterSpacing: '0.03em', textTransform: 'uppercase' }}>
+                    {t('form.fullName')} *
+                  </label>
+                  <motion.div animate={{ x: shaking === 'full_name' ? [0, -6, 6, -6, 6, 0] : 0 }} transition={{ duration: 0.4 }}>
+                    <input
+                      style={inputStyle('full_name')}
+                      value={form.full_name}
+                      onChange={e => setForm({...form, full_name: e.target.value})}
+                      onFocus={e => { e.target.style.boxShadow = '0 0 0 3px rgba(36,96,231,0.15)'; e.target.style.borderColor = 'var(--color-accent)' }}
+                      onBlur={e => { e.target.style.boxShadow = 'none'; e.target.style.borderColor = 'var(--color-border-light)' }}
+                      placeholder="Ahmed Mansouri"
+                    />
+                  </motion.div>
+                  <AnimatePresence>
+                    {errors.full_name && (
+                      <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="text-xs mt-1.5" style={{ color: '#EF4444' }}>{errors.full_name}</motion.p>
+                    )}
+                  </AnimatePresence>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold mb-2" style={{ color: 'var(--color-text-muted)', letterSpacing: '0.03em', textTransform: 'uppercase' }}>
+                    {t('form.email')} *
+                  </label>
+                  <motion.div animate={{ x: shaking === 'email' ? [0, -6, 6, -6, 6, 0] : 0 }} transition={{ duration: 0.4 }}>
+                    <input
+                      style={inputStyle('email')}
+                      type="email"
+                      value={form.email}
+                      onChange={e => setForm({...form, email: e.target.value})}
+                      onFocus={e => { e.target.style.boxShadow = '0 0 0 3px rgba(36,96,231,0.15)'; e.target.style.borderColor = 'var(--color-accent)' }}
+                      onBlur={e => { e.target.style.boxShadow = 'none'; e.target.style.borderColor = 'var(--color-border-light)' }}
+                      placeholder="ahmed@univ-bouira.dz"
+                    />
+                  </motion.div>
+                  <AnimatePresence>
+                    {errors.email && (
+                      <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="text-xs mt-1.5" style={{ color: '#EF4444' }}>{errors.email}</motion.p>
+                    )}
+                  </AnimatePresence>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold mb-2" style={{ color: 'var(--color-text-muted)', letterSpacing: '0.03em', textTransform: 'uppercase' }}>
+                    {t('form.phone')}
+                  </label>
+                  <input
+                    style={inputStyle('phone')}
+                    value={form.phone}
+                    onChange={e => setForm({...form, phone: e.target.value})}
+                    onFocus={e => { e.target.style.boxShadow = '0 0 0 3px rgba(36,96,231,0.15)'; e.target.style.borderColor = 'var(--color-accent)' }}
+                    onBlur={e => { e.target.style.boxShadow = 'none'; e.target.style.borderColor = 'var(--color-border-light)' }}
+                    placeholder="+213 6XX XXX XXX"
+                  />
+                </div>
+
+                <div>
+                  <motion.div
+                    animate={{ x: shaking === 'agreed_to_policies' ? [0, -6, 6, -6, 6, 0] : 0 }}
+                    transition={{ duration: 0.4 }}
+                    className="flex items-start gap-3"
+                  >
+                    <input
+                      type="checkbox"
+                      id="policies"
+                      checked={form.agreed_to_policies}
+                      onChange={e => setForm({...form, agreed_to_policies: e.target.checked})}
+                      style={{
+                        marginTop: 2,
+                        width: 18,
+                        height: 18,
+                        accentColor: 'var(--color-accent)',
+                        cursor: 'pointer',
+                        flexShrink: 0,
+                      }}
+                    />
+                    <label htmlFor="policies" className="text-sm" style={{ color: 'var(--color-text)', cursor: 'pointer', lineHeight: 1.5 }}>
+                      {t('form.policies')}
+                    </label>
+                  </motion.div>
+                  <AnimatePresence>
+                    {errors.agreed_to_policies && (
+                      <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="text-xs mt-1.5" style={{ color: '#EF4444' }}>{errors.agreed_to_policies}</motion.p>
+                    )}
+                  </AnimatePresence>
+                </div>
 
                 <AnimatePresence>
                   {status === 'error' && (
-                    <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="text-sm text-center mt-4" style={{ color: '#EF4444' }}>{t('form.error')}</motion.p>
+                    <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="text-sm text-center" style={{ color: '#EF4444' }}>{t('form.error')}</motion.p>
                   )}
                 </AnimatePresence>
 
-                <div className="flex items-center justify-between mt-8 gap-4">
-                  <motion.button
-                    onClick={prevStep}
-                    disabled={step === 0}
-                    whileTap={step !== 0 ? { scale: 0.95 } : {}}
-                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-[100px] font-semibold text-sm transition-all duration-200"
-                    style={{
-                      background: 'transparent',
-                      color: step === 0 ? 'var(--color-border)' : 'var(--color-text-muted)',
-                      border: `1.5px solid var(--color-border)`,
-                      cursor: step === 0 ? 'not-allowed' : 'pointer',
-                      opacity: step === 0 ? 0.4 : 1,
-                    }}
-                  >
-                    <ArrowLeft size={14} />
-                    Back
-                  </motion.button>
-
-                  {step < 2 ? (
-                    <motion.button
-                      onClick={nextStep}
-                      whileHover={{ scale: 1.03 }}
-                      whileTap={{ scale: 0.95 }}
-                      className="inline-flex items-center gap-2 px-6 py-2.5 rounded-[100px] font-semibold text-sm transition-all duration-200"
-                      style={{ background: 'var(--color-accent)', color: '#fff' }}
-                    >
-                      Next <ArrowRight size={14} />
-                    </motion.button>
+                <motion.button
+                  onClick={handleSubmit}
+                  disabled={status === 'loading'}
+                  whileHover={status !== 'loading' ? { scale: 1.03 } : {}}
+                  whileTap={status !== 'loading' ? { scale: 0.95 } : {}}
+                  className="inline-flex items-center justify-center gap-2 w-full px-6 py-3.5 rounded-[100px] font-semibold text-sm transition-all duration-200 mt-2"
+                  style={{
+                    background: status === 'loading' ? 'var(--color-accent-dark)' : 'var(--color-accent)',
+                    color: '#fff',
+                    opacity: status === 'loading' ? 0.8 : 1,
+                  }}
+                >
+                  {status === 'loading' ? (
+                    <motion.div
+                      animate={{ rotate: 360 }}
+                      transition={{ repeat: Infinity, duration: 0.6, ease: 'linear' }}
+                      style={{ width: 16, height: 16, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%' }}
+                    />
                   ) : (
-                    <motion.button
-                      onClick={handleSubmit}
-                      disabled={status === 'loading'}
-                      whileHover={status !== 'loading' ? { scale: 1.03 } : {}}
-                      whileTap={status !== 'loading' ? { scale: 0.95 } : {}}
-                      className="inline-flex items-center gap-2 px-6 py-2.5 rounded-[100px] font-semibold text-sm transition-all duration-200"
-                      style={{
-                        background: status === 'loading' ? 'var(--color-accent-dark)' : 'var(--color-accent)',
-                        color: '#fff',
-                        opacity: status === 'loading' ? 0.8 : 1,
-                      }}
-                    >
-                      {status === 'loading' ? (
-                        <motion.div
-                          animate={{ rotate: 360 }}
-                          transition={{ repeat: Infinity, duration: 0.6, ease: 'linear' }}
-                          style={{ width: 16, height: 16, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%' }}
-                        />
-                      ) : (
-                        <Send size={14} />
-                      )}
-                      {status === 'loading' ? 'Submitting...' : t('form.submit')}
-                    </motion.button>
+                    <Send size={14} />
                   )}
-                </div>
-              </>
+                  {status === 'loading' ? t('form.submitting') : t('form.submit')}
+                </motion.button>
+              </div>
             )}
           </div>
         </div>

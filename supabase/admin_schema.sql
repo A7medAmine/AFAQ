@@ -1,0 +1,12 @@
+-- ============================================================
+-- AFAQ Scientific Club — Database Setup
+-- ============================================================
+-- 
+-- Tables are managed by Drizzle (src/db/schema.js)
+-- To push table schema:   npm run db:push
+-- To generate migration:  npm run db:generate
+--
+-- RLS policies, storage buckets, SQL functions are in:
+--   supabase/rls_storage.sql
+-- Run that file in Supabase SQL Editor after db:push.
+-- ============================================================

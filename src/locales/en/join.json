@@ -1,0 +1,67 @@
+{
+  "hero": {
+    "title": "Join AFAQ",
+    "subtitle": "Become part of a community where technology meets innovation."
+  },
+  "form": {
+    "title": "Membership Application",
+    "studentId": "Student ID",
+    "fullName": "Full Name",
+    "email": "Email Address",
+    "phone": "Phone Number",
+    "department": "Department",
+    "studyYear": "Study Year",
+    "interests": "Areas of Interest",
+    "skills": "Your Skills",
+    "motivation": "Why do you want to join?",
+    "motivationPlaceholder": "Tell us about yourself and why you'd like to be part of AFAQ...",
+    "submit": "Submit Application",
+    "submitting": "Submitting...",
+    "success": "Thank you for your application! We will get back to you soon.",
+    "error": "Something went wrong. Please try again.",
+    "duplicateApplication": "An application with this email or student ID has already been submitted.",
+    "back": "Back",
+    "next": "Next",
+    "step": "Step {{current}} of {{total}}",
+    "validation": {
+      "required": "This field is required",
+      "email": "Please enter a valid email address"
+    }
+  },
+  "departments": {
+    "fsas": "Faculty of Sciences and Applied Sciences",
+    "fnlses": "Faculty of Natural and Life Sciences and Earth Sciences",
+    "flps": "Faculty of Law and Political Science",
+    "fecms": "Faculty of Economic, Commercial and Management Sciences",
+    "fshs": "Faculty of Social and Human Sciences",
+    "fll": "Faculty of Letters and Languages",
+    "istaps": "Institute of Physical Education and Sports Sciences and Techniques (ISTAPS)",
+    "iot": "Institute of Technology",
+    "fes": "Faculty of Exact Sciences"
+  },
+  "years": {
+    "1": "1st Year",
+    "2": "2nd Year",
+    "3": "3rd Year",
+    "4": "4th Year",
+    "5": "5th Year"
+  },
+  "interestOptions": {
+    "robotics": "Robotics",
+    "programming": "Programming",
+    "electronics": "Electronics",
+    "iot": "IoT",
+    "ai": "Artificial Intelligence",
+    "web": "Web Development"
+  },
+  "skillOptions": {
+    "programming": "Programming",
+    "circuitDesign": "Circuit Design",
+    "cad": "CAD Design",
+    "soldering": "Soldering",
+    "publicSpeaking": "Public Speaking",
+    "leadership": "Leadership",
+    "writing": "Technical Writing",
+    "design": "Graphic Design"
+  }
+}

@@ -6,7 +6,8 @@
     "projects": "Projets",
     "events": "Événements",
     "gallery": "Galerie",
-    "register": "Rejoindre",
+    "register": "S'inscrire",
+    "join": "Rejoindre",
     "contact": "Contact"
   },
   "theme": { "light": "Mode Clair", "dark": "Mode Sombre" },

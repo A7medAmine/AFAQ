@@ -1,0 +1,67 @@
+{
+  "hero": {
+    "title": "Rejoindre AFAQ",
+    "subtitle": "Faites partie d'une communauté où la technologie rencontre l'innovation."
+  },
+  "form": {
+    "title": "Demande d'Adhésion",
+    "studentId": "Identifiant Étudiant",
+    "fullName": "Nom Complet",
+    "email": "Adresse Email",
+    "phone": "Numéro de Téléphone",
+    "department": "Département",
+    "studyYear": "Année d'Étude",
+    "interests": "Centres d'Intérêt",
+    "skills": "Vos Compétences",
+    "motivation": "Pourquoi voulez-vous rejoindre ?",
+    "motivationPlaceholder": "Parlez-nous de vous et pourquoi vous souhaitez faire partie d'AFAQ...",
+    "submit": "Soumettre la Candidature",
+    "submitting": "Envoi en cours...",
+    "success": "Merci pour votre candidature ! Nous vous contacterons bientôt.",
+    "error": "Une erreur s'est produite. Veuillez réessayer.",
+    "duplicateApplication": "Une candidature avec cet email ou cet identifiant étudiant a déjà été soumise.",
+    "back": "Retour",
+    "next": "Suivant",
+    "step": "Étape {{current}} sur {{total}}",
+    "validation": {
+      "required": "Ce champ est requis",
+      "email": "Veuillez entrer une adresse email valide"
+    }
+  },
+  "departments": {
+    "fsas": "Faculté des Sciences et Sciences Appliquées",
+    "fnlses": "Faculté des Sciences de la Nature et de la Vie et Sciences de la Terre",
+    "flps": "Faculté de Droit et des Sciences Politiques",
+    "fecms": "Faculté des Sciences Économiques, Commerciales et des Sciences de Gestion",
+    "fshs": "Faculté des Sciences Sociales et Humaines",
+    "fll": "Faculté des Lettres et des Langues",
+    "istaps": "Institut d'Éducation Physique et des Sciences et Techniques des Sports (ISTAPS)",
+    "iot": "Institut de Technologie",
+    "fes": "Faculté des Sciences Exactes"
+  },
+  "years": {
+    "1": "1ère Année",
+    "2": "2ème Année",
+    "3": "3ème Année",
+    "4": "4ème Année",
+    "5": "5ème Année"
+  },
+  "interestOptions": {
+    "robotics": "Robotique",
+    "programming": "Programmation",
+    "electronics": "Électronique",
+    "iot": "IoT",
+    "ai": "Intelligence Artificielle",
+    "web": "Développement Web"
+  },
+  "skillOptions": {
+    "programming": "Programmation",
+    "circuitDesign": "Conception de Circuits",
+    "cad": "Conception CAO",
+    "soldering": "Soudure",
+    "publicSpeaking": "Prise de Parole",
+    "leadership": "Leadership",
+    "writing": "Rédaction Technique",
+    "design": "Design Graphique"
+  }
+}
