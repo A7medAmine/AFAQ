@@ -41,7 +41,7 @@ export default function LanguageSwitcher() {
       </button>
       {open && (
         <div
-          className="absolute top-full mt-2 right-0 overflow-hidden z-50 animate-up"
+          className="absolute top-full mt-2 end-0 overflow-hidden z-50 animate-up"
           style={{
             background: 'var(--color-card)',
             border: '1px solid var(--color-border-light)',
@@ -54,7 +54,7 @@ export default function LanguageSwitcher() {
             <button
               key={l.code}
               onClick={() => switchLang(l.code)}
-              className="w-full text-left px-4 py-2.5 flex items-center gap-2 transition-colors"
+              className="w-full text-start px-4 py-2.5 flex items-center gap-2 transition-colors"
               style={{
                 fontSize: 14,
                 color: l.code === i18n.language ? 'var(--color-accent)' : 'var(--color-text)',

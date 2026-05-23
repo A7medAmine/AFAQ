@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, Edit3, Trash2, Upload, ImageIcon, ChevronDown, ChevronUp } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
@@ -21,6 +21,8 @@ export default function GalleryPage() {
   const [albumImages, setAlbumImages] = useState({})
   const [loadingImages, setLoadingImages] = useState({})
   const [uploading, setUploading] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState(0)
+  const [uploadingFile, setUploadingFile] = useState('')
   const addToast = useAdminStore(s => s.addToast)
 
   const [form, setForm] = useState({ title_en: '', title_ar: '', title_fr: '', description: '' })
@@ -82,18 +84,42 @@ export default function GalleryPage() {
     loadAlbums()
   }
 
+  const uploadFile = (file) => new Promise((resolve, reject) => {
+    const fd = new FormData()
+    fd.append('file', file)
+    const xhr = new XMLHttpRequest()
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable) {
+        setUploadProgress(Math.round((e.loaded / e.total) * 100))
+      }
+    }
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        resolve(JSON.parse(xhr.responseText))
+      } else {
+        reject(new Error(`Upload failed: ${xhr.status}`))
+      }
+    }
+    xhr.onerror = () => reject(new Error('Network error'))
+    xhr.open('POST', '/api/upload')
+    xhr.setRequestHeader('Authorization', `Bearer ${getToken()}`)
+    xhr.send(fd)
+  })
+
   const handleUpload = async (e) => {
-    const files = e.target.files
+    const files = Array.from(e.target.files)
     if (!files.length) return
     setUploading(true)
-    for (const file of files) {
-      const fd = new FormData()
-      fd.append('file', file)
-      const res = await fetch('/api/upload', { method: 'POST', headers: { Authorization: `Bearer ${getToken()}` }, body: fd })
-      const { url } = await res.json()
+    setUploadProgress(0)
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i]
+      setUploadingFile(file.name)
+      const { url } = await uploadFile(file)
       await supabase.from('gallery_images').insert({ album_id: expandedId, url })
+      setUploadProgress(Math.round(((i + 1) / files.length) * 100))
     }
     setUploading(false)
+    setUploadingFile('')
     addToast(`${files.length} image(s) uploaded`)
     const { data } = await supabase.from('gallery_images').select('*').eq('album_id', expandedId).order('sort_order')
     setAlbumImages(p => ({ ...p, [expandedId]: data || [] }))
@@ -172,11 +198,30 @@ export default function GalleryPage() {
                     >
                       <div className="px-4 pb-4 border-t" style={{ borderColor: 'var(--color-border-light)' }}>
                         {/* Upload bar */}
-                        <label className="flex items-center justify-center gap-2 mt-4 p-4 rounded-xl border-2 border-dashed cursor-pointer transition-colors hover:opacity-80" style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-muted)' }}>
-                          <Upload size={16} />
-                          <span className="text-sm">{uploading ? 'Uploading...' : 'Click to upload images'}</span>
-                          <input type="file" multiple accept="image/*" onChange={handleUpload} className="hidden" disabled={uploading} />
-                        </label>
+                        {uploading ? (
+                          <div className="mt-4 p-4 rounded-xl border-2" style={{ borderColor: 'var(--color-border)' }}>
+                            <div className="flex items-center gap-2 mb-2">
+                              <Upload size={16} className="animate-pulse" style={{ color: 'var(--color-accent)' }} />
+                              <span className="text-sm font-medium" style={{ color: 'var(--color-text)' }}>Uploading {uploadingFile}</span>
+                              <span className="text-xs ml-auto" style={{ color: 'var(--color-text-muted)' }}>{uploadProgress}%</span>
+                            </div>
+                            <div className="w-full h-2 rounded-full" style={{ background: 'var(--color-bg-alt)' }}>
+                              <motion.div
+                                className="h-full rounded-full"
+                                style={{ background: 'var(--color-accent)', width: `${uploadProgress}%` }}
+                                initial={{ width: 0 }}
+                                animate={{ width: `${uploadProgress}%` }}
+                                transition={{ duration: 0.3 }}
+                              />
+                            </div>
+                          </div>
+                        ) : (
+                          <label className="flex items-center justify-center gap-2 mt-4 p-4 rounded-xl border-2 border-dashed cursor-pointer transition-colors hover:opacity-80" style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-muted)' }}>
+                            <Upload size={16} />
+                            <span className="text-sm">Click to upload images</span>
+                            <input type="file" multiple accept="image/*" onChange={handleUpload} className="hidden" />
+                          </label>
+                        )}
 
                         {/* Image grid */}
                         {loadingImages[album.id] ? (
