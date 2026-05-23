@@ -1,23 +1,12 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
-import { Search } from 'lucide-react'
+import { Expand } from 'lucide-react'
 import Lightbox from '../components/shared/Lightbox'
 import SideImage from '../components/shared/SideImage'
 import { supabase } from '../lib/supabase'
 
 const spring = { type: 'spring', damping: 28, stiffness: 120 }
-const staggerSpring = { type: 'spring', damping: 25, stiffness: 100 }
-
-const sizes = ['tall', 'wide', 'square', 'wide', 'square', 'tall', 'square', 'big', 'square', 'wide']
-
-function getSize(i) {
-  const s = sizes[i % sizes.length]
-  if (s === 'tall') return { gridRow: 'span 2', gridColumn: 'span 1' }
-  if (s === 'wide') return { gridRow: 'span 1', gridColumn: 'span 2' }
-  if (s === 'big')  return { gridRow: 'span 2', gridColumn: 'span 2' }
-  return { gridRow: 'span 1', gridColumn: 'span 1' }
-}
 
 export default function Gallery() {
   const { t, i18n } = useTranslation('gallery')
@@ -79,19 +68,17 @@ export default function Gallery() {
         <SideImage side="right" />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {loading ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
               {Array.from({ length: 8 }).map((_, i) => (
-                <div key={i} className="rounded-2xl" style={{
-                  background: 'var(--color-bg-alt)',
-                  animation: 'shimmer 1.5s ease-in-out infinite',
-                  aspectRatio: i % 3 === 0 ? '3/4' : i % 3 === 1 ? '4/3' : '1',
-                }} />
+                <div key={i} className="rounded-2xl p-3" style={{ background: 'var(--color-card)', border: '1px solid var(--color-border-light)' }}>
+                  <div className="rounded-xl" style={{ paddingBottom: '75%', background: 'var(--color-bg-alt)', animation: 'shimmer 1.5s ease-in-out infinite' }} />
+                </div>
               ))}
             </div>
           ) : images.length === 0 ? (
-            <p className="text-center py-12 text-sm" style={{ color: 'var(--color-text-muted)' }}>{t('noImages')}</p>
+            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-20 text-sm" style={{ color: 'var(--color-text-muted)' }}>{t('noImages')}</motion.p>
           ) : (
-            <div className="space-y-16">
+            <div className="space-y-20">
               {grouped.map((group, gi) => {
                 const lang = i18n.language
                 const albumTitle = group.album
@@ -104,46 +91,54 @@ export default function Gallery() {
                     initial={{ opacity: 0, y: 40 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true, margin: '-50px' }}
-                    transition={{ ...spring, delay: gi * 0.08 }}
+                    transition={{ ...spring, delay: gi * 0.06 }}
                   >
                     {albumTitle && (
-                      <div className="flex items-center gap-4 mb-8">
-                        <div className="h-px flex-1" style={{ background: 'var(--color-border-light)' }} />
-                        <span className="text-xs font-semibold tracking-[0.15em] uppercase" style={{ color: 'var(--color-text-muted)' }}>
-                          {albumTitle}
+                      <div className="flex items-center gap-5 mb-10">
+                        <div className="flex-1 min-w-0">
+                          <h2 className="text-sm font-bold tracking-[0.2em] uppercase" style={{ color: 'var(--color-text)' }}>
+                            {albumTitle}
+                          </h2>
+                        </div>
+                        <div className="h-px flex-[2]" style={{ background: 'var(--color-border-light)' }} />
+                        <span className="text-[11px] font-medium tracking-widest uppercase whitespace-nowrap" style={{ color: 'var(--color-text-muted)' }}>
+                          {group.images.length} {group.images.length === 1 ? 'photo' : 'photos'}
                         </span>
-                        <div className="h-px flex-1" style={{ background: 'var(--color-border-light)' }} />
                       </div>
                     )}
 
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4 auto-rows-[160px] md:auto-rows-[200px]">
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 md:gap-6">
                       {group.images.map((img, i) => {
-                        const size = getSize(gi * 1000 + i)
+                        const rot = ((i % 5) - 2) * 0.8
                         return (
                           <motion.button
                             key={img.id || i}
-                            initial={{ opacity: 0, scale: 0.92 }}
-                            whileInView={{ opacity: 1, scale: 1 }}
+                            initial={{ opacity: 0, y: 16, rotate: 0 }}
+                            whileInView={{ opacity: 1, y: 0, rotate: rot }}
                             viewport={{ once: true, margin: '-30px' }}
-                            transition={{ ...staggerSpring, delay: i * 0.04 }}
-                            whileHover={{ scale: 1.02, zIndex: 10 }}
+                            transition={{ ...spring, delay: i * 0.04 }}
+                            whileHover={{ rotate: 0, scale: 1.03, y: -4 }}
                             onClick={() => setLightboxIndex(images.indexOf(img))}
-                            className="relative group overflow-hidden rounded-2xl border-0 outline-none"
-                            style={{
-                              ...size,
-                              gridRowEnd: `span ${size.gridRow}`,
-                              gridColumnEnd: `span ${size.gridColumn}`,
-                            }}
+                            className="group cursor-pointer border-0 outline-none text-left"
+                            style={{ perspective: 800 }}
                           >
-                            <img
-                              src={img.url}
-                              alt={img.alt_text || ''}
-                              loading="lazy"
-                              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                            />
-                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-300 flex items-center justify-center">
-                              <div className="p-3 rounded-full bg-white/90 text-slate-800 opacity-0 group-hover:opacity-100 transition-all duration-300 scale-50 group-hover:scale-100">
-                                <Search size={18} />
+                            <div
+                              className="relative overflow-hidden transition-all duration-300 rounded-xl"
+                              style={{
+                                paddingBottom: '75%',
+                                background: 'var(--color-bg-alt)',
+                                boxShadow: '0 2px 8px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)',
+                              }}
+                            >
+                              <img
+                                src={img.url}
+                                alt={img.alt_text || ''}
+                                loading="lazy"
+                                className="absolute inset-0 w-full h-full object-cover transition-all duration-500 group-hover:scale-105"
+                              />
+                              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
+                              <div className="absolute bottom-2 right-2 w-7 h-7 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-1 group-hover:translate-y-0">
+                                <Expand size={12} className="text-slate-800" />
                               </div>
                             </div>
                           </motion.button>
@@ -154,8 +149,10 @@ export default function Gallery() {
                 )
               })}
 
-              <div className="text-center text-sm" style={{ color: 'var(--color-text-muted)' }}>
-                {images.length} {t('images') || 'images'}
+              <div className="text-center">
+                <span className="inline-flex items-center gap-2 px-5 py-2 rounded-full text-xs font-medium" style={{ background: 'var(--color-bg-alt)', color: 'var(--color-text-muted)' }}>
+                  {images.length} {images.length === 1 ? 'image' : 'images'}
+                </span>
               </div>
             </div>
           )}
