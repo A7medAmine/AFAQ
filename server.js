@@ -7,6 +7,7 @@ import { createClient } from '@supabase/supabase-js'
 import nodemailer from 'nodemailer'
 import QRCodeLib from 'qrcode'
 import rateLimit from 'express-rate-limit'
+import ws from 'ws'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const uploadDir = path.resolve(__dirname, 'upload')
@@ -17,6 +18,7 @@ fs.mkdirSync(uploadDir, { recursive: true })
 const supabaseAdmin = createClient(
   process.env.VITE_SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY,
+  { realtime: { transport: ws } },
 )
 
 // --- Helpers ---
