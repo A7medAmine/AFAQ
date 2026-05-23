@@ -1,4 +1,6 @@
 FROM node:20-alpine AS build
+ARG VITE_SUPABASE_URL
+ARG VITE_SUPABASE_PUBLISHABLE_KEY
 WORKDIR /app
 COPY package.json package-lock.json* ./
 RUN npm ci
