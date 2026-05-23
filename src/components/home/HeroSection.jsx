@@ -13,7 +13,7 @@ import {
 import { Button } from "../shared/Button";
 import { supabase } from "../../lib/supabase";
 
-function Img({ src, alt, className, style }) {
+function Img({ src, alt, className, style, fetchpriority, loading }) {
   const [failed, setFailed] = useState(false);
   if (failed) {
     return (
@@ -32,7 +32,8 @@ function Img({ src, alt, className, style }) {
       className={className}
       style={style}
       onError={() => setFailed(true)}
-      loading="lazy"
+      fetchpriority={fetchpriority}
+      loading={loading}
     />
   );
 }
@@ -165,6 +166,7 @@ function HeroRight() {
       <Img
         src="/images/hero/bolt.png"
         alt="Bolt"
+        fetchpriority="high"
         className="absolute inset-0 w-full h-full z-0 object-contain"
         style={{
           transform: "scale(1.35)",
@@ -282,18 +284,21 @@ function HeroRight() {
       <Img
         src="/images/hero/uno.png"
         alt="Arduino"
+        loading="lazy"
         className={`hidden sm:block absolute top-[5%] ${isRTL ? 'right-[15%]' : 'left-[15%]'} w-72 lg:w-80 -rotate-6 float-asset z-10`}
         style={{ filter: "drop-shadow(0 20px 40px rgba(59,130,246,0.4))" }}
       />
       <Img
         src="/images/hero/robocar.png"
         alt="Robocar"
+        loading="lazy"
         className={`hidden sm:block absolute bottom-[22%] ${isRTL ? 'left-[-5%]' : 'right-[-5%]'} w-96 lg:w-[25rem] rotate-3 float-asset z-10`}
         style={{ filter: "drop-shadow(0 20px 40px rgba(59,130,246,0.4))" }}
       />
       <Img
         src="/images/hero/bord.png"
         alt="Breadboard"
+        loading="lazy"
         className={`hidden sm:block absolute bottom-[5%] ${isRTL ? 'right-[5%]' : 'left-[5%]'} w-44 lg:w-52 -rotate-3 float-asset z-10`}
         style={{ filter: "drop-shadow(0 20px 40px rgba(59,130,246,0.4))" }}
       />
