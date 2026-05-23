@@ -10,13 +10,13 @@
     "subject": "Sujet",
     "message": "Votre Message",
     "submit": "Envoyer le Message",
-    "success": "Message envoyé avec succès ! Nous vous répondrons bientôt.",
-    "error": "Échec de l'envoi du message. Veuillez réessayer."
+    "success": "Message envoye avec succès ! Nous vous repondrons bientôt.",
+    "error": "Echec de l'envoi du message. Veuillez reessayer."
   },
   "info": {
     "title": "Informations de Contact",
     "email": "afaq.club@univ-bouira.dz",
     "phone": "+213 555 123 456",
-    "location": "Université Akli Mohand Oulhadj, Bouira, Algérie"
+    "location": "Universite Akli Mohand Oulhadj, Bouira, Algerie"
   }
 }

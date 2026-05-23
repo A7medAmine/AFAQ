@@ -103,6 +103,11 @@ export default function JoinUs() {
       console.error(error)
       setStatus('error')
     } else {
+      fetch('/api/email/membership-confirmation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: form.email, name: form.full_name }),
+      }).catch(() => {})
       setStatus('success')
       setForm(initialForm)
     }

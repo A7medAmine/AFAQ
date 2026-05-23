@@ -1,20 +1,20 @@
 {
   "hero": {
     "title": "Nos Projets",
-    "subtitle": "Explorez les projets innovants réalisés par nos membres."
+    "subtitle": "Explorez les projets innovants realises par nos membres."
   },
   "filters": {
     "all": "Tous",
     "arduino": "Arduino",
     "robotics": "Robotique",
     "iot": "IoT",
-    "electronics": "Électronique",
-    "embedded_systems": "Systèmes Embarqués",
+    "electronics": "Electronique",
+    "embedded_systems": "Systèmes Embarques",
     "ai": "IA"
   },
   "card": {
     "technologies": "Technologies",
-    "team": "Équipe"
+    "team": "Equipe"
   },
-  "noProjects": "Aucun projet trouvé dans cette catégorie."
+  "noProjects": "Aucun projet trouve dans cette categorie."
 }

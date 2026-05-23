@@ -15,11 +15,12 @@ export default function StatisticsSection() {
       supabase.from('events').select('*', { count: 'exact', head: true }).eq('is_published', true),
       supabase.from('projects').select('*', { count: 'exact', head: true }).eq('is_published', true),
       supabase.from('event_registrations').select('*', { count: 'exact', head: true }).eq('status', 'approved'),
+      supabase.from('membership_applications').select('*', { count: 'exact', head: true }).eq('status', 'approved'),
       supabase.from('admin_users').select('*', { count: 'exact', head: true }).eq('is_active', true),
-    ]).then(([events, projects, regs, admins]) => {
+    ]).then(([events, projects, regs, memberships, admins]) => {
       setEventCount(events.count || 0)
       setProjectCount(projects.count || 0)
-      setMemberCount((regs.count || 0) + (admins.count || 0))
+      setMemberCount((regs.count || 0) + (memberships.count || 0) + (admins.count || 0))
     })
   }, [])
 

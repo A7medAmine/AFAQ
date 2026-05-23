@@ -1,18 +1,23 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Users, Calendar, FolderGit2, Image, Mail, UserPlus, UserCheck, ArrowRight, Plus } from 'lucide-react'
+import { Users, Calendar, FolderGit2, Image, Mail, UserPlus, UserCheck, ArrowRight, Plus, UserRoundPlus } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import useAdminStore from '../store/adminStore'
 import StatsCard from '../components/ui/StatsCard'
 import Skeleton from '../components/ui/Skeleton'
+import Modal from '../components/ui/Modal'
 
 export default function Dashboard() {
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
   const [recentEvents, setRecentEvents] = useState([])
   const [recentMessages, setRecentMessages] = useState([])
+  const [memberModal, setMemberModal] = useState(false)
+  const [memberForm, setMemberForm] = useState({ full_name: '', email: '', phone: '', department: '' })
+  const [addingMember, setAddingMember] = useState(false)
   const navigate = useNavigate()
+  const addToast = useAdminStore(s => s.addToast)
 
   useEffect(() => {
     loadStats()
@@ -45,7 +50,7 @@ export default function Dashboard() {
       ])
 
       setStats({
-        members: members || 0,
+        members: (members || 0) + (membershipApps || 0),
         pendingRegistrations: pendingRegs || 0,
         membershipApplications: membershipApps || 0,
         pendingMembership: pendingMembership || 0,
@@ -61,6 +66,27 @@ export default function Dashboard() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const addMember = async () => {
+    if (!memberForm.full_name.trim() || !memberForm.email.trim()) return
+    setAddingMember(true)
+    const { error } = await supabase.from('membership_applications').insert({
+      full_name: memberForm.full_name,
+      email: memberForm.email,
+      phone: memberForm.phone || null,
+      department: memberForm.department || null,
+      status: 'approved',
+    })
+    if (error) {
+      addToast('Failed to add member', 'error')
+    } else {
+      addToast('Member added successfully')
+      setMemberModal(false)
+      setMemberForm({ full_name: '', email: '', phone: '', department: '' })
+      loadStats()
+    }
+    setAddingMember(false)
   }
 
   if (loading) {
@@ -172,12 +198,56 @@ export default function Dashboard() {
       >
         <h2 className="text-base font-semibold mb-4" style={{ color: 'var(--color-text)' }}>Quick Actions</h2>
         <div className="flex flex-wrap gap-3">
+          <QuickActionBtn icon={UserRoundPlus} label="Add Member" onClick={() => setMemberModal(true)} />
           <QuickActionBtn icon={Plus} label="New Event" onClick={() => navigate('/admin/events')} />
           <QuickActionBtn icon={Plus} label="New Project" onClick={() => navigate('/admin/projects')} />
           <QuickActionBtn icon={Plus} label="New Album" onClick={() => navigate('/admin/gallery')} />
           <QuickActionBtn icon={Mail} label="View Messages" onClick={() => navigate('/admin/messages')} />
         </div>
       </motion.div>
+
+      {/* Add Member Modal */}
+      <Modal open={memberModal} onClose={() => setMemberModal(false)} title="Add Member">
+        <div className="space-y-4">
+          <div>
+            <label className="block text-xs font-medium mb-1" style={{ color: 'var(--color-text-muted)' }}>Full Name *</label>
+            <input value={memberForm.full_name} onChange={e => setMemberForm({...memberForm, full_name: e.target.value})}
+              className="w-full px-3 py-2 rounded-xl border text-sm"
+              style={{ background: 'var(--color-bg)', borderColor: 'var(--color-border-light)', color: 'var(--color-text)' }}
+              placeholder="Ahmed Mansouri" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium mb-1" style={{ color: 'var(--color-text-muted)' }}>Email *</label>
+            <input type="email" value={memberForm.email} onChange={e => setMemberForm({...memberForm, email: e.target.value})}
+              className="w-full px-3 py-2 rounded-xl border text-sm"
+              style={{ background: 'var(--color-bg)', borderColor: 'var(--color-border-light)', color: 'var(--color-text)' }}
+              placeholder="ahmed@univ-bouira.dz" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium mb-1" style={{ color: 'var(--color-text-muted)' }}>Phone</label>
+            <input value={memberForm.phone} onChange={e => setMemberForm({...memberForm, phone: e.target.value})}
+              className="w-full px-3 py-2 rounded-xl border text-sm"
+              style={{ background: 'var(--color-bg)', borderColor: 'var(--color-border-light)', color: 'var(--color-text)' }}
+              placeholder="+213 6XX XXX XXX" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium mb-1" style={{ color: 'var(--color-text-muted)' }}>Department</label>
+            <input value={memberForm.department} onChange={e => setMemberForm({...memberForm, department: e.target.value})}
+              className="w-full px-3 py-2 rounded-xl border text-sm"
+              style={{ background: 'var(--color-bg)', borderColor: 'var(--color-border-light)', color: 'var(--color-text)' }}
+              placeholder="Computer Science" />
+          </div>
+          <div className="flex justify-end gap-3 pt-4 border-t" style={{ borderColor: 'var(--color-border-light)' }}>
+            <button onClick={() => setMemberModal(false)} className="px-4 py-2 rounded-xl text-sm font-medium border"
+              style={{ borderColor: 'var(--color-border-light)', color: 'var(--color-text)' }}>Cancel</button>
+            <button onClick={addMember} disabled={addingMember}
+              className="px-4 py-2 rounded-xl text-sm font-medium text-white"
+              style={{ background: addingMember ? 'var(--color-accent-dark)' : 'var(--color-accent)' }}>
+              {addingMember ? 'Adding...' : 'Add Member'}
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   )
 }

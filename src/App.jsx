@@ -8,6 +8,7 @@ import Events from './pages/Events'
 import Gallery from './pages/Gallery'
 import JoinUs from './pages/JoinUs'
 import Registration from './pages/Registration'
+import Announcements from './pages/Announcements'
 import Contact from './pages/Contact'
 
 // Admin
@@ -38,6 +39,7 @@ export default function App() {
           <Route path="/gallery" element={<Gallery />} />
           <Route path="/join" element={<JoinUs />} />
           <Route path="/register" element={<Registration />} />
+          <Route path="/announcements" element={<Announcements />} />
           <Route path="/contact" element={<Contact />} />
         </Route>
 

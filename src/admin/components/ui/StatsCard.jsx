@@ -1,6 +1,13 @@
-import { motion } from 'framer-motion'
+import { useEffect } from 'react'
+import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion'
 
 export default function StatsCard({ icon: Icon, label, value, trend, color = 'var(--color-accent)' }) {
+  const count = useMotionValue(0)
+  const spring = useSpring(count, { damping: 25, stiffness: 100 })
+  const display = useTransform(spring, v => Math.round(v).toLocaleString())
+
+  useEffect(() => { count.set(value) }, [value, count])
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
@@ -21,7 +28,7 @@ export default function StatsCard({ icon: Icon, label, value, trend, color = 'va
           </span>
         )}
       </div>
-      <p className="text-2xl font-bold mb-0.5" style={{ color: 'var(--color-text)' }}>{value}</p>
+      <motion.p className="text-2xl font-bold mb-0.5" style={{ color: 'var(--color-text)' }}>{display}</motion.p>
       <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>{label}</p>
     </motion.div>
   )

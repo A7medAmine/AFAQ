@@ -11,8 +11,10 @@ const fastSpring = { type: 'spring', damping: 16, stiffness: 300 }
 const initialForm = {
   event_id: '',
   full_name: '',
+  student_id: '',
   email: '',
   phone: '',
+  department: '',
   agreed_to_policies: false,
 }
 
@@ -36,6 +38,8 @@ export default function Registration() {
       .then(({ data }) => setEvents(data || []))
   }, [])
 
+  const deptKeys = ['fsas', 'fnlses', 'flps', 'fecms', 'fshs', 'fll', 'istaps', 'iot', 'fes']
+
   const validate = () => {
     const errs = {}
     if (!form.event_id) errs.event_id = t('form.validation.required')
@@ -58,14 +62,24 @@ export default function Registration() {
     const { error } = await supabase.from('event_registrations').insert([{
       event_id: form.event_id,
       full_name: form.full_name,
+      student_id: form.student_id || null,
       email: form.email,
       phone: form.phone || null,
+      department: form.department || null,
       agreed_to_policies: true,
     }])
     if (error) {
       console.error(error)
       setStatus('error')
     } else {
+      const ev = events.find(e => e.id === form.event_id)
+      const eventTitle = ev ? (ev[`title_${i18n.language}`] || ev.title_en) : ''
+      const eventDate = ev?.date ? new Date(ev.date + 'T00:00:00').toLocaleDateString() : ''
+      fetch('/api/email/registration-confirmation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: form.email, name: form.full_name, event_title: eventTitle, date: eventDate }),
+      }).catch(() => {})
       setStatus('success')
       setForm(initialForm)
     }
@@ -205,6 +219,20 @@ export default function Registration() {
 
                 <div>
                   <label className="block text-xs font-semibold mb-2" style={{ color: 'var(--color-text-muted)', letterSpacing: '0.03em', textTransform: 'uppercase' }}>
+                    {t('form.studentId')}
+                  </label>
+                  <input
+                    style={inputStyle('student_id')}
+                    value={form.student_id}
+                    onChange={e => setForm({...form, student_id: e.target.value})}
+                    onFocus={e => { e.target.style.boxShadow = '0 0 0 3px rgba(36,96,231,0.15)'; e.target.style.borderColor = 'var(--color-accent)' }}
+                    onBlur={e => { e.target.style.boxShadow = 'none'; e.target.style.borderColor = 'var(--color-border-light)' }}
+                    placeholder="2024XXXXX"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold mb-2" style={{ color: 'var(--color-text-muted)', letterSpacing: '0.03em', textTransform: 'uppercase' }}>
                     {t('form.email')} *
                   </label>
                   <motion.div animate={{ x: shaking === 'email' ? [0, -6, 6, -6, 6, 0] : 0 }} transition={{ duration: 0.4 }}>
@@ -237,6 +265,24 @@ export default function Registration() {
                     onBlur={e => { e.target.style.boxShadow = 'none'; e.target.style.borderColor = 'var(--color-border-light)' }}
                     placeholder="+213 6XX XXX XXX"
                   />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold mb-2" style={{ color: 'var(--color-text-muted)', letterSpacing: '0.03em', textTransform: 'uppercase' }}>
+                    {t('form.department')}
+                  </label>
+                  <select
+                    style={inputStyle('department')}
+                    value={form.department}
+                    onChange={e => setForm({...form, department: e.target.value})}
+                    onFocus={e => { e.target.style.boxShadow = '0 0 0 3px rgba(36,96,231,0.15)'; e.target.style.borderColor = 'var(--color-accent)' }}
+                    onBlur={e => { e.target.style.boxShadow = 'none'; e.target.style.borderColor = 'var(--color-border-light)' }}
+                  >
+                    <option value="">{t('form.selectDepartment')}</option>
+                    {deptKeys.map(key => (
+                      <option key={key} value={key}>{t(`departments.${key}`)}</option>
+                    ))}
+                  </select>
                 </div>
 
                 <div>

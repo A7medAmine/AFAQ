@@ -1,34 +1,46 @@
 {
   "hero": {
-    "title": "À Propos d'AFAQ",
-    "subtitle": "Découvrez notre histoire, notre mission et ce qui nous rend uniques."
+    "title": "A Propos d'AFAQ",
+    "subtitle": "Decouvrez notre histoire, notre mission et ce qui nous rend uniques."
   },
   "story": {
     "title": "Notre Histoire",
-    "paragraph1": "Le Club Scientifique AFAQ a été fondé par un groupe d'étudiants passionnés à l'Université Akli Mohand Oulhadj de Bouira, animés par une vision commune de créer un espace où technologie et créativité se rencontrent.",
-    "paragraph2": "Le nom 'AFAQ' vient du mot arabe 'آفاق', signifiant 'avenir radieux' ou 'horizons' — reflétant notre engagement à explorer de nouvelles frontières en science et technologie."
+    "paragraph1": "Le Club Scientifique AFAQ a ete fonde par un groupe d'etudiants passionnes à l'Universite Akli Mohand Oulhadj de Bouira, animes par une vision commune de creer un espace où technologie et creativite se rencontrent.",
+    "paragraph2": "Le nom 'AFAQ' vient du mot arabe 'آفاق', signifiant 'avenir radieux' ou 'horizons' — refletant notre engagement à explorer de nouvelles frontières en science et technologie."
   },
   "mission": {
     "title": "Notre Mission",
-    "text": "Autonomiser les étudiants avec des compétences pratiques en technologie et électronique, favoriser l'innovation et le travail d'équipe, et créer une communauté dynamique de futurs ingénieurs et créateurs."
+    "text": "Autonomiser les etudiants avec des competences pratiques en technologie et electronique, favoriser l'innovation et le travail d'equipe, et creer une communaute dynamique de futurs ingenieurs et createurs."
   },
   "vision": {
     "title": "Notre Vision",
-    "text": "Devenir un club étudiant leader qui inspire l'innovation technologique et prépare les étudiants aux défis de demain."
+    "text": "Devenir un club etudiant leader qui inspire l'innovation technologique et prepare les etudiants aux defis de demain."
   },
   "values": {
     "title": "Nos Valeurs",
-    "innovation": { "title": "Innovation", "desc": "Nous encourageons la pensée créative et les solutions nouvelles." },
-    "teamwork": { "title": "Travail d'Équipe", "desc": "Nous croyons en la puissance de la collaboration et du partage des connaissances." },
-    "excellence": { "title": "Excellence", "desc": "Nous visons la plus haute qualité dans tout ce que nous faisons." },
-    "integrity": { "title": "Intégrité", "desc": "Nous agissons avec honnêteté, transparence et respect." }
+    "innovation": {
+      "title": "Innovation",
+      "desc": "Nous encourageons la pensee creative et les solutions nouvelles."
+    },
+    "teamwork": {
+      "title": "Travail d'Equipe",
+      "desc": "Nous croyons en la puissance de la collaboration et du partage des connaissances."
+    },
+    "excellence": {
+      "title": "Excellence",
+      "desc": "Nous visons la plus haute qualite dans tout ce que nous faisons."
+    },
+    "integrity": {
+      "title": "Integrite",
+      "desc": "Nous agissons avec honnêtete, transparence et respect."
+    }
   },
   "special": {
-    "title": "Ce Qui Rend AFAQ Spécial",
+    "title": "Ce Qui Rend AFAQ Special",
     "point1": "Approche d'apprentissage pratique avec de vrais projets",
-    "point2": "Équipe multidisciplinaire de différents départements",
-    "point3": "Lien fort avec l'industrie et les anciens élèves",
-    "point4": "Communauté solidaire et inclusive",
-    "point5": "Ateliers et événements réguliers"
+    "point2": "Equipe multidisciplinaire de differents departements",
+    "point3": "Lien fort avec l'industrie et les anciens elèves",
+    "point4": "Communaute solidaire et inclusive",
+    "point5": "Ateliers et evenements reguliers"
   }
 }

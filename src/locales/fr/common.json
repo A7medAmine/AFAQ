@@ -2,24 +2,25 @@
   "siteName": "Club Scientifique AFAQ",
   "nav": {
     "home": "Accueil",
-    "about": "À Propos",
+    "about": "A Propos",
     "projects": "Projets",
-    "events": "Événements",
+    "events": "Evenements",
     "gallery": "Galerie",
     "register": "S'inscrire",
+    "announcements": "Annonces",
     "join": "Rejoindre",
     "contact": "Contact"
   },
   "theme": { "light": "Mode Clair", "dark": "Mode Sombre" },
   "language": { "en": "English", "ar": "العربية", "fr": "Français" },
   "footer": {
-    "description": "Où la technologie, l'électronique, la créativité, l'innovation et le travail d'équipe se rencontrent.",
+    "description": "Où la technologie, l'electronique, la creativite, l'innovation et le travail d'equipe se rencontrent.",
     "quickLinks": "Liens Rapides",
     "followUs": "Suivez-Nous",
     "connect": "Connecter",
     "contactUs": "Contactez-Nous",
-    "rights": "Tous droits réservés.",
-    "university": "Université Akli Mohand Oulhadj — Bouira, Algérie"
+    "rights": "Tous droits reserves.",
+    "university": "Universite Akli Mohand Oulhadj — Bouira, Algerie"
   },
   "buttons": {
     "learnMore": "En Savoir Plus",

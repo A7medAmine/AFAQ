@@ -11,6 +11,8 @@ export default defineConfig({
     proxy: {
       '/api/upload': 'http://localhost:3001',
       '/api/admin': 'http://localhost:3001',
+      '/api/email': 'http://localhost:3001',
+      '/api/approve': 'http://localhost:3001',
       '/uploads': 'http://localhost:3001',
     },
   },

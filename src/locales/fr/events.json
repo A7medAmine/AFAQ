@@ -1,28 +1,28 @@
 {
   "hero": {
-    "title": "Événements",
-    "subtitle": "Suivez nos événements passés et à venir."
+    "title": "Evenements",
+    "subtitle": "Suivez nos evenements passes et à venir."
   },
-  "upcoming": "Événements à Venir",
-  "past": "Événements Passés",
-  "noUpcoming": "Aucun événement à venir. Revenez bientôt !",
-  "register": "S'inscrire à cet Événement",
-  "details": "Détails de l'Événement",
+  "upcoming": "Evenements à Venir",
+  "past": "Evenements Passes",
+  "noUpcoming": "Aucun evenement à venir. Revenez bientôt !",
+  "register": "S'inscrire à cet Evenement",
+  "details": "Details de l'Evenement",
   "event1": {
     "title": "Atelier Arduino",
-    "desc": "Un atelier pratique sur la programmation Arduino et l'électronique pour débutants.",
+    "desc": "Un atelier pratique sur la programmation Arduino et l'electronique pour debutants.",
     "date": "15 Juin 2026",
     "location": "Salle 201, Bloc Sciences"
   },
   "event2": {
-    "title": "Compétition de Robotique",
-    "desc": "Compétition annuelle de robotique où les équipes s'affrontent sur divers défis.",
+    "title": "Competition de Robotique",
+    "desc": "Competition annuelle de robotique où les equipes s'affrontent sur divers defis.",
     "date": "10 Juillet 2026",
-    "location": "Amphithéâtre de l'Université"
+    "location": "Amphitheâtre de l'Universite"
   },
   "event3": {
     "title": "Hackathon Tech",
-    "desc": "Un hackathon de 24h pour construire des solutions innovantes aux problèmes réels.",
+    "desc": "Un hackathon de 24h pour construire des solutions innovantes aux problèmes reels.",
     "date": "5 Août 2026",
     "location": "Lab d'Innovation"
   },
@@ -30,12 +30,12 @@
     "title": "Introduction à l'IoT",
     "desc": "Une session d'introduction aux concepts et applications de l'Internet des Objets.",
     "date": "20 Mars 2026",
-    "location": "Salle 105, Bloc Ingénierie"
+    "location": "Salle 105, Bloc Ingenierie"
   },
   "pastevent2": {
     "title": "Bootcamp Python",
     "desc": "Un bootcamp intensif de trois jours sur les fondamentaux de la programmation Python.",
-    "date": "10 Février 2026",
+    "date": "10 Fevrier 2026",
     "location": "Lab Informatique 3"
   }
 }

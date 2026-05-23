@@ -18,6 +18,7 @@ const navLinks = [
   { key: 'projects', path: '/projects' },
   { key: 'events', path: '/events' },
   { key: 'gallery', path: '/gallery' },
+  { key: 'announcements', path: '/announcements' },
   { key: 'join', path: '/join' },
   { key: 'contact', path: '/contact' },
 ]

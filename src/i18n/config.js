@@ -38,6 +38,10 @@ import enContact from '../locales/en/contact.json'
 import arContact from '../locales/ar/contact.json'
 import frContact from '../locales/fr/contact.json'
 
+import enAnnouncements from '../locales/en/announcements.json'
+import arAnnouncements from '../locales/ar/announcements.json'
+import frAnnouncements from '../locales/fr/announcements.json'
+
 const savedLang = localStorage.getItem('i18nextLng') || 'en'
 document.documentElement.dir = savedLang === 'ar' ? 'rtl' : 'ltr'
 document.documentElement.lang = savedLang
@@ -57,6 +61,7 @@ i18n
         register: enRegister,
         join: enJoin,
         contact: enContact,
+        announcements: enAnnouncements,
       },
       ar: {
         common: arCommon,
@@ -68,6 +73,7 @@ i18n
         register: arRegister,
         join: arJoin,
         contact: arContact,
+        announcements: arAnnouncements,
       },
       fr: {
         common: frCommon,
@@ -79,11 +85,12 @@ i18n
         register: frRegister,
         join: frJoin,
         contact: frContact,
+        announcements: frAnnouncements,
       },
     },
     fallbackLng: 'en',
     supportedLngs: ['en', 'ar', 'fr'],
-    ns: ['common', 'home', 'about', 'projects', 'events', 'gallery', 'register', 'join', 'contact'],
+    ns: ['common', 'home', 'about', 'projects', 'events', 'gallery', 'register', 'join', 'contact', 'announcements'],
     defaultNS: 'common',
     detection: {
       order: ['localStorage', 'navigator'],

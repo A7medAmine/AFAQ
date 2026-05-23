@@ -8,8 +8,11 @@
     "event": "Select Event",
     "selectEvent": "Choose an event...",
     "fullName": "Full Name",
+    "studentId": "Student ID",
     "email": "Email Address",
     "phone": "Phone Number",
+    "department": "Department",
+    "selectDepartment": "Select your department...",
     "policies": "I agree to the club's policies and terms of participation.",
     "submit": "Register Now",
     "submitting": "Submitting...",
@@ -20,5 +23,16 @@
       "email": "Please enter a valid email address",
       "requiredPolicies": "You must agree to the policies to register"
     }
+  },
+  "departments": {
+    "fsas": "Faculty of Sciences and Applied Sciences",
+    "fnlses": "Faculty of Natural and Life Sciences and Earth Sciences",
+    "flps": "Faculty of Law and Political Science",
+    "fecms": "Faculty of Economic, Commercial and Management Sciences",
+    "fshs": "Faculty of Social and Human Sciences",
+    "fll": "Faculty of Letters and Languages",
+    "istaps": "Institute of Physical Education and Sports Sciences and Techniques (ISTAPS)",
+    "iot": "Institute of Technology",
+    "fes": "Faculty of Exact Sciences"
   }
 }

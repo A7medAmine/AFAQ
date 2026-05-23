@@ -1,24 +1,38 @@
 {
   "hero": {
-    "title": "S'inscrire à un Événement",
-    "subtitle": "Inscrivez-vous à un événement spécifique. Choisissez parmi les événements à venir."
+    "title": "S'inscrire à un Evenement",
+    "subtitle": "Inscrivez-vous à un evenement specifique. Choisissez parmi les evenements à venir."
   },
   "form": {
-    "title": "Inscription à l'Événement",
-    "event": "Sélectionner un Événement",
-    "selectEvent": "Choisissez un événement...",
+    "title": "Inscription à l'Evenement",
+    "event": "Selectionner un Evenement",
+    "selectEvent": "Choisissez un evenement...",
     "fullName": "Nom Complet",
+    "studentId": "Identifiant Etudiant",
     "email": "Adresse Email",
-    "phone": "Numéro de Téléphone",
+    "phone": "Numero de Telephone",
+    "department": "Departement",
+    "selectDepartment": "Selectionnez votre departement...",
     "policies": "J'accepte les politiques et conditions de participation du club.",
     "submit": "S'inscrire",
     "submitting": "Envoi en cours...",
-    "success": "Vous avez été inscrit avec succès ! Nous vous contacterons bientôt.",
-    "error": "Une erreur s'est produite. Veuillez réessayer.",
+    "success": "Vous avez ete inscrit avec succès ! Nous vous contacterons bientôt.",
+    "error": "Une erreur s'est produite. Veuillez reessayer.",
     "validation": {
       "required": "Ce champ est requis",
       "email": "Veuillez entrer une adresse email valide",
       "requiredPolicies": "Vous devez accepter les politiques pour vous inscrire"
     }
+  },
+  "departments": {
+    "fsas": "Faculte des Sciences et Sciences Appliquees",
+    "fnlses": "Faculte des Sciences de la Nature et de la Vie et Sciences de la Terre",
+    "flps": "Faculte de Droit et des Sciences Politiques",
+    "fecms": "Faculte des Sciences Economiques, Commerciales et des Sciences de Gestion",
+    "fshs": "Faculte des Sciences Sociales et Humaines",
+    "fll": "Faculte des Lettres et des Langues",
+    "istaps": "Institut d'Education Physique et des Sciences et Techniques des Sports (ISTAPS)",
+    "iot": "Institut de Technologie",
+    "fes": "Faculte des Sciences Exactes"
   }
 }

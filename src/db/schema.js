@@ -51,6 +51,7 @@ export const eventRegistrations = pgTable('event_registrations', {
   fullName: text('full_name').notNull(),
   email: text().notNull(),
   phone: text(),
+  studentId: text('student_id'),
   department: text(),
   studyYear: text('study_year'),
   skills: text().array(),

@@ -21,10 +21,26 @@ export default function MembershipPage() {
     setLoading(false)
   }
 
+  const [approving, setApproving] = useState({})
+
   const updateStatus = async (id, status) => {
-    await supabase.from('membership_applications').update({ status }).eq('id', id)
-    addToast(`Application ${status}`)
-    loadApplications()
+    if (status === 'approved') {
+      setApproving(prev => ({ ...prev, [id]: true }))
+      setApplications(prev => prev.map(r => r.id === id ? { ...r, status: 'approved' } : r))
+      fetch('/api/approve/membership', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      }).then(res => res.json()).then(data => {
+        if (!data.ok) addToast(data.error || 'Failed to approve')
+        else addToast('Application approved')
+      }).catch(() => addToast('Failed to approve'))
+      .finally(() => setApproving(prev => ({ ...prev, [id]: false })))
+    } else {
+      await supabase.from('membership_applications').update({ status }).eq('id', id)
+      addToast(`Application ${status}`)
+      loadApplications()
+    }
   }
 
   const filtered = filter === 'all' ? applications : applications.filter(r => r.status === filter)
@@ -44,7 +60,7 @@ export default function MembershipPage() {
       <div className="flex gap-1">
         {row.original.status === 'pending' && (
           <>
-            <button onClick={() => updateStatus(row.original.id, 'approved')} className="p-1.5 rounded-lg hover:opacity-70" style={{ color: '#16a34a' }}><Check size={14} /></button>
+            <button onClick={() => updateStatus(row.original.id, 'approved')} disabled={approving[row.original.id]} className="p-1.5 rounded-lg hover:opacity-70 disabled:opacity-30" style={{ color: '#16a34a' }}><Check size={14} /></button>
             <button onClick={() => updateStatus(row.original.id, 'rejected')} className="p-1.5 rounded-lg hover:opacity-70" style={{ color: '#dc2626' }}><X size={14} /></button>
           </>
         )}
