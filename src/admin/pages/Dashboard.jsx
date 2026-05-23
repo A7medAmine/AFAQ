@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Users, Calendar, FolderGit2, Image, Mail, UserPlus, ArrowRight, Plus } from 'lucide-react'
+import { Users, Calendar, FolderGit2, Image, Mail, UserPlus, UserCheck, ArrowRight, Plus } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import useAdminStore from '../store/adminStore'
@@ -23,6 +23,8 @@ export default function Dashboard() {
       const [
         { count: members },
         { count: pendingRegs },
+        { count: membershipApps },
+        { count: pendingMembership },
         { count: upcomingEvents },
         { count: projects },
         { count: images },
@@ -32,6 +34,8 @@ export default function Dashboard() {
       ] = await Promise.all([
         supabase.from('event_registrations').select('*', { count: 'exact', head: true }),
         supabase.from('event_registrations').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
+        supabase.from('membership_applications').select('*', { count: 'exact', head: true }),
+        supabase.from('membership_applications').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
         supabase.from('events').select('*', { count: 'exact', head: true }).gte('date', new Date().toISOString().split('T')[0]),
         supabase.from('projects').select('*', { count: 'exact', head: true }),
         supabase.from('gallery_images').select('*', { count: 'exact', head: true }),
@@ -43,6 +47,8 @@ export default function Dashboard() {
       setStats({
         members: members || 0,
         pendingRegistrations: pendingRegs || 0,
+        membershipApplications: membershipApps || 0,
+        pendingMembership: pendingMembership || 0,
         upcomingEvents: upcomingEvents || 0,
         projects: projects || 0,
         galleryImages: images || 0,
@@ -72,6 +78,7 @@ export default function Dashboard() {
   const statCards = [
     { icon: Users, label: 'Total Members', value: stats?.members || 0, color: '#2460e7' },
     { icon: UserPlus, label: 'Pending Registrations', value: stats?.pendingRegistrations || 0, color: '#d97706' },
+    { icon: UserCheck, label: 'Membership Apps', value: stats?.membershipApplications || 0, color: '#0891b2' },
     { icon: Calendar, label: 'Upcoming Events', value: stats?.upcomingEvents || 0, color: '#16a34a' },
     { icon: FolderGit2, label: 'Projects', value: stats?.projects || 0, color: '#8b5cf6' },
     { icon: Image, label: 'Gallery Images', value: stats?.galleryImages || 0, color: '#ec4899' },

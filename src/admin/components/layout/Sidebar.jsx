@@ -2,19 +2,20 @@ import { NavLink } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
   LayoutDashboard, Calendar, ClipboardCheck, FolderGit2, Image,
-  Mail, Megaphone, Shield, Settings, ChevronLeft, LogOut,
+  Mail, Megaphone, Shield, Settings, ChevronLeft, LogOut, UserCheck,
 } from 'lucide-react'
 import useAdminStore from '../../store/adminStore'
 
 const iconMap = {
   LayoutDashboard, Calendar, ClipboardCheck, FolderGit2, Image,
-  Mail, Megaphone, Shield, Settings,
+  Mail, Megaphone, Shield, Settings, UserCheck,
 }
 
 const NAV_ITEMS = [
   { label: 'Overview', path: '/admin', icon: 'LayoutDashboard', roles: null },
   { label: 'Events', path: '/admin/events', icon: 'Calendar', roles: ['super_admin', 'event_manager'] },
-  { label: 'Registrations', path: '/admin/registrations', icon: 'ClipboardCheck', roles: ['super_admin', 'event_manager'] },
+  { label: 'Membership', path: '/admin/membership', icon: 'UserCheck', roles: ['super_admin', 'event_manager'] },
+  { label: 'Event Registration', path: '/admin/registrations', icon: 'ClipboardCheck', roles: ['super_admin', 'event_manager'] },
   { label: 'Projects', path: '/admin/projects', icon: 'FolderGit2', roles: ['super_admin', 'project_manager'] },
   { label: 'Gallery', path: '/admin/gallery', icon: 'Image', roles: ['super_admin', 'media_manager'] },
   { label: 'Messages', path: '/admin/messages', icon: 'Mail', roles: null },

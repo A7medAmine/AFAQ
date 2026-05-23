@@ -11,7 +11,8 @@ export default function AdminLayout({ children }) {
   const pageTitles = {
     '/admin': 'Overview',
     '/admin/events': 'Events',
-    '/admin/registrations': 'Registrations',
+    '/admin/registrations': 'Event Registration',
+    '/admin/membership': 'Membership',
     '/admin/projects': 'Projects',
     '/admin/gallery': 'Gallery',
     '/admin/messages': 'Messages',

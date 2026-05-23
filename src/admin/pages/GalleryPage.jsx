@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
-import { Plus, Edit3, Trash2, Upload, ImageIcon } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Plus, Edit3, Trash2, Upload, ImageIcon, ChevronDown, ChevronUp } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import useAdminStore from '../store/adminStore'
 import Modal from '../components/ui/Modal'
@@ -8,15 +8,17 @@ import ConfirmDialog from '../components/ui/ConfirmDialog'
 import Skeleton from '../components/ui/Skeleton'
 import EmptyState from '../components/ui/EmptyState'
 
+const spring = { type: 'spring', damping: 22, stiffness: 200 }
+
 export default function GalleryPage() {
   const [albums, setAlbums] = useState([])
   const [loading, setLoading] = useState(true)
-  const [modalOpen, setModalOpen] = useState(false)
+  const [albumModalOpen, setAlbumModalOpen] = useState(false)
   const [deleteId, setDeleteId] = useState(null)
   const [editing, setEditing] = useState(null)
-  const [albumImages, setAlbumImages] = useState([])
-  const [imageModalOpen, setImageModalOpen] = useState(false)
-  const [imageAlbumId, setImageAlbumId] = useState(null)
+  const [expandedId, setExpandedId] = useState(null)
+  const [albumImages, setAlbumImages] = useState({})
+  const [loadingImages, setLoadingImages] = useState({})
   const [uploading, setUploading] = useState(false)
   const addToast = useAdminStore(s => s.addToast)
 
@@ -30,23 +32,27 @@ export default function GalleryPage() {
     setLoading(false)
   }
 
-  const loadImages = async (albumId) => {
-    const { data } = await supabase.from('gallery_images').select('*').eq('album_id', albumId).order('sort_order')
-    setAlbumImages(data || [])
-    setImageAlbumId(albumId)
-    setImageModalOpen(true)
+  const toggleExpand = async (albumId) => {
+    if (expandedId === albumId) { setExpandedId(null); return }
+    setExpandedId(albumId)
+    if (!albumImages[albumId]) {
+      setLoadingImages(p => ({ ...p, [albumId]: true }))
+      const { data } = await supabase.from('gallery_images').select('*').eq('album_id', albumId).order('sort_order')
+      setAlbumImages(p => ({ ...p, [albumId]: data || [] }))
+      setLoadingImages(p => ({ ...p, [albumId]: false }))
+    }
   }
 
   const openCreate = () => {
     setEditing(null)
     setForm({ title_en: '', title_ar: '', title_fr: '', description: '' })
-    setModalOpen(true)
+    setAlbumModalOpen(true)
   }
 
   const openEdit = (a) => {
     setEditing(a)
     setForm({ title_en: a.title_en || '', title_ar: a.title_ar || '', title_fr: a.title_fr || '', description: a.description || '' })
-    setModalOpen(true)
+    setAlbumModalOpen(true)
   }
 
   const handleSave = async () => {
@@ -57,22 +63,21 @@ export default function GalleryPage() {
       await supabase.from('gallery_albums').insert(form)
       addToast('Album created')
     }
-    setModalOpen(false)
+    setAlbumModalOpen(false)
     loadAlbums()
   }
 
   const handleDelete = async () => {
-    // Delete images from storage first
     const { data: images } = await supabase.from('gallery_images').select('url').eq('album_id', deleteId)
     if (images) {
       for (const img of images) {
-        const path = img.url.split('/gallery/')[1]
-        if (path) await supabase.storage.from('gallery').remove([path])
+        await fetch('/api/upload', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url: img.url }) })
       }
     }
     await supabase.from('gallery_albums').delete().eq('id', deleteId)
     addToast('Album deleted')
     setDeleteId(null)
+    setAlbumImages(p => { const { [deleteId]: _, ...rest } = p; return rest })
     loadAlbums()
   }
 
@@ -85,24 +90,26 @@ export default function GalleryPage() {
       fd.append('file', file)
       const res = await fetch('/api/upload', { method: 'POST', body: fd })
       const { url } = await res.json()
-      await supabase.from('gallery_images').insert({ album_id: imageAlbumId, url })
+      await supabase.from('gallery_images').insert({ album_id: expandedId, url })
     }
     setUploading(false)
     addToast(`${files.length} image(s) uploaded`)
-    loadImages(imageAlbumId)
+    const { data } = await supabase.from('gallery_images').select('*').eq('album_id', expandedId).order('sort_order')
+    setAlbumImages(p => ({ ...p, [expandedId]: data || [] }))
   }
 
   const deleteImage = async (img) => {
     await fetch('/api/upload', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url: img.url }) })
     await supabase.from('gallery_images').delete().eq('id', img.id)
-    loadImages(imageAlbumId)
+    const { data } = await supabase.from('gallery_images').select('*').eq('album_id', expandedId).order('sort_order')
+    setAlbumImages(p => ({ ...p, [expandedId]: data || [] }))
   }
 
-  if (loading) return <div className="space-y-4">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} style={{ height: 48 }} />)}</div>
+  if (loading) return <div className="space-y-4">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} style={{ height: 200 }} />)}</div>
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-      <div className="flex items-center justify-between mb-6">
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+      <div className="flex items-center justify-between mb-2">
         <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>Manage gallery albums</p>
         <button onClick={openCreate} className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-white" style={{ background: 'var(--color-accent)' }}>
           <Plus size={16} /> New Album
@@ -110,35 +117,111 @@ export default function GalleryPage() {
       </div>
 
       {albums.length === 0 ? (
-                  <EmptyState icon={ImageIcon} title="No albums yet" description="Create your first album" action={
+        <EmptyState icon={ImageIcon} title="No albums yet" description="Create your first album" action={
           <button onClick={openCreate} className="mt-4 px-4 py-2 rounded-xl text-sm font-medium text-white" style={{ background: 'var(--color-accent)' }}>Create Album</button>
         } />
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {albums.map(album => (
-            <motion.div
-              key={album.id}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="rounded-2xl border p-5 cursor-pointer hover:opacity-90 transition-opacity"
-              style={{ background: 'var(--color-card)', borderColor: 'var(--color-border-light)' }}
-              onClick={() => loadImages(album.id)}
-            >
-              <div className="flex items-start justify-between mb-3">
-                <h3 className="font-semibold text-sm" style={{ color: 'var(--color-text)' }}>{album.title_en}</h3>
-                <div className="flex gap-1">
-                  <button onClick={(e) => { e.stopPropagation(); openEdit(album) }} className="p-1 rounded hover:opacity-70" style={{ color: 'var(--color-text-muted)' }}><Edit3 size={12} /></button>
-                  <button onClick={(e) => { e.stopPropagation(); setDeleteId(album.id) }} className="p-1 rounded hover:opacity-70" style={{ color: '#dc2626' }}><Trash2 size={12} /></button>
+        <div className="space-y-5">
+          {albums.map((album, idx) => {
+            const isOpen = expandedId === album.id
+            const images = albumImages[album.id] || []
+            const imageCount = albumImages[album.id] ? images.length : '...'
+
+            return (
+              <motion.div
+                key={album.id}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: idx * 0.04 }}
+                className="rounded-2xl border overflow-hidden"
+                style={{ background: 'var(--color-card)', borderColor: 'var(--color-border-light)' }}
+              >
+                {/* Album Header */}
+                <div
+                  onClick={() => toggleExpand(album.id)}
+                  className="flex items-center justify-between p-4 cursor-pointer hover:opacity-80 transition-opacity"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center justify-center w-10 h-10 rounded-xl" style={{ background: 'var(--color-bg-alt)' }}>
+                      <ImageIcon size={16} style={{ color: 'var(--color-accent)' }} />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-sm" style={{ color: 'var(--color-text)' }}>{album.title_en}</h3>
+                      <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
+                        {album.description || 'No description'} &middot; {imageCount} image(s)
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button onClick={(e) => { e.stopPropagation(); openEdit(album) }} className="p-2 rounded-xl hover:opacity-70" style={{ color: 'var(--color-text-muted)' }}><Edit3 size={14} /></button>
+                    <button onClick={(e) => { e.stopPropagation(); setDeleteId(album.id) }} className="p-2 rounded-xl hover:opacity-70" style={{ color: '#dc2626' }}><Trash2 size={14} /></button>
+                    {isOpen ? <ChevronUp size={18} style={{ color: 'var(--color-text-muted)' }} /> : <ChevronDown size={18} style={{ color: 'var(--color-text-muted)' }} />}
+                  </div>
                 </div>
-              </div>
-              {album.description && <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>{album.description}</p>}
-            </motion.div>
-          ))}
+
+                {/* Expanded Image Grid */}
+                <AnimatePresence>
+                  {isOpen && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={spring}
+                      className="overflow-hidden"
+                    >
+                      <div className="px-4 pb-4 border-t" style={{ borderColor: 'var(--color-border-light)' }}>
+                        {/* Upload bar */}
+                        <label className="flex items-center justify-center gap-2 mt-4 p-4 rounded-xl border-2 border-dashed cursor-pointer transition-colors hover:opacity-80" style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-muted)' }}>
+                          <Upload size={16} />
+                          <span className="text-sm">{uploading ? 'Uploading...' : 'Click to upload images'}</span>
+                          <input type="file" multiple accept="image/*" onChange={handleUpload} className="hidden" disabled={uploading} />
+                        </label>
+
+                        {/* Image grid */}
+                        {loadingImages[album.id] ? (
+                          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3 mt-4">
+                            {Array.from({ length: 6 }).map((_, i) => (
+                              <Skeleton key={i} style={{ aspectRatio: '1', borderRadius: 12 }} />
+                            ))}
+                          </div>
+                        ) : images.length === 0 ? (
+                          <p className="text-sm text-center py-8" style={{ color: 'var(--color-text-muted)' }}>No images in this album yet</p>
+                        ) : (
+                          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3 mt-4">
+                            {images.map((img, i) => (
+                              <motion.div
+                                key={img.id}
+                                initial={{ opacity: 0, scale: 0.9 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                transition={{ delay: i * 0.03 }}
+                                className="relative group rounded-xl overflow-hidden border"
+                                style={{ borderColor: 'var(--color-border-light)', aspectRatio: '1' }}
+                              >
+                                <img src={img.url} alt="" className="w-full h-full object-cover" loading="lazy" />
+                                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all flex items-center justify-center">
+                                  <button
+                                    onClick={() => deleteImage(img)}
+                                    className="p-2 rounded-lg bg-white/90 text-red-600 opacity-0 group-hover:opacity-100 transition-all scale-75 group-hover:scale-100"
+                                  >
+                                    <Trash2 size={14} />
+                                  </button>
+                                </div>
+                              </motion.div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
+            )
+          })}
         </div>
       )}
 
       {/* Album CRUD Modal */}
-      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editing ? 'Edit Album' : 'Create Album'}>
+      <Modal open={albumModalOpen} onClose={() => setAlbumModalOpen(false)} title={editing ? 'Edit Album' : 'Create Album'}>
         <div className="space-y-4">
           {['en', 'ar', 'fr'].map(lang => (
             <div key={lang}>
@@ -151,38 +234,9 @@ export default function GalleryPage() {
             <textarea value={form.description} onChange={e => setForm({...form, description: e.target.value})} rows={2} className="w-full px-3 py-2 rounded-xl border text-sm" style={{ background: 'var(--color-bg)', borderColor: 'var(--color-border-light)', color: 'var(--color-text)' }} />
           </div>
           <div className="flex justify-end gap-3 pt-4 border-t" style={{ borderColor: 'var(--color-border-light)' }}>
-            <button onClick={() => setModalOpen(false)} className="px-4 py-2 rounded-xl text-sm font-medium border" style={{ borderColor: 'var(--color-border-light)', color: 'var(--color-text)' }}>Cancel</button>
+            <button onClick={() => setAlbumModalOpen(false)} className="px-4 py-2 rounded-xl text-sm font-medium border" style={{ borderColor: 'var(--color-border-light)', color: 'var(--color-text)' }}>Cancel</button>
             <button onClick={handleSave} className="px-4 py-2 rounded-xl text-sm font-medium text-white" style={{ background: 'var(--color-accent)' }}>{editing ? 'Update' : 'Create'}</button>
           </div>
-        </div>
-      </Modal>
-
-      {/* Image Upload Modal */}
-      <Modal open={imageModalOpen} onClose={() => setImageModalOpen(false)} title="Album Images" size="lg">
-        <div className="space-y-4">
-          <label className="flex items-center justify-center gap-2 p-6 rounded-xl border-2 border-dashed cursor-pointer" style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-muted)' }}>
-            <Upload size={18} />
-            <span className="text-sm">{uploading ? 'Uploading...' : 'Click to upload images'}</span>
-            <input type="file" multiple accept="image/*" onChange={handleUpload} className="hidden" disabled={uploading} />
-          </label>
-
-          {albumImages.length === 0 ? (
-            <p className="text-sm text-center py-4" style={{ color: 'var(--color-text-muted)' }}>No images in this album</p>
-          ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {albumImages.map(img => (
-                <div key={img.id} className="relative group rounded-xl overflow-hidden border" style={{ borderColor: 'var(--color-border-light)' }}>
-                  <img src={img.url} alt="" className="w-full h-32 object-cover" />
-                  <button
-                    onClick={() => deleteImage(img)}
-                    className="absolute top-2 right-2 p-1.5 rounded-lg bg-black/50 text-white opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    <Trash2 size={12} />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
       </Modal>
 

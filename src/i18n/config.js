@@ -30,6 +30,10 @@ import enRegister from '../locales/en/register.json'
 import arRegister from '../locales/ar/register.json'
 import frRegister from '../locales/fr/register.json'
 
+import enJoin from '../locales/en/join.json'
+import arJoin from '../locales/ar/join.json'
+import frJoin from '../locales/fr/join.json'
+
 import enContact from '../locales/en/contact.json'
 import arContact from '../locales/ar/contact.json'
 import frContact from '../locales/fr/contact.json'
@@ -51,6 +55,7 @@ i18n
         events: enEvents,
         gallery: enGallery,
         register: enRegister,
+        join: enJoin,
         contact: enContact,
       },
       ar: {
@@ -61,6 +66,7 @@ i18n
         events: arEvents,
         gallery: arGallery,
         register: arRegister,
+        join: arJoin,
         contact: arContact,
       },
       fr: {
@@ -71,12 +77,13 @@ i18n
         events: frEvents,
         gallery: frGallery,
         register: frRegister,
+        join: frJoin,
         contact: frContact,
       },
     },
     fallbackLng: 'en',
     supportedLngs: ['en', 'ar', 'fr'],
-    ns: ['common', 'home', 'about', 'projects', 'events', 'gallery', 'register', 'contact'],
+    ns: ['common', 'home', 'about', 'projects', 'events', 'gallery', 'register', 'join', 'contact'],
     defaultNS: 'common',
     detection: {
       order: ['localStorage', 'navigator'],

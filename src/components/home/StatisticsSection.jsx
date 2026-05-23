@@ -11,12 +11,16 @@ export default function StatisticsSection() {
   const [memberCount, setMemberCount] = useState(null)
 
   useEffect(() => {
-    supabase.from('events').select('*', { count: 'exact', head: true }).eq('is_published', true)
-      .then(({ count }) => setEventCount(count || 0))
-    supabase.from('projects').select('*', { count: 'exact', head: true }).eq('is_published', true)
-      .then(({ count }) => setProjectCount(count || 0))
-    supabase.from('event_registrations').select('*', { count: 'exact', head: true }).eq('status', 'approved')
-      .then(({ count }) => setMemberCount(count || 0))
+    Promise.all([
+      supabase.from('events').select('*', { count: 'exact', head: true }).eq('is_published', true),
+      supabase.from('projects').select('*', { count: 'exact', head: true }).eq('is_published', true),
+      supabase.from('event_registrations').select('*', { count: 'exact', head: true }).eq('status', 'approved'),
+      supabase.from('admin_users').select('*', { count: 'exact', head: true }).eq('is_active', true),
+    ]).then(([events, projects, regs, admins]) => {
+      setEventCount(events.count || 0)
+      setProjectCount(projects.count || 0)
+      setMemberCount((regs.count || 0) + (admins.count || 0))
+    })
   }, [])
 
   const stats = ['members', 'projects', 'events', 'workshops']

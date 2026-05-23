@@ -15,6 +15,7 @@ import Login from './admin/pages/Login'
 import Dashboard from './admin/pages/Dashboard'
 import EventsPage from './admin/pages/EventsPage'
 import RegistrationsPage from './admin/pages/RegistrationsPage'
+import MembershipPage from './admin/pages/MembershipPage'
 import ProjectsPage from './admin/pages/ProjectsPage'
 import GalleryPage from './admin/pages/GalleryPage'
 import MessagesPage from './admin/pages/MessagesPage'
@@ -46,6 +47,7 @@ export default function App() {
           <Route index element={<Dashboard />} />
           <Route path="events" element={<EventsPage />} />
           <Route path="registrations" element={<RegistrationsPage />} />
+          <Route path="membership" element={<MembershipPage />} />
           <Route path="projects" element={<ProjectsPage />} />
           <Route path="gallery" element={<GalleryPage />} />
           <Route path="messages" element={<MessagesPage />} />
