@@ -312,6 +312,7 @@ function StatsBar() {
   const [projectCount, setProjectCount] = useState(null);
   const [memberCount, setMemberCount] = useState(null);
   const [counts, setCounts] = useState({});
+  const [dataLoaded, setDataLoaded] = useState(false);
   const ref = useRef(null);
 
   useEffect(() => {
@@ -325,6 +326,7 @@ function StatsBar() {
       setEventCount(events.count || 0)
       setProjectCount(projects.count || 0)
       setMemberCount((regs.count || 0) + (memberships.count || 0) + (admins.count || 0))
+      setDataLoaded(true)
     })
   }, [])
 
@@ -352,36 +354,46 @@ function StatsBar() {
   ];
 
   useEffect(() => {
+    if (!dataLoaded) return;
     const el = ref.current;
     if (!el) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          stats.forEach((s, idx) => {
-            const val = parseInt(s.number);
-            if (isNaN(val)) {
-              setCounts((prev) => ({ ...prev, [idx]: s.number }));
-              return;
-            }
-            let current = 0;
-            const increment = Math.ceil(val / 30);
-            const timer = setInterval(() => {
-              current += increment;
-              if (current >= val) {
-                current = val;
-                clearInterval(timer);
-              }
-              setCounts((prev) => ({ ...prev, [idx]: current + (s.number.includes("+") ? "+" : "") }));
-            }, 40);
-          });
-          observer.disconnect();
+
+    const animate = () => {
+      stats.forEach((s, idx) => {
+        const val = parseInt(s.number);
+        if (isNaN(val)) {
+          setCounts((prev) => ({ ...prev, [idx]: s.number }));
+          return;
         }
-      },
-      { threshold: 0.3 }
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [eventCount, projectCount]);
+        let current = 0;
+        const increment = Math.ceil(val / 30);
+        const timer = setInterval(() => {
+          current += increment;
+          if (current >= val) {
+            current = val;
+            clearInterval(timer);
+          }
+          setCounts((prev) => ({ ...prev, [idx]: current + (s.number.includes("+") ? "+" : "") }));
+        }, 40);
+      });
+    };
+
+    if (el.getBoundingClientRect().top < window.innerHeight) {
+      animate();
+    } else {
+      const observer = new IntersectionObserver(
+        ([entry]) => {
+          if (entry.isIntersecting) {
+            animate();
+            observer.disconnect();
+          }
+        },
+        { threshold: 0.3 }
+      );
+      observer.observe(el);
+      return () => observer.disconnect();
+    }
+  }, [dataLoaded]);
 
   return (
     <div ref={ref} className="w-full bg-[#F1F5F9] border-t border-slate-200 py-6 md:py-12">
