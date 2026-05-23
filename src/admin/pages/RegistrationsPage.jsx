@@ -32,7 +32,7 @@ export default function RegistrationsPage() {
       setRegistrations(prev => prev.map(r => r.id === id ? { ...r, status: 'approved' } : r))
       fetch('/api/approve/registration', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${useAdminStore.getState().session?.access_token}` },
         body: JSON.stringify({ id }),
       }).then(res => res.json()).then(data => {
         if (!data.ok) addToast(data.error || 'Failed to approve')

@@ -182,7 +182,7 @@ export default function EventsPage() {
                 <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
                   const fd = new FormData()
                   fd.append('file', e.target.files[0])
-                  const res = await fetch('/api/upload', { method: 'POST', body: fd })
+                  const res = await fetch('/api/upload', { method: 'POST', headers: { Authorization: `Bearer ${useAdminStore.getState().session?.access_token}` }, body: fd })
                   const { url } = await res.json()
                   setForm({...form, poster_url: url})
                 }} />

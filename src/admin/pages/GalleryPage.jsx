@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, Edit3, Trash2, Upload, ImageIcon, ChevronDown, ChevronUp } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import useAdminStore from '../store/adminStore'
+const getToken = () => useAdminStore.getState().session?.access_token
 import Modal from '../components/ui/Modal'
 import ConfirmDialog from '../components/ui/ConfirmDialog'
 import Skeleton from '../components/ui/Skeleton'
@@ -71,7 +72,7 @@ export default function GalleryPage() {
     const { data: images } = await supabase.from('gallery_images').select('url').eq('album_id', deleteId)
     if (images) {
       for (const img of images) {
-        await fetch('/api/upload', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url: img.url }) })
+    await fetch('/api/upload', { method: 'DELETE', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` }, body: JSON.stringify({ url: img.url }) })
       }
     }
     await supabase.from('gallery_albums').delete().eq('id', deleteId)
@@ -88,7 +89,7 @@ export default function GalleryPage() {
     for (const file of files) {
       const fd = new FormData()
       fd.append('file', file)
-      const res = await fetch('/api/upload', { method: 'POST', body: fd })
+      const res = await fetch('/api/upload', { method: 'POST', headers: { Authorization: `Bearer ${getToken()}` }, body: fd })
       const { url } = await res.json()
       await supabase.from('gallery_images').insert({ album_id: expandedId, url })
     }
@@ -99,7 +100,7 @@ export default function GalleryPage() {
   }
 
   const deleteImage = async (img) => {
-    await fetch('/api/upload', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url: img.url }) })
+    await fetch('/api/upload', { method: 'DELETE', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` }, body: JSON.stringify({ url: img.url }) })
     await supabase.from('gallery_images').delete().eq('id', img.id)
     const { data } = await supabase.from('gallery_images').select('*').eq('album_id', expandedId).order('sort_order')
     setAlbumImages(p => ({ ...p, [expandedId]: data || [] }))

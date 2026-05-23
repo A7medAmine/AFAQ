@@ -36,12 +36,15 @@ export default function AdminUsersPage() {
     setModalOpen(true)
   }
 
+  const session = useAdminStore(s => s.session)
+
   const handleCreate = async () => {
+    if (form.password.length < 8) { addToast('Password must be at least 8 characters', 'error'); return }
     setSaving(true)
     try {
       const res = await fetch('/api/admin/users', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token}` },
         body: JSON.stringify(form),
       })
       const data = await res.json()
@@ -57,9 +60,12 @@ export default function AdminUsersPage() {
   }
 
   const handleDelete = async () => {
-    const res = await fetch(`/api/admin/users/${deleteId}`, { method: 'DELETE' })
+    const res = await fetch(`/api/admin/users/${deleteId}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${session?.access_token}` },
+    })
     const data = await res.json()
-    if (!res.ok) throw new Error(data.error)
+    if (!res.ok) { addToast(data.error || 'Failed to delete', 'error'); return }
     addToast('Admin deleted')
     setDeleteId(null)
     const { data: adminsData } = await supabase.from('admin_users').select('*, role:admin_roles(name, label)').order('created_at', { ascending: false })
