@@ -161,3 +161,33 @@ export const activityLogs = pgTable('activity_logs', {
   metadata: jsonb(),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
 })
+
+export const faq = pgTable('faq', {
+  id: bigint({ mode: 'number' }).primaryKey().generatedAlwaysAsIdentity(),
+  questionEn: text('question_en'),
+  questionAr: text('question_ar'),
+  questionFr: text('question_fr'),
+  answerEn: text('answer_en'),
+  answerAr: text('answer_ar'),
+  answerFr: text('answer_fr'),
+  category: text(),
+  isPublished: boolean('is_published').default(true),
+  sortOrder: integer('sort_order').default(0),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+})
+
+export const clubInfo = pgTable('club_info', {
+  id: bigint({ mode: 'number' }).primaryKey().generatedAlwaysAsIdentity(),
+  key: text().notNull().unique(),
+  labelEn: text('label_en').notNull(),
+  labelAr: text('label_ar'),
+  labelFr: text('label_fr'),
+  valueEn: text('value_en').notNull(),
+  valueAr: text('value_ar'),
+  valueFr: text('value_fr'),
+  category: text(),
+  sortOrder: integer('sort_order').default(0),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+})

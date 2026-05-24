@@ -13,7 +13,7 @@ import {
 import { Button } from "../shared/Button";
 import { supabase } from "../../lib/supabase";
 
-function Img({ src, alt, className, style, fetchpriority, loading }) {
+function Img({ src, alt, className, style, fetchPriority, loading }) {
   const [failed, setFailed] = useState(false);
   if (failed) {
     return (
@@ -32,7 +32,7 @@ function Img({ src, alt, className, style, fetchpriority, loading }) {
       className={className}
       style={style}
       onError={() => setFailed(true)}
-      fetchpriority={fetchpriority}
+      fetchPriority={fetchPriority}
       loading={loading}
     />
   );
@@ -166,7 +166,7 @@ function HeroRight() {
       <Img
         src="/images/hero/bolt.png"
         alt="Bolt"
-        fetchpriority="high"
+        fetchPriority="high"
         className="absolute inset-0 w-full h-full z-0 object-contain"
         style={{
           transform: "scale(1.35)",

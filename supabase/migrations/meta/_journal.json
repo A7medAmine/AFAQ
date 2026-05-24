@@ -8,6 +8,20 @@
       "when": 1779555835584,
       "tag": "0000_tearful_puppet_master",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1779576354601,
+      "tag": "0001_nice_the_renegades",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1779580849328,
+      "tag": "0002_melted_squirrel_girl",
+      "breakpoints": true
     }
   ]
 }

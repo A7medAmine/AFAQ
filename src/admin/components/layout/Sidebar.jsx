@@ -2,13 +2,13 @@ import { NavLink } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
   LayoutDashboard, Calendar, ClipboardCheck, FolderGit2, Image,
-  Mail, Megaphone, Shield, Settings, ChevronLeft, LogOut, UserCheck,
+  Mail, Megaphone, Shield, Settings, ChevronLeft, LogOut, UserCheck, Brain,
 } from 'lucide-react'
 import useAdminStore from '../../store/adminStore'
 
 const iconMap = {
   LayoutDashboard, Calendar, ClipboardCheck, FolderGit2, Image,
-  Mail, Megaphone, Shield, Settings, UserCheck,
+  Mail, Megaphone, Shield, Settings, UserCheck, Brain,
 }
 
 const NAV_ITEMS = [
@@ -21,6 +21,7 @@ const NAV_ITEMS = [
   { label: 'Messages', path: '/admin/messages', icon: 'Mail', roles: null },
   { label: 'Announcements', path: '/admin/announcements', icon: 'Megaphone', roles: null },
   { label: 'Admins', path: '/admin/admins', icon: 'Shield', roles: ['super_admin'] },
+  { label: 'AI Config', path: '/admin/ai-config', icon: 'Brain', roles: ['super_admin'] },
   { label: 'Settings', path: '/admin/settings', icon: 'Settings', roles: ['super_admin'] },
 ]
 

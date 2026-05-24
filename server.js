@@ -8,6 +8,8 @@ import nodemailer from 'nodemailer'
 import QRCodeLib from 'qrcode'
 import rateLimit from 'express-rate-limit'
 import ws from 'ws'
+import aiRoutes from './server/routes/ai.js'
+import clubInfoRoutes from './server/routes/clubInfo.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const uploadDir = path.resolve(__dirname, 'upload')
@@ -92,6 +94,7 @@ const upload = multer({
 })
 
 const app = express()
+app.set('trust proxy', 1)
 app.use(express.json())
 app.use('/api/', apiLimiter)
 
@@ -367,6 +370,14 @@ app.post('/api/approve/membership', requireAuth, requireRole('super_admin', 'eve
 
   res.json({ ok: true })
 })
+
+// --- AI Assistant ---
+
+app.use('/api/ai', aiRoutes)
+
+// --- Club Info (no auth — used by AI context builder) ---
+
+app.use('/api/club-info', clubInfoRoutes)
 
 // --- SPA fallback (production) ---
 
