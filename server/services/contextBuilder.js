@@ -1,8 +1,8 @@
-function formatClubInfo(clubInfo) {
-  if (!clubInfo || clubInfo.length === 0) return ''
-  return clubInfo.map(c =>
-    `- ${c.labelEn}: ${c.valueEn}`
-  ).join('\n')
+function formatKnowledge(knowledge) {
+  if (!knowledge || knowledge.length === 0) return ''
+  return knowledge.map(k =>
+    `[${k.category || 'General'}] ${k.title}\n${k.content}`
+  ).join('\n\n---\n\n')
 }
 
 function formatEvents(events) {
@@ -36,8 +36,8 @@ function formatFaqs(faqs) {
 export function buildContext(data) {
   const parts = []
 
-  if (data.clubInfo && data.clubInfo.length > 0) {
-    parts.push('=== ABOUT THE CLUB ===\n' + formatClubInfo(data.clubInfo))
+  if (data.knowledge && data.knowledge.length > 0) {
+    parts.push('=== CLUB KNOWLEDGE ===\n' + formatKnowledge(data.knowledge))
   }
 
   if (data.events && data.events.length > 0) {

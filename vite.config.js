@@ -6,6 +6,7 @@ export default defineConfig({
   assetsInclude: ['**/*.glb'],
   plugins: [react(), tailwindcss()],
   server: {
+    host: '0.0.0.0',
     port: 3000,
     proxy: {
       '/api/upload': 'http://localhost:3001',
@@ -14,6 +15,8 @@ export default defineConfig({
       '/api/approve': 'http://localhost:3001',
       '/api/ai': 'http://localhost:3001',
       '/uploads': 'http://localhost:3001',
+      '/api/ai-knowledge': 'http://localhost:3001',
+      '/api/club-info': 'http://localhost:3001',
     },
   },
 });

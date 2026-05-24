@@ -21,7 +21,7 @@ const NAV_ITEMS = [
   { label: 'Messages', path: '/admin/messages', icon: 'Mail', roles: null },
   { label: 'Announcements', path: '/admin/announcements', icon: 'Megaphone', roles: null },
   { label: 'Admins', path: '/admin/admins', icon: 'Shield', roles: ['super_admin'] },
-  { label: 'AI Config', path: '/admin/ai-config', icon: 'Brain', roles: ['super_admin'] },
+  { label: 'AI Knowledge', path: '/admin/ai-knowledge', icon: 'Brain', roles: ['super_admin'] },
   { label: 'Settings', path: '/admin/settings', icon: 'Settings', roles: ['super_admin'] },
 ]
 

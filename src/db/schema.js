@@ -177,17 +177,15 @@ export const faq = pgTable('faq', {
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
 })
 
-export const clubInfo = pgTable('club_info', {
+export const aiKnowledge = pgTable('ai_knowledge', {
   id: bigint({ mode: 'number' }).primaryKey().generatedAlwaysAsIdentity(),
-  key: text().notNull().unique(),
-  labelEn: text('label_en').notNull(),
-  labelAr: text('label_ar'),
-  labelFr: text('label_fr'),
-  valueEn: text('value_en').notNull(),
-  valueAr: text('value_ar'),
-  valueFr: text('value_fr'),
+  title: text().notNull(),
+  slug: text().notNull().unique(),
   category: text(),
-  sortOrder: integer('sort_order').default(0),
+  content: text().notNull(),
+  keywords: text().array(),
+  published: boolean().default(true),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
 })
+

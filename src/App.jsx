@@ -23,7 +23,7 @@ import MessagesPage from './admin/pages/MessagesPage'
 import AnnouncementsPage from './admin/pages/AnnouncementsPage'
 import AdminUsersPage from './admin/pages/AdminUsersPage'
 import SettingsPage from './admin/pages/SettingsPage'
-import AIConfigPage from './admin/pages/AIConfigPage'
+import AIKnowledgePage from './admin/pages/AIKnowledgePage'
 import ProtectedRoute from './admin/components/guards/ProtectedRoute'
 import RoleGuard from './admin/components/guards/RoleGuard'
 import Chatbot from './components/chatbot/Chatbot'
@@ -62,8 +62,8 @@ export default function App() {
           <Route path="settings" element={
             <RoleGuard role="super_admin"><SettingsPage /></RoleGuard>
           } />
-          <Route path="ai-config" element={
-            <RoleGuard role="super_admin"><AIConfigPage /></RoleGuard>
+          <Route path="ai-knowledge" element={
+            <RoleGuard role="super_admin"><AIKnowledgePage /></RoleGuard>
           } />
         </Route>
       </Routes>

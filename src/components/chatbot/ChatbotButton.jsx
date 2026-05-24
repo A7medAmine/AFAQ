@@ -1,5 +1,5 @@
-import { motion, AnimatePresence } from 'framer-motion'
-import { MessageCircle, X } from 'lucide-react'
+import { motion, AnimatePresence } from "framer-motion";
+import { X } from "lucide-react";
 
 export default function ChatbotButton({ open, onClick }) {
   return (
@@ -10,14 +10,17 @@ export default function ChatbotButton({ open, onClick }) {
             initial={{ scale: 0, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0, opacity: 0 }}
-            whileHover={{ scale: 1.05 }}
+            whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
             onClick={onClick}
-            className="w-14 h-14 rounded-2xl shadow-lg flex items-center justify-center cursor-pointer"
-            style={{ background: 'var(--color-accent)', color: '#fff' }}
+            className="flex items-center justify-center cursor-pointer bg-transparent border-none p-0"
             title="Open AI Assistant"
           >
-            <MessageCircle size={24} />
+            <img
+              src="/images/ai/pfp.png"
+              alt="AI"
+              className="w-16 h-16 md:w-20 md:h-20 object-contain drop-shadow-lg"
+            />
           </motion.button>
         )}
       </AnimatePresence>
@@ -26,13 +29,16 @@ export default function ChatbotButton({ open, onClick }) {
         <motion.button
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
-          className="w-10 h-10 rounded-xl shadow-md flex items-center justify-center cursor-pointer"
-          style={{ background: 'var(--color-bg-alt)', color: 'var(--color-text-muted)' }}
+          className="w-8 h-8 md:w-10 md:h-10 rounded-xl shadow-md flex items-center justify-center cursor-pointer"
+          style={{
+            background: "var(--color-bg-alt)",
+            color: "var(--color-text-muted)",
+          }}
           onClick={onClick}
         >
-          <X size={16} />
+          <X size={14} />
         </motion.button>
       )}
     </div>
-  )
+  );
 }

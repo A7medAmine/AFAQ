@@ -9,7 +9,7 @@ import QRCodeLib from 'qrcode'
 import rateLimit from 'express-rate-limit'
 import ws from 'ws'
 import aiRoutes from './server/routes/ai.js'
-import clubInfoRoutes from './server/routes/clubInfo.js'
+import aiKnowledgeRoutes from './server/routes/aiKnowledge.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const uploadDir = path.resolve(__dirname, 'upload')
@@ -375,9 +375,9 @@ app.post('/api/approve/membership', requireAuth, requireRole('super_admin', 'eve
 
 app.use('/api/ai', aiRoutes)
 
-// --- Club Info (no auth — used by AI context builder) ---
+// --- AI Knowledge ---
 
-app.use('/api/club-info', clubInfoRoutes)
+app.use('/api/ai-knowledge', aiKnowledgeRoutes)
 
 // --- SPA fallback (production) ---
 
@@ -389,6 +389,6 @@ if (fs.existsSync(distDir)) {
 }
 
 const PORT = process.env.PORT || 3001
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`)
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server running on http://0.0.0.0:${PORT}`)
 })

@@ -22,6 +22,20 @@
       "when": 1779580849328,
       "tag": "0002_melted_squirrel_girl",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1779616827583,
+      "tag": "0003_daffy_lester",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1779617642721,
+      "tag": "0004_unknown_hawkeye",
+      "breakpoints": true
     }
   ]
 }
