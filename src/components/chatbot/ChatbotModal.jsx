@@ -18,9 +18,17 @@ function loadHistory() {
 
 function saveHistory(messages) {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(messages.slice(-MAX_HISTORY)));
-  } catch { /* ignore */ }
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify(messages.slice(-MAX_HISTORY))
+    );
+  } catch {
+    /* ignore */
+  }
 }
+
+// Pass `streaming` prop to ChatMessage so it can show the blinking cursor
+// inside the bubble when content is actively streaming.
 
 export default function ChatbotModal({ open, onClose }) {
   const [messages, setMessages] = useState(loadHistory);
@@ -28,6 +36,7 @@ export default function ChatbotModal({ open, onClose }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [streamingId, setStreamingId] = useState(null);
+  const [inputFocused, setInputFocused] = useState(false);
   const listRef = useRef(null);
   const inputRef = useRef(null);
   const abortRef = useRef(null);
@@ -81,6 +90,9 @@ export default function ChatbotModal({ open, onClose }) {
       if (!msg || loading) return;
 
       setInput("");
+      if (inputRef.current) {
+        inputRef.current.style.height = "auto";
+      }
       setError(null);
 
       const userMessage = { role: "user", content: msg, id: Date.now() };
@@ -92,7 +104,6 @@ export default function ChatbotModal({ open, onClose }) {
       const botId = Date.now() + 1;
       const botMessage = { role: "assistant", content: "", id: botId };
       setMessages((prev) => [...prev, botMessage]);
-      setStreamingId(botId);
 
       const controller = new AbortController();
       abortRef.current = controller;
@@ -113,7 +124,6 @@ export default function ChatbotModal({ open, onClose }) {
         const reader = res.body.getReader();
         const decoder = new TextDecoder();
         let buffer = "";
-
         let streamError = null;
 
         while (true) {
@@ -131,15 +141,23 @@ export default function ChatbotModal({ open, onClose }) {
 
             try {
               const parsed = JSON.parse(payload);
-              if (parsed.error) { streamError = parsed.error; break; }
+              if (parsed.error) {
+                streamError = parsed.error;
+                break;
+              }
               if (parsed.text) {
+                setStreamingId((prev) => prev || botId);
                 setMessages((prev) =>
                   prev.map((m) =>
-                    m.id === botId ? { ...m, content: m.content + parsed.text } : m
+                    m.id === botId
+                      ? { ...m, content: m.content + parsed.text }
+                      : m
                   )
                 );
               }
-            } catch { /* skip malformed */ }
+            } catch {
+              /* skip malformed */
+            }
           }
           if (streamError) break;
         }
@@ -147,10 +165,8 @@ export default function ChatbotModal({ open, onClose }) {
         if (streamError) throw new Error(streamError);
 
         setMessages((prev) => {
-          const bot = prev.find(m => m.id === botId);
-          if (bot && !bot.content) {
-            return prev.filter(m => m.id !== botId);
-          }
+          const bot = prev.find((m) => m.id === botId);
+          if (bot && !bot.content) return prev.filter((m) => m.id !== botId);
           saveHistory(prev);
           return prev;
         });
@@ -158,14 +174,16 @@ export default function ChatbotModal({ open, onClose }) {
         if (err.name === "AbortError") {
           setMessages((prev) => {
             const aborted = prev.map((m) =>
-              m.id === botId && !m.content ? { ...m, content: "..." } : m
+              m.id === botId && !m.content ? { ...m, content: "…" } : m
             );
             saveHistory(aborted);
             return aborted;
           });
         } else {
           setError(err.message);
-          setMessages((prev) => prev.filter((m) => m.id !== botId || m.content));
+          setMessages((prev) =>
+            prev.filter((m) => m.id !== botId || m.content)
+          );
         }
       } finally {
         setLoading(false);
@@ -197,6 +215,7 @@ export default function ChatbotModal({ open, onClose }) {
     <AnimatePresence>
       {open && (
         <>
+          {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -205,24 +224,29 @@ export default function ChatbotModal({ open, onClose }) {
             onClick={onClose}
           />
 
+          {/* Chat window */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            initial={{ opacity: 0, scale: 0.93, y: 16 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            className="fixed z-[101] bottom-0 right-0 md:bottom-24 md:right-6 w-full md:w-96 max-h-[85dvh] md:max-h-[600px] md:h-[600px] flex flex-col rounded-t-2xl md:rounded-2xl overflow-hidden shadow-2xl border"
+            exit={{ opacity: 0, scale: 0.93, y: 16 }}
+            transition={{ type: "spring", stiffness: 380, damping: 30 }}
+             className="fixed z-[101] bottom-0 right-0 md:bottom-24 md:right-6 w-full md:w-96 max-h-[92dvh] md:max-h-[600px] md:h-[600px] flex flex-col rounded-t-2xl md:rounded-2xl overflow-hidden shadow-2xl border"
             style={{
               background: "var(--color-card)",
               borderColor: "var(--color-border-light)",
             }}
           >
-            {/* Header */}
+            {/* ── Header ── */}
             <div
               className="flex items-center justify-between px-3 md:px-4 py-3 border-b flex-shrink-0"
-              style={{ borderColor: "var(--color-border-light)", background: "var(--color-card)" }}
+              style={{
+                borderColor: "var(--color-border-light)",
+                background: "var(--color-card)",
+              }}
             >
               <div className="flex items-center gap-2.5">
                 <div
-                  className="w-9 h-9 md:w-10 md:h-10 rounded-xl flex items-center justify-center overflow-hidden"
+                  className="w-9 h-9 md:w-10 md:h-10 rounded-xl flex items-center justify-center overflow-hidden flex-shrink-0"
                   style={{ background: "var(--color-accent)" }}
                 >
                   <img
@@ -233,23 +257,40 @@ export default function ChatbotModal({ open, onClose }) {
                 </div>
                 <div>
                   <span
-                    className="text-sm font-semibold"
+                    className="text-sm font-semibold block"
                     style={{ color: "var(--color-text)" }}
                   >
                     AFAQ Assistant
                   </span>
-                  <p
-                    className="text-[10px]"
-                    style={{ color: "var(--color-text-muted)" }}
-                  >
-                    {lang === "ar"
-                      ? "مدعوم بالذكاء الاصطناعي"
-                      : lang === "fr"
-                      ? "Alimenté par l'IA"
-                      : "AI-powered"}
-                  </p>
+                  <span className="flex items-center gap-1.5">
+                    {/* Pulsing status dot */}
+                    <span
+                      className="inline-block w-1.5 h-1.5 rounded-full"
+                      style={{
+                        background: loading ? "var(--color-accent)" : "#22c55e",
+                        animation: "status-pulse 2s ease-in-out infinite",
+                      }}
+                    />
+                    <span
+                      className="text-[10px]"
+                      style={{ color: "var(--color-text-muted)" }}
+                    >
+                      {loading
+                        ? lang === "ar"
+                          ? "يكتب…"
+                          : lang === "fr"
+                          ? "En train d'écrire…"
+                          : "Typing…"
+                        : lang === "ar"
+                        ? "متصل"
+                        : lang === "fr"
+                        ? "En ligne"
+                        : "Online"}
+                    </span>
+                  </span>
                 </div>
               </div>
+
               <div className="flex items-center gap-1">
                 {messages.length > 0 && (
                   <button
@@ -258,10 +299,10 @@ export default function ChatbotModal({ open, onClose }) {
                     style={{ color: "var(--color-text-muted)" }}
                     title={
                       lang === "ar"
-                        ? "مسح المحادثة"
+                        ? "مسح"
                         : lang === "fr"
-                        ? "Effacer la conversation"
-                        : "Clear conversation"
+                        ? "Effacer"
+                        : "Clear"
                     }
                   >
                     <Trash2 size={14} />
@@ -277,16 +318,17 @@ export default function ChatbotModal({ open, onClose }) {
               </div>
             </div>
 
-            {/* Messages */}
+            {/* ── Messages ── */}
             <div
               ref={listRef}
               className="flex-1 overflow-y-auto px-3 md:px-4 py-3 md:py-4 space-y-3 md:space-y-4 scroll-smooth"
               style={{ background: "var(--color-bg)" }}
             >
+              {/* Empty state */}
               {messages.length === 0 && (
-                <div className="flex flex-col items-center justify-center h-full text-center px-6">
+                <div className="flex flex-col items-center justify-center h-full text-center px-6 gap-3">
                   <div
-                    className="w-12 h-12 md:w-14 md:h-14 rounded-2xl flex items-center justify-center mb-3 overflow-hidden"
+                    className="w-12 h-12 md:w-14 md:h-14 rounded-2xl flex items-center justify-center overflow-hidden"
                     style={{ background: "var(--color-accent-soft)" }}
                   >
                     <img
@@ -295,83 +337,120 @@ export default function ChatbotModal({ open, onClose }) {
                       className="w-full h-full object-cover"
                     />
                   </div>
-                  <p
-                    className="text-sm font-medium mb-1"
-                    style={{ color: "var(--color-text)" }}
-                  >
-                    {lang === "ar"
-                      ? "مرحباً! كيف يمكنني مساعدتك؟"
-                      : lang === "fr"
-                      ? "Bonjour! Comment puis-je vous aider?"
-                      : "Hi! How can I help you?"}
-                  </p>
-                  <p
-                    className="text-xs"
-                    style={{ color: "var(--color-text-muted)" }}
-                  >
-                    {lang === "ar"
-                      ? "اطرح سؤالاً عن النادي"
-                      : lang === "fr"
-                      ? "Posez une question sur le club"
-                      : "Ask me anything about AFAQ Club"}
-                  </p>
+                  <div>
+                    <p
+                      className="text-sm font-medium mb-1"
+                      style={{ color: "var(--color-text)" }}
+                    >
+                      {lang === "ar"
+                        ? "مرحباً! كيف يمكنني مساعدتك؟"
+                        : lang === "fr"
+                        ? "Bonjour ! Comment puis-je vous aider ?"
+                        : "Hi! How can I help you?"}
+                    </p>
+                    <p
+                      className="text-xs"
+                      style={{ color: "var(--color-text-muted)" }}
+                    >
+                      {lang === "ar"
+                        ? "اطرح سؤالاً عن النادي"
+                        : lang === "fr"
+                        ? "Posez une question sur le club"
+                        : "Ask me anything about AFAQ Club"}
+                    </p>
+                  </div>
                 </div>
               )}
 
+              {/* Message list */}
               {messages.map((m) => (
-                <ChatMessage
+                <motion.div
                   key={m.id}
-                  role={m.role}
-                  content={m.content}
-                  streaming={m.id === streamingId}
-                />
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+                >
+                  <ChatMessage
+                    role={m.role}
+                    content={m.content}
+                    streaming={m.id === streamingId}
+                  />
+                </motion.div>
               ))}
 
+              {/* Typing indicator — only before first token arrives */}
               {loading && !streamingId && (
                 <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="flex items-center gap-2 px-1"
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 6 }}
+                  transition={{ duration: 0.18 }}
+                  className="flex gap-3"
                 >
-                  <div className="flex gap-1">
-                    <span
-                      className="w-1.5 h-1.5 rounded-full animate-bounce"
-                      style={{ background: "var(--color-text-muted)", animationDelay: "0ms" }}
+                  <div
+                    className="flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center overflow-hidden"
+                    style={{ background: "var(--color-bg-alt)" }}
+                  >
+                    <img
+                      src="/images/ai/pfp.png"
+                      alt="AI"
+                      className="w-full h-full object-cover"
                     />
-                    <span
-                      className="w-1.5 h-1.5 rounded-full animate-bounce"
-                      style={{ background: "var(--color-text-muted)", animationDelay: "150ms" }}
-                    />
-                    <span
-                      className="w-1.5 h-1.5 rounded-full animate-bounce"
-                      style={{ background: "var(--color-text-muted)", animationDelay: "300ms" }}
-                    />
+                  </div>
+                  <div className="flex flex-col items-start">
+                    <div
+                      className="flex items-center gap-[5px] px-3 py-2.5 rounded-2xl rounded-bl-sm"
+                      style={{
+                        background:
+                          "var(--color-bg-alt, var(--color-border-light))",
+                      }}
+                    >
+                      {[0, 1, 2].map((i) => (
+                        <span
+                          key={i}
+                          style={{
+                            display: "inline-block",
+                            width: 7,
+                            height: 7,
+                            borderRadius: "50%",
+                            background: "var(--color-text-muted)",
+                            animation: `typing-bounce 1.2s ease-in-out ${
+                              i * 0.15
+                            }s infinite`,
+                          }}
+                        />
+                      ))}
+                    </div>
                   </div>
                 </motion.div>
               )}
 
+              {/* Error */}
               {error && (
                 <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
                   className="flex flex-col items-center gap-2 py-3 px-4 rounded-xl"
                   style={{ background: "#fef2f2" }}
                 >
-                  <p className="text-xs text-center" style={{ color: "#dc2626" }}>
+                  <p
+                    className="text-xs text-center"
+                    style={{ color: "#dc2626" }}
+                  >
                     {error}
                   </p>
                   <button
                     onClick={retry}
-                    className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg font-medium transition-all hover:opacity-80"
+                    className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg font-medium transition-all hover:opacity-80 active:scale-95"
                     style={{ background: "#dc2626", color: "#fff" }}
                   >
-                    <RefreshCw size={12} /> Retry
+                    <RefreshCw size={11} /> Retry
                   </button>
                 </motion.div>
               )}
             </div>
 
-            {/* Suggested */}
+            {/* ── Suggested questions ── */}
             {messages.length === 0 && !loading && (
               <SuggestedQuestions
                 onSelect={(q) => {
@@ -382,10 +461,13 @@ export default function ChatbotModal({ open, onClose }) {
               />
             )}
 
-            {/* Input */}
+            {/* ── Input ── */}
             <div
               className="px-3 md:px-4 py-3 border-t flex-shrink-0"
-              style={{ borderColor: "var(--color-border-light)", background: "var(--color-card)" }}
+              style={{
+                borderColor: "var(--color-border-light)",
+                background: "var(--color-card)",
+              }}
             >
               <div className="flex items-end gap-2">
                 <textarea
@@ -396,56 +478,79 @@ export default function ChatbotModal({ open, onClose }) {
                     autoResize(e.target);
                   }}
                   onKeyDown={handleKeyDown}
+                  onFocus={() => setInputFocused(true)}
+                  onBlur={() => setInputFocused(false)}
                   rows={1}
                   placeholder={
                     lang === "ar"
-                      ? "اكتب رسالتك..."
+                      ? "اكتب رسالتك…"
                       : lang === "fr"
-                      ? "Tapez votre message..."
-                      : "Type your message..."
+                      ? "Tapez votre message…"
+                      : "Type your message…"
                   }
-                  className="flex-1 resize-none px-3 md:px-4 py-2.5 rounded-xl border text-sm outline-none"
+                  className="flex-1 resize-none px-3 md:px-4 py-2.5 rounded-xl border text-sm outline-none transition-colors"
                   style={{
                     background: "var(--color-bg)",
-                    borderColor: "var(--color-border-light)",
+                    borderColor: inputFocused
+                      ? "var(--color-accent)"
+                      : "var(--color-border-light)",
                     color: "var(--color-text)",
                     maxHeight: 120,
+                    boxShadow: inputFocused
+                      ? "0 0 0 3px color-mix(in srgb, var(--color-accent) 12%, transparent)"
+                      : "none",
                   }}
                   disabled={loading}
                 />
+
                 {loading && streamingId ? (
-                  <button
+                  <motion.button
                     onClick={stopStreaming}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.93 }}
                     className="w-9 h-9 md:w-10 md:h-10 rounded-xl flex items-center justify-center flex-shrink-0 cursor-pointer"
                     style={{ background: "#dc2626", color: "#fff" }}
                     title="Stop"
                   >
                     <StopCircle size={16} />
-                  </button>
+                  </motion.button>
                 ) : (
-                  <button
+                  <motion.button
                     onClick={() => sendMessage()}
                     disabled={!input.trim() || loading}
-                    className="w-9 h-9 md:w-10 md:h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-opacity cursor-pointer"
+                    whileHover={input.trim() && !loading ? { scale: 1.05 } : {}}
+                    whileTap={input.trim() && !loading ? { scale: 0.93 } : {}}
+                    className="w-9 h-9 md:w-10 md:h-10 rounded-xl flex items-center justify-center flex-shrink-0 cursor-pointer transition-colors"
                     style={{
                       background:
                         input.trim() && !loading
                           ? "var(--color-accent)"
-                          : "var(--color-bg-alt)",
+                          : "var(--color-bg-alt, var(--color-border-light))",
                       color:
                         input.trim() && !loading
                           ? "#fff"
                           : "var(--color-text-muted)",
                     }}
                   >
-                    <Send size={16} />
-                  </button>
+                    <Send size={15} />
+                  </motion.button>
                 )}
               </div>
             </div>
           </motion.div>
         </>
       )}
+
+      <style>{`
+        @keyframes typing-bounce {
+          0%, 60%, 100% { transform: translateY(0);   opacity: 0.4; }
+          30%            { transform: translateY(-5px); opacity: 1;   }
+        }
+        @keyframes status-pulse {
+          0%, 100% { opacity: 1;   transform: scale(1); }
+          50%       { opacity: 0.5; transform: scale(0.75); }
+        }
+      `}</style>
     </AnimatePresence>
   );
 }

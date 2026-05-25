@@ -1230,3 +1230,8 @@ select.form-input {
   background: var(--color-border);
   border-radius: 2px;
 }
+
+@keyframes cursor-blink {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 0; }
+}

@@ -22,6 +22,8 @@ export default function ChatMessage({ role, content, streaming }) {
   const [copied, setCopied] = useState(false);
   const isUser = role === "user";
 
+  if (!isUser && !content && !streaming) return null;
+
   const handleCopy = () => {
     navigator.clipboard.writeText(content);
     setCopied(true);
@@ -112,13 +114,22 @@ export default function ChatMessage({ role, content, streaming }) {
                 ),
               }}
             >
-              {autoLink(content) || (streaming ? "" : "...")}
+              {autoLink(content) || ""}
             </ReactMarkdown>
           )}
           {streaming && (
             <span
-              className="inline-block w-1.5 h-4 ml-0.5 animate-pulse rounded-sm"
-              style={{ background: "var(--color-text-muted)" }}
+              style={{
+                display: "inline-block",
+                width: 2,
+                height: "0.9em",
+                background: "currentColor",
+                borderRadius: 1,
+                marginLeft: 2,
+                verticalAlign: "middle",
+                opacity: 0.7,
+                animation: "cursor-blink 0.8s step-end infinite",
+              }}
             />
           )}
         </div>

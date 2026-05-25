@@ -55,7 +55,7 @@ export default function Navbar() {
         <div className="flex items-center justify-between h-16 md:h-20">
           <Link to="/" className="flex items-center gap-2.5 group">
             <div className="transition-transform duration-300 group-hover:scale-105">
-              <Logo size={36} />
+              <Logo size={36} variant="black" />
             </div>
             <span
               className="font-bold text-base tracking-tight text-slate-800"

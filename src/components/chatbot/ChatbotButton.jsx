@@ -17,7 +17,7 @@ export default function ChatbotButton({ open, onClick }) {
             title="Open AI Assistant"
           >
             <img
-              src="/images/ai/pfp.png"
+              src="/images/ai/aufu.png"
               alt="AI"
               className="w-16 h-16 md:w-20 md:h-20 object-contain drop-shadow-lg"
             />
