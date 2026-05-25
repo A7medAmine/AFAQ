@@ -10,7 +10,7 @@ const useAdminStore = create((set, get) => ({
   isAuthenticated: false,
 
   // UI state
-  sidebarOpen: true,
+  sidebarOpen: false,
   toasts: [],
 
   // Initialize — check existing session

@@ -3,16 +3,14 @@ import useAdminStore from '../../store/adminStore'
 
 export default function TopNav({ title }) {
   const toggleSidebar = useAdminStore(s => s.toggleSidebar)
-  const sidebarOpen = useAdminStore(s => s.sidebarOpen)
   const profile = useAdminStore(s => s.adminProfile)
 
   return (
     <header
-      className="h-16 fixed top-0 right-0 left-0 z-30 flex items-center justify-between px-6 border-b transition-all duration-300"
+      className="h-16 fixed top-0 right-0 left-0 z-30 flex items-center justify-between px-6 border-b"
       style={{
         background: 'var(--color-card)',
         borderColor: 'var(--color-border-light)',
-        marginLeft: sidebarOpen ? 240 : 64,
       }}
       id="admin-topnav"
     >

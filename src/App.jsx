@@ -1,4 +1,5 @@
-import { Routes, Route } from 'react-router-dom'
+import { useEffect } from 'react'
+import { Routes, Route, useNavigate } from 'react-router-dom'
 import Layout from './components/layout/Layout'
 import ScrollToTop from './components/shared/ScrollToTop'
 import Home from './pages/Home'
@@ -13,6 +14,7 @@ import Contact from './pages/Contact'
 
 // Admin
 import Login from './admin/pages/Login'
+import ResetPassword from './admin/pages/ResetPassword'
 import Dashboard from './admin/pages/Dashboard'
 import EventsPage from './admin/pages/EventsPage'
 import RegistrationsPage from './admin/pages/RegistrationsPage'
@@ -29,6 +31,15 @@ import RoleGuard from './admin/components/guards/RoleGuard'
 import Chatbot from './components/chatbot/Chatbot'
 
 export default function App() {
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    const hash = window.location.hash
+    if (hash.includes('type=recovery') && !window.location.pathname.includes('/admin/reset-password')) {
+      navigate('/admin/reset-password' + hash, { replace: true })
+    }
+  }, [navigate])
+
   return (
     <>
       <ScrollToTop />
@@ -47,6 +58,7 @@ export default function App() {
 
         {/* Admin Routes */}
         <Route path="/admin/login" element={<Login />} />
+        <Route path="/admin/reset-password" element={<ResetPassword />} />
         <Route path="/admin" element={<ProtectedRoute />}>
           <Route index element={<Dashboard />} />
           <Route path="events" element={<EventsPage />} />
