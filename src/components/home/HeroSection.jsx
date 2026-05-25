@@ -11,7 +11,6 @@ import {
   Wrench,
 } from "lucide-react";
 import { Button } from "../shared/Button";
-import { supabase } from "../../lib/supabase";
 
 function Img({ src, alt, className, style, fetchPriority, loading }) {
   const [failed, setFailed] = useState(false);
@@ -316,34 +315,31 @@ function StatsBar() {
   const ref = useRef(null);
 
   useEffect(() => {
-    Promise.all([
-      supabase.from('events').select('*', { count: 'exact', head: true }).eq('is_published', true),
-      supabase.from('projects').select('*', { count: 'exact', head: true }).eq('is_published', true),
-      supabase.from('event_registrations').select('*', { count: 'exact', head: true }).eq('status', 'approved'),
-      supabase.from('membership_applications').select('*', { count: 'exact', head: true }).eq('status', 'approved'),
-      supabase.from('admin_users').select('*', { count: 'exact', head: true }).eq('is_active', true),
-    ]).then(([events, projects, regs, memberships, admins]) => {
-      setEventCount(events.count || 0)
-      setProjectCount(projects.count || 0)
-      setMemberCount((regs.count || 0) + (memberships.count || 0) + (admins.count || 0))
-      setDataLoaded(true)
-    })
+    fetch('/api/stats')
+      .then(r => r.json())
+      .then(data => {
+        setEventCount(data.events)
+        setProjectCount(data.projects)
+        setMemberCount(data.members)
+        setDataLoaded(true)
+      })
+      .catch(() => setDataLoaded(true))
   }, [])
 
   const stats = [
     {
       icon: <Users size={24} className="text-blue-500" />,
-      number: memberCount !== null ? `${memberCount}+` : "0+",
+      number: memberCount !== null ? `${memberCount}+` : "94+",
       labelKey: "heroStats.members",
     },
     {
       icon: <Wrench size={24} className="text-blue-500" />,
-      number: "30+",
+      number: "7+",
       labelKey: "heroStats.workshops",
     },
     {
       icon: <Rocket size={24} className="text-blue-500" />,
-      number: projectCount !== null ? `${projectCount}+` : "25+",
+      number: projectCount !== null ? `${projectCount}+` : "15+",
       labelKey: "heroStats.projects",
     },
     {

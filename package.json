@@ -23,6 +23,7 @@
     "@react-three/rapier": "^2.2.0",
     "@supabase/supabase-js": "^2.106.0",
     "@tanstack/react-table": "^8.21.3",
+    "axios": "^1.16.1",
     "date-fns": "^4.2.1",
     "drizzle-orm": "^0.45.2",
     "express": "^5.2.1",

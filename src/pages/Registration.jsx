@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { Send, Check } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import SideImage from '../components/shared/SideImage'
+import ProgresButton from '../components/registration/ProgresButton'
 
 const spring = { type: 'spring', damping: 22, stiffness: 200 }
 const fastSpring = { type: 'spring', damping: 16, stiffness: 300 }
@@ -24,6 +25,7 @@ export default function Registration() {
   const [status, setStatus] = useState('idle')
   const [errors, setErrors] = useState({})
   const [shaking, setShaking] = useState(null)
+  const [showAutoFillBanner, setShowAutoFillBanner] = useState(false)
   const [events, setEvents] = useState([])
 
   useEffect(() => {
@@ -38,7 +40,10 @@ export default function Registration() {
       .then(({ data }) => setEvents(data || []))
   }, [])
 
-  const deptKeys = ['fsas', 'fnlses', 'flps', 'fecms', 'fshs', 'fll', 'istaps', 'iot', 'fes']
+  const baseDeptKeys = ['fsas', 'fnlses', 'flps', 'fecms', 'fshs', 'fll', 'istaps', 'iot', 'fes']
+  const deptKeys = form.department && !baseDeptKeys.includes(form.department)
+    ? [...baseDeptKeys, form.department]
+    : baseDeptKeys
 
   const validate = () => {
     const errs = {}
@@ -54,6 +59,26 @@ export default function Registration() {
       setTimeout(() => setShaking(null), 500)
     }
     return Object.keys(errs).length === 0
+  }
+
+  const autoFillFields = ['full_name', 'student_id', 'email', 'phone', 'department']
+
+  const updateForm = (patch) => {
+    setForm({ ...form, ...patch })
+    if (showAutoFillBanner && Object.keys(patch).some(k => autoFillFields.includes(k))) {
+      setShowAutoFillBanner(false)
+    }
+  }
+
+  const handleProgresSuccess = (data) => {
+    const patch = {}
+    if (data.userName || data.student_id) patch.student_id = data.userName || data.student_id
+    if (data.full_name) patch.full_name = data.full_name
+    if (data.email) patch.email = data.email
+    if (data.phone) patch.phone = data.phone
+    if (data.department) patch.department = data.department
+    updateForm(patch)
+    setShowAutoFillBanner(true)
   }
 
   const handleSubmit = async () => {
@@ -172,7 +197,7 @@ export default function Registration() {
                     <select
                       style={inputStyle('event_id')}
                       value={form.event_id}
-                      onChange={e => setForm({...form, event_id: e.target.value})}
+                      onChange={e => updateForm({ event_id: e.target.value })}
                       onFocus={e => { e.target.style.boxShadow = '0 0 0 3px rgba(36,96,231,0.15)'; e.target.style.borderColor = 'var(--color-accent)' }}
                       onBlur={e => { e.target.style.boxShadow = 'none'; e.target.style.borderColor = 'var(--color-border-light)' }}
                     >
@@ -204,7 +229,7 @@ export default function Registration() {
                     <input
                       style={inputStyle('full_name')}
                       value={form.full_name}
-                      onChange={e => setForm({...form, full_name: e.target.value})}
+                      onChange={e => updateForm({ full_name: e.target.value })}
                       onFocus={e => { e.target.style.boxShadow = '0 0 0 3px rgba(36,96,231,0.15)'; e.target.style.borderColor = 'var(--color-accent)' }}
                       onBlur={e => { e.target.style.boxShadow = 'none'; e.target.style.borderColor = 'var(--color-border-light)' }}
                       placeholder="Ahmed Mansouri"
@@ -224,7 +249,7 @@ export default function Registration() {
                   <input
                     style={inputStyle('student_id')}
                     value={form.student_id}
-                    onChange={e => setForm({...form, student_id: e.target.value})}
+                    onChange={e => updateForm({ student_id: e.target.value })}
                     onFocus={e => { e.target.style.boxShadow = '0 0 0 3px rgba(36,96,231,0.15)'; e.target.style.borderColor = 'var(--color-accent)' }}
                     onBlur={e => { e.target.style.boxShadow = 'none'; e.target.style.borderColor = 'var(--color-border-light)' }}
                     placeholder="2024XXXXX"
@@ -240,7 +265,7 @@ export default function Registration() {
                       style={inputStyle('email')}
                       type="email"
                       value={form.email}
-                      onChange={e => setForm({...form, email: e.target.value})}
+                      onChange={e => updateForm({ email: e.target.value })}
                       onFocus={e => { e.target.style.boxShadow = '0 0 0 3px rgba(36,96,231,0.15)'; e.target.style.borderColor = 'var(--color-accent)' }}
                       onBlur={e => { e.target.style.boxShadow = 'none'; e.target.style.borderColor = 'var(--color-border-light)' }}
                       placeholder="ahmed@univ-bouira.dz"
@@ -260,7 +285,7 @@ export default function Registration() {
                   <input
                     style={inputStyle('phone')}
                     value={form.phone}
-                    onChange={e => setForm({...form, phone: e.target.value})}
+                    onChange={e => updateForm({ phone: e.target.value })}
                     onFocus={e => { e.target.style.boxShadow = '0 0 0 3px rgba(36,96,231,0.15)'; e.target.style.borderColor = 'var(--color-accent)' }}
                     onBlur={e => { e.target.style.boxShadow = 'none'; e.target.style.borderColor = 'var(--color-border-light)' }}
                     placeholder="+213 6XX XXX XXX"
@@ -274,7 +299,7 @@ export default function Registration() {
                   <select
                     style={inputStyle('department')}
                     value={form.department}
-                    onChange={e => setForm({...form, department: e.target.value})}
+                    onChange={e => updateForm({ department: e.target.value })}
                     onFocus={e => { e.target.style.boxShadow = '0 0 0 3px rgba(36,96,231,0.15)'; e.target.style.borderColor = 'var(--color-accent)' }}
                     onBlur={e => { e.target.style.boxShadow = 'none'; e.target.style.borderColor = 'var(--color-border-light)' }}
                   >
@@ -295,7 +320,7 @@ export default function Registration() {
                       type="checkbox"
                       id="policies"
                       checked={form.agreed_to_policies}
-                      onChange={e => setForm({...form, agreed_to_policies: e.target.checked})}
+                      onChange={e => updateForm({ agreed_to_policies: e.target.checked })}
                       style={{
                         marginTop: 2,
                         width: 18,
@@ -345,6 +370,21 @@ export default function Registration() {
                   )}
                   {status === 'loading' ? t('form.submitting') : t('form.submit')}
                 </motion.button>
+
+                <div className="text-center">
+                  <ProgresButton onSuccess={handleProgresSuccess} />
+
+                  {showAutoFillBanner && (
+                    <motion.p
+                      initial={{ opacity: 0, y: -4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="text-sm mt-3"
+                      style={{ color: '#16A34A' }}
+                    >
+                      ✓ Form filled from your Progres account — please review before submitting.
+                    </motion.p>
+                  )}
+                </div>
               </div>
             )}
           </div>

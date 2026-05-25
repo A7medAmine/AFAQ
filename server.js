@@ -7,6 +7,7 @@ import { createClient } from '@supabase/supabase-js'
 import nodemailer from 'nodemailer'
 import QRCodeLib from 'qrcode'
 import rateLimit from 'express-rate-limit'
+import axios from 'axios'
 import ws from 'ws'
 import aiRoutes from './server/routes/ai.js'
 import aiKnowledgeRoutes from './server/routes/aiKnowledge.js'
@@ -369,6 +370,90 @@ app.post('/api/approve/membership', requireAuth, requireRole('super_admin', 'eve
   })
 
   res.json({ ok: true })
+})
+
+// --- Progres MESRS API proxy ---
+
+const PROGRES_BASE = 'https://progres.mesrs.dz/api'
+
+app.post('/api/progres/auth', async (req, res) => {
+  const { username, password } = req.body
+  if (!username || !password) {
+    return res.status(400).json({ error: 'Username and password are required.' })
+  }
+  try {
+      const { data } = await axios.post(`${PROGRES_BASE}/authentication/v1/`, { username, password })
+    res.json({ token: data.token, uuid: data.uuid, userName: data.userName })
+  } catch (err) {
+    if (err.response && (err.response.status === 401 || err.response.status === 403)) {
+      return res.status(401).json({ error: 'Invalid Progres credentials.' })
+    }
+    console.error('Progres auth error:', err.message)
+    res.status(502).json({ error: 'Progres API unreachable.' })
+  }
+})
+
+app.get('/api/progres/student', async (req, res) => {
+  const { uuid } = req.query
+  const authHeader = req.headers.authorization
+  if (!uuid || !authHeader) {
+    return res.status(400).json({ error: 'Missing uuid or authorization header.' })
+  }
+  try {
+    const [individuRes, diasRes] = await Promise.all([
+      axios.get(`${PROGRES_BASE}/infos/bac/${uuid}/individu`, { headers: { Authorization: authHeader } }),
+      axios.get(`${PROGRES_BASE}/infos/bac/${uuid}/dias`, { headers: { Authorization: authHeader } }),
+    ])
+    const individu = individuRes.data
+    const dias = diasRes.data
+    if (!Array.isArray(dias) || dias.length === 0) {
+      return res.status(404).json({ error: 'No academic records found.' })
+    }
+    const sorted = [...dias].sort((a, b) => ((b.anneeAcademiqueCode || '')).localeCompare(a.anneeAcademiqueCode || ''))
+    const latest = sorted[0]
+    res.json({
+      student_id: latest.numeroMatricule || '',
+      full_name: `${individu.prenomLatin || ''} ${individu.nomLatin || ''}`.trim(),
+      email: individu.email || '',
+      phone: latest.telephoneBachelier || '',
+      department: latest.llFiliere || latest.ofLlFiliere || '',
+      study_year: latest.niveauLibelleLongLt || '',
+      university: latest.llEtablissementLatin || '',
+      academic_year: latest.anneeAcademiqueCode || '',
+    })
+  } catch (err) {
+    if (err.response && err.response.status === 401) {
+      return res.status(401).json({ error: 'Session expired.' })
+    }
+    console.error('Progres student fetch error:', err.message)
+    res.status(502).json({ error: 'Failed to fetch student data.' })
+  }
+})
+
+// --- Public stats (uses service_role to bypass RLS) ---
+
+app.get('/api/stats', async (req, res) => {
+  try {
+    const [
+      { count: events },
+      { count: projects },
+      { count: registrations },
+      { count: memberships },
+    ] = await Promise.all([
+      supabaseAdmin.from('events').select('*', { count: 'exact', head: true }).eq('is_published', true),
+      supabaseAdmin.from('projects').select('*', { count: 'exact', head: true }).eq('is_published', true),
+      supabaseAdmin.from('event_registrations').select('*', { count: 'exact', head: true }),
+      supabaseAdmin.from('membership_applications').select('*', { count: 'exact', head: true }),
+    ])
+    res.json({
+      events: events || 0,
+      projects: projects || 0,
+      members: (registrations || 0) + (memberships || 0),
+    })
+  } catch (err) {
+    console.error('Stats error:', err)
+    res.status(500).json({ error: 'Failed to fetch stats.' })
+  }
 })
 
 // --- AI Assistant ---

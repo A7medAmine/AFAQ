@@ -22,6 +22,16 @@
     "rights": "Tous droits reserves.",
     "university": "Universite Akli Mohand Oulhadj — Bouira, Algerie"
   },
+  "progres": {
+    "button": "🎓 Remplir avec le compte Progres",
+    "title": "Connectez-vous avec votre compte Progres",
+    "subtitle": "Vos identifiants sont envoyés à <strong>mesrs.dz</strong> et <red>jamais stockés.</red>",
+    "usernameLabel": "Identifiant Progres",
+    "passwordLabel": "Mot de passe",
+    "submit": "Auto-remplir",
+    "submitting": "Remplissage…",
+    "banner": "✓ Formulaire rempli depuis votre compte Progres — veuillez vérifier avant d'envoyer."
+  },
   "buttons": {
     "learnMore": "En Savoir Plus",
     "joinUs": "Nous Rejoindre",

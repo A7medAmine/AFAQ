@@ -17,6 +17,8 @@ export default defineConfig({
       '/uploads': 'http://localhost:3001',
       '/api/ai-knowledge': 'http://localhost:3001',
       '/api/club-info': 'http://localhost:3001',
+      '/api/progres': 'http://localhost:3001',
+      '/api/stats': 'http://localhost:3001',
     },
   },
 });
