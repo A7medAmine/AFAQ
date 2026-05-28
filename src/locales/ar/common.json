@@ -22,6 +22,16 @@
     "rights": "جميع الحقوق محفوظة.",
     "university": "جامعة أكلي محند أولحاج - البويرة، الجزائر"
   },
+  "progres": {
+    "button": " تعبئة بحساب progres",
+    "title": "تسجيل الدخول بحساب progres",
+    "subtitle": "تُرسل بياناتك إلى <strong>mesrs.dz</strong> و <red>لا تُخزن أبداً.</red>",
+    "usernameLabel": "اسم المستخدم progres",
+    "passwordLabel": "كلمة المرور",
+    "submit": "تعبئة تلقائية",
+    "submitting": "جارٍ التعبئة…",
+    "banner": "✓ تم تعبئة النموذج من حساب progres — يرجى المراجعة قبل الإرسال."
+  },
   "buttons": {
     "learnMore": "اعرف المزيد",
     "joinUs": "انضم إلينا",

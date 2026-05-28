@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { Send, Check, User, BookOpen, Heart, ArrowLeft, ArrowRight } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import SideImage from '../components/shared/SideImage'
+import ProgresButton from '../components/registration/ProgresButton'
 
 const spring = { type: 'spring', damping: 22, stiffness: 200 }
 const fastSpring = { type: 'spring', damping: 16, stiffness: 300 }
@@ -30,6 +31,7 @@ export default function JoinUs() {
   const [status, setStatus] = useState('idle')
   const [errors, setErrors] = useState({})
   const [shaking, setShaking] = useState(null)
+  const [showAutoFillBanner, setShowAutoFillBanner] = useState(false)
   const inputRefs = useRef({})
 
   useEffect(() => {
@@ -61,9 +63,26 @@ export default function JoinUs() {
 
   const clearDuplicate = () => setErrors(prev => { const { duplicate, ...rest } = prev; return rest })
 
+  const autoFillFields = ['full_name', 'student_id', 'email', 'phone', 'department', 'study_year']
+
   const updateForm = (patch) => {
     if ('student_id' in patch || 'email' in patch) clearDuplicate()
+    if (showAutoFillBanner && Object.keys(patch).some(k => autoFillFields.includes(k))) {
+      setShowAutoFillBanner(false)
+    }
     setForm(prev => ({ ...prev, ...patch }))
+  }
+
+  const handleProgresSuccess = (data) => {
+    const patch = {}
+    if (data.userName || data.student_id) patch.student_id = data.userName || data.student_id
+    if (data.full_name) patch.full_name = data.full_name
+    if (data.email) patch.email = data.email
+    if (data.phone) patch.phone = data.phone
+    if (data.department) patch.department = data.department
+    if (data.study_year) patch.study_year = data.study_year
+    updateForm(patch)
+    setShowAutoFillBanner(true)
   }
 
   const nextStep = () => {
@@ -124,8 +143,14 @@ export default function JoinUs() {
 
   const interests = Object.keys(t('interestOptions', { returnObjects: true }))
   const skillOpts = Object.keys(t('skillOptions', { returnObjects: true }))
-  const departments = Object.keys(t('departments', { returnObjects: true }))
-  const years = Object.keys(t('years', { returnObjects: true }))
+  const deptOptions = Object.keys(t('departments', { returnObjects: true }))
+  const departments = form.department && !deptOptions.includes(form.department)
+    ? [...deptOptions, form.department]
+    : deptOptions
+  const yearOptions = Object.keys(t('years', { returnObjects: true }))
+  const years = form.study_year && !yearOptions.includes(form.study_year)
+    ? [...yearOptions, form.study_year]
+    : yearOptions
 
   const inputStyle = (field) => ({
     background: 'var(--color-bg)',
@@ -337,7 +362,7 @@ export default function JoinUs() {
                           <input
                             style={inputStyle('phone')}
                             value={form.phone}
-                            onChange={e => setForm({...form, phone: e.target.value})}
+                            onChange={e => updateForm({ phone: e.target.value })}
                             onFocus={e => { e.target.style.boxShadow = '0 0 0 3px rgba(36,96,231,0.15)'; e.target.style.borderColor = 'var(--color-accent)' }}
                             onBlur={e => { e.target.style.boxShadow = 'none'; e.target.style.borderColor = 'var(--color-border-light)' }}
                             placeholder="+213 6XX XXX XXX"
@@ -357,7 +382,7 @@ export default function JoinUs() {
                               ref={el => setInputRef(1, el)}
                               style={inputStyle('department')}
                               value={form.department}
-                              onChange={e => setForm({...form, department: e.target.value})}
+                              onChange={e => updateForm({ department: e.target.value })}
                               onFocus={e => { e.target.style.boxShadow = '0 0 0 3px rgba(36,96,231,0.15)'; e.target.style.borderColor = 'var(--color-accent)' }}
                               onBlur={e => { e.target.style.boxShadow = 'none'; e.target.style.borderColor = 'var(--color-border-light)' }}
                             >
@@ -381,7 +406,7 @@ export default function JoinUs() {
                             <select
                               style={inputStyle('study_year')}
                               value={form.study_year}
-                              onChange={e => setForm({...form, study_year: e.target.value})}
+                              onChange={e => updateForm({ study_year: e.target.value })}
                               onFocus={e => { e.target.style.boxShadow = '0 0 0 3px rgba(36,96,231,0.15)'; e.target.style.borderColor = 'var(--color-accent)' }}
                               onBlur={e => { e.target.style.boxShadow = 'none'; e.target.style.borderColor = 'var(--color-border-light)' }}
                             >
@@ -528,6 +553,21 @@ export default function JoinUs() {
                       )}
                       {status === 'loading' ? t('form.submitting') : t('form.submit')}
                     </motion.button>
+                  )}
+                </div>
+
+                <div className="text-center mt-6">
+                  <ProgresButton onSuccess={handleProgresSuccess} />
+
+                  {showAutoFillBanner && (
+                    <motion.p
+                      initial={{ opacity: 0, y: -4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="text-sm mt-3"
+                      style={{ color: '#16A34A' }}
+                    >
+                      ✓ Form filled from your Progres account — please review before submitting.
+                    </motion.p>
                   )}
                 </div>
               </>
