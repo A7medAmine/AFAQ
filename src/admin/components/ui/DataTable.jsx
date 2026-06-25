@@ -35,13 +35,13 @@ export default function DataTable({
   return (
     <div>
       {searchable && (
-        <div className="relative mb-4 max-w-xs">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--color-text-muted)' }} />
+        <div className="relative mb-5 max-w-sm">
+          <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2" style={{ color: 'var(--color-text-muted)' }} />
           <input
             value={globalFilter || ''}
             onChange={e => setGlobalFilter(e.target.value)}
             placeholder={searchPlaceholder}
-            className="w-full pl-9 pr-3 py-2 rounded-xl border text-sm"
+            className="admin-input w-full pl-10 pr-4 py-2.5 rounded-xl border text-base"
             style={{
               background: 'var(--color-bg)',
               borderColor: 'var(--color-border-light)',
@@ -59,15 +59,15 @@ export default function DataTable({
                 {hg.headers.map(header => (
                   <th
                     key={header.id}
-                    className="text-left px-4 py-3 font-medium text-xs uppercase tracking-wider cursor-pointer select-none"
+                    className="text-left px-5 py-3.5 font-semibold text-sm uppercase tracking-wider cursor-pointer select-none transition-all hover:brightness-95"
                     style={{ color: 'var(--color-text-muted)', background: 'var(--color-bg-alt)' }}
                     onClick={header.column.getToggleSortingHandler()}
                   >
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1.5">
                       {flexRender(header.column.columnDef.header, header.getContext())}
                       {{
-                        asc: <ChevronUp size={12} />,
-                        desc: <ChevronDown size={12} />,
+                        asc: <ChevronUp size={14} />,
+                        desc: <ChevronDown size={14} />,
                       }[header.column.getIsSorted()] ?? null}
                     </div>
                   </th>
@@ -101,7 +101,7 @@ export default function DataTable({
           <button
             onClick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}
-            className="p-2 rounded-lg border disabled:opacity-30"
+            className="admin-icon-btn p-2 rounded-lg border disabled:opacity-30 disabled:cursor-not-allowed"
             style={{ borderColor: 'var(--color-border-light)' }}
           >
             <ChevronLeft size={14} />
@@ -109,7 +109,7 @@ export default function DataTable({
           <button
             onClick={() => table.nextPage()}
             disabled={!table.getCanNextPage()}
-            className="p-2 rounded-lg border disabled:opacity-30"
+            className="admin-icon-btn p-2 rounded-lg border disabled:opacity-30 disabled:cursor-not-allowed"
             style={{ borderColor: 'var(--color-border-light)' }}
           >
             <ChevronRight size={14} />

@@ -83,7 +83,7 @@ export default function RegistrationsPage() {
       const r = row.original
       if (r.status !== 'approved') return null
       return (
-        <button onClick={() => setQrModalReg(r)} className="p-1.5 rounded-lg hover:opacity-70" style={{ color: 'var(--color-accent)' }} title="View QR Code">
+        <button onClick={() => setQrModalReg(r)} className="admin-icon-btn p-1.5 rounded-lg" style={{ color: 'var(--color-accent)' }} title="View QR Code">
           <QrCode size={14} />
         </button>
       )
@@ -93,8 +93,8 @@ export default function RegistrationsPage() {
       <div className="flex gap-1">
         {row.original.status === 'pending' && (
           <>
-            <button onClick={() => updateStatus(row.original.id, 'approved')} disabled={approving[row.original.id]} className="p-1.5 rounded-lg hover:opacity-70 disabled:opacity-30" style={{ color: '#16a34a' }}><Check size={14} /></button>
-            <button onClick={() => updateStatus(row.original.id, 'rejected')} className="p-1.5 rounded-lg hover:opacity-70" style={{ color: '#dc2626' }}><X size={14} /></button>
+            <button onClick={() => updateStatus(row.original.id, 'approved')} disabled={approving[row.original.id]} className="admin-icon-btn p-1.5 rounded-lg disabled:opacity-30" style={{ color: '#16a34a' }}><Check size={14} /></button>
+            <button onClick={() => updateStatus(row.original.id, 'rejected')} className="admin-icon-btn p-1.5 rounded-lg" style={{ color: '#dc2626' }}><X size={14} /></button>
           </>
         )}
       </div>
@@ -109,7 +109,7 @@ export default function RegistrationsPage() {
         <div className="flex gap-2">
           {['all', 'pending', 'approved', 'rejected', 'cancelled'].map(f => (
             <button key={f} onClick={() => setFilter(f)}
-              className="px-3 py-1.5 rounded-lg text-xs font-medium capitalize transition-all"
+              className="px-3 py-1.5 rounded-lg text-xs font-medium capitalize transition-all hover:brightness-110"
               style={{
                 background: filter === f ? 'var(--color-accent)' : 'var(--color-bg-alt)',
                 color: filter === f ? '#fff' : 'var(--color-text-muted)',
@@ -117,7 +117,7 @@ export default function RegistrationsPage() {
             >{f}</button>
           ))}
         </div>
-        <button onClick={exportCSV} className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border" style={{ borderColor: 'var(--color-border-light)', color: 'var(--color-text)' }}>
+        <button onClick={exportCSV} className="admin-btn flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border" style={{ borderColor: 'var(--color-border-light)', color: 'var(--color-text)' }}>
           <Download size={14} /> Export CSV
         </button>
       </div>
@@ -134,7 +134,7 @@ export default function RegistrationsPage() {
             <img src={qrModalReg.qr_code} alt="QR Code" className="rounded-xl" style={{ width: 200, height: 200 }} />
             <p className="text-sm font-medium" style={{ color: 'var(--color-text)' }}>{qrModalReg.full_name}</p>
             <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>{qrModalReg.email}</p>
-            <button onClick={() => downloadQR(qrModalReg.qr_code, qrModalReg.full_name)} className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-white" style={{ background: 'var(--color-accent)' }}>
+            <button onClick={() => downloadQR(qrModalReg.qr_code, qrModalReg.full_name)} className="admin-btn-primary flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-white" style={{ background: 'var(--color-accent)' }}>
               <Download size={14} /> Download QR
             </button>
           </div>

@@ -50,9 +50,9 @@ export default function MessagesPage() {
     )},
     { header: '', id: 'actions', cell: ({ row }) => (
       <div className="flex gap-1">
-        <button onClick={() => setSelected(row.original)} className="p-1.5 rounded-lg hover:opacity-70" style={{ color: 'var(--color-text-muted)' }}><Eye size={14} /></button>
-        <button onClick={() => toggleRead(row.original)} className="p-1.5 rounded-lg hover:opacity-70" style={{ color: 'var(--color-text-muted)' }}>{row.original.is_read ? <EyeOff size={14} /> : <Eye size={14} />}</button>
-        <button onClick={() => setDeleteId(row.original.id)} className="p-1.5 rounded-lg hover:opacity-70" style={{ color: '#dc2626' }}><Trash2 size={14} /></button>
+        <button onClick={() => setSelected(row.original)} className="admin-icon-btn p-1.5 rounded-lg" style={{ color: 'var(--color-text-muted)' }}><Eye size={14} /></button>
+        <button onClick={() => toggleRead(row.original)} className="admin-icon-btn p-1.5 rounded-lg" style={{ color: 'var(--color-text-muted)' }}>{row.original.is_read ? <EyeOff size={14} /> : <Eye size={14} />}</button>
+        <button onClick={() => setDeleteId(row.original.id)} className="admin-icon-btn p-1.5 rounded-lg" style={{ color: '#dc2626' }}><Trash2 size={14} /></button>
       </div>
     )},
   ]

@@ -106,10 +106,10 @@ export default function EventsPage() {
     )},
     { header: '', id: 'actions', cell: ({ row }) => (
       <div className="flex gap-1">
-        <button onClick={() => openEdit(row.original)} className="p-1.5 rounded-lg hover:opacity-70" style={{ color: 'var(--color-text-muted)' }}><Edit3 size={14} /></button>
-        <button onClick={() => togglePublish(row.original)} className="p-1.5 rounded-lg hover:opacity-70" style={{ color: 'var(--color-text-muted)' }}>{row.original.is_published ? <EyeOff size={14} /> : <Eye size={14} />}</button>
-        <button onClick={() => toggleRegistration(row.original)} className="p-1.5 rounded-lg hover:opacity-70" style={{ color: 'var(--color-text-muted)' }}>{row.original.registration_open ? <ToggleRight size={14} /> : <ToggleLeft size={14} />}</button>
-        <button onClick={() => setDeleteId(row.original.id)} className="p-1.5 rounded-lg hover:opacity-70" style={{ color: '#dc2626' }}><Trash2 size={14} /></button>
+        <button onClick={() => openEdit(row.original)} className="admin-icon-btn p-1.5 rounded-lg" style={{ color: 'var(--color-text-muted)' }}><Edit3 size={14} /></button>
+        <button onClick={() => togglePublish(row.original)} className="admin-icon-btn p-1.5 rounded-lg" style={{ color: 'var(--color-text-muted)' }}>{row.original.is_published ? <EyeOff size={14} /> : <Eye size={14} />}</button>
+        <button onClick={() => toggleRegistration(row.original)} className="admin-icon-btn p-1.5 rounded-lg" style={{ color: 'var(--color-text-muted)' }}>{row.original.registration_open ? <ToggleRight size={14} /> : <ToggleLeft size={14} />}</button>
+        <button onClick={() => setDeleteId(row.original.id)} className="admin-icon-btn p-1.5 rounded-lg" style={{ color: '#dc2626' }}><Trash2 size={14} /></button>
       </div>
     )},
   ]
@@ -122,7 +122,7 @@ export default function EventsPage() {
         <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>Manage club events</p>
         <button
           onClick={openCreate}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-white"
+          className="admin-btn-primary flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-white"
           style={{ background: 'var(--color-accent)' }}
         >
           <Plus size={16} /> New Event
@@ -131,7 +131,7 @@ export default function EventsPage() {
 
       {events.length === 0 ? (
         <EmptyState icon={Eye} title="No events yet" description="Create your first event to get started" action={
-          <button onClick={openCreate} className="mt-4 px-4 py-2 rounded-xl text-sm font-medium text-white" style={{ background: 'var(--color-accent)' }}>Create Event</button>
+          <button onClick={openCreate} className="admin-btn-primary mt-4 px-4 py-2 rounded-xl text-sm font-medium text-white" style={{ background: 'var(--color-accent)' }}>Create Event</button>
         } />
       ) : (
         <DataTable columns={columns} data={events} searchPlaceholder="Search events..." />
@@ -177,7 +177,7 @@ export default function EventsPage() {
           <div>
             <label className="block text-xs font-medium mb-1" style={{ color: 'var(--color-text-muted)' }}>Poster</label>
             <div className="flex items-center gap-3">
-              <label className="flex items-center gap-2 px-4 py-2 rounded-xl border text-sm cursor-pointer" style={{ borderColor: 'var(--color-border-light)', color: 'var(--color-text-muted)' }}>
+              <label className="admin-btn flex items-center gap-2 px-4 py-2 rounded-xl border text-sm cursor-pointer" style={{ borderColor: 'var(--color-border-light)', color: 'var(--color-text-muted)' }}>
                 <Upload size={14} /> Upload
                 <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
                   const fd = new FormData()
@@ -190,7 +190,7 @@ export default function EventsPage() {
               {form.poster_url && (
                 <div className="relative">
                   <img src={form.poster_url} alt="" className="w-16 h-16 object-cover rounded-lg border" style={{ borderColor: 'var(--color-border-light)' }} />
-                  <button onClick={() => setForm({...form, poster_url: ''})} className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500 text-white text-[10px] flex items-center justify-center">&times;</button>
+                  <button onClick={() => setForm({...form, poster_url: ''})} className="admin-icon-btn absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500 text-white text-[10px] flex items-center justify-center hover:bg-red-600">&times;</button>
                 </div>
               )}
             </div>
@@ -210,8 +210,8 @@ export default function EventsPage() {
             </label>
           </div>
           <div className="flex justify-end gap-3 pt-4 border-t" style={{ borderColor: 'var(--color-border-light)' }}>
-            <button onClick={() => setModalOpen(false)} className="px-4 py-2 rounded-xl text-sm font-medium border" style={{ borderColor: 'var(--color-border-light)', color: 'var(--color-text)' }}>Cancel</button>
-            <button onClick={handleSave} disabled={saving} className="px-4 py-2 rounded-xl text-sm font-medium text-white" style={{ background: 'var(--color-accent)' }}>
+            <button onClick={() => setModalOpen(false)} className="admin-btn px-4 py-2 rounded-xl text-sm font-medium border" style={{ borderColor: 'var(--color-border-light)', color: 'var(--color-text)' }}>Cancel</button>
+            <button onClick={handleSave} disabled={saving} className="admin-btn-primary px-4 py-2 rounded-xl text-sm font-medium text-white" style={{ background: 'var(--color-accent)' }}>
               {saving ? 'Saving...' : editing ? 'Update' : 'Create'}
             </button>
           </div>

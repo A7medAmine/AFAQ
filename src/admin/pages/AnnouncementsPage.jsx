@@ -81,14 +81,14 @@ export default function AnnouncementsPage() {
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
       <div className="flex items-center justify-between mb-6">
         <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>Club announcements</p>
-        <button onClick={openCreate} className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-white" style={{ background: 'var(--color-accent)' }}>
+        <button onClick={openCreate} className="admin-btn-primary flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-white" style={{ background: 'var(--color-accent)' }}>
           <Plus size={16} /> New Announcement
         </button>
       </div>
 
       {announcements.length === 0 ? (
         <EmptyState icon={Edit3} title="No announcements yet" action={
-          <button onClick={openCreate} className="mt-4 px-4 py-2 rounded-xl text-sm font-medium text-white" style={{ background: 'var(--color-accent)' }}>Create Announcement</button>
+          <button onClick={openCreate} className="admin-btn-primary mt-4 px-4 py-2 rounded-xl text-sm font-medium text-white" style={{ background: 'var(--color-accent)' }}>Create Announcement</button>
         } />
       ) : (
         <div className="space-y-3">
@@ -110,11 +110,11 @@ export default function AnnouncementsPage() {
                   <p className="text-xs line-clamp-2" style={{ color: 'var(--color-text-muted)' }}>{a.content_en}</p>
                 </div>
                 <div className="flex gap-1 ml-4">
-                  <button onClick={() => togglePin(a)} className="p-1.5 rounded-lg hover:opacity-70" style={{ color: 'var(--color-text-muted)' }}>
+                  <button onClick={() => togglePin(a)} className="admin-icon-btn p-1.5 rounded-lg" style={{ color: 'var(--color-text-muted)' }}>
                     {a.is_pinned ? <PinOff size={14} /> : <Pin size={14} />}
                   </button>
-                  <button onClick={() => openEdit(a)} className="p-1.5 rounded-lg hover:opacity-70" style={{ color: 'var(--color-text-muted)' }}><Edit3 size={14} /></button>
-                  <button onClick={() => setDeleteId(a.id)} className="p-1.5 rounded-lg hover:opacity-70" style={{ color: '#dc2626' }}><Trash2 size={14} /></button>
+                  <button onClick={() => openEdit(a)} className="admin-icon-btn p-1.5 rounded-lg" style={{ color: 'var(--color-text-muted)' }}><Edit3 size={14} /></button>
+                  <button onClick={() => setDeleteId(a.id)} className="admin-icon-btn p-1.5 rounded-lg" style={{ color: '#dc2626' }}><Trash2 size={14} /></button>
                 </div>
               </div>
             </motion.div>
@@ -151,8 +151,8 @@ export default function AnnouncementsPage() {
             </label>
           </div>
           <div className="flex justify-end gap-3 pt-4 border-t" style={{ borderColor: 'var(--color-border-light)' }}>
-            <button onClick={() => setModalOpen(false)} className="px-4 py-2 rounded-xl text-sm font-medium border" style={{ borderColor: 'var(--color-border-light)', color: 'var(--color-text)' }}>Cancel</button>
-            <button onClick={handleSave} disabled={saving} className="px-4 py-2 rounded-xl text-sm font-medium text-white" style={{ background: 'var(--color-accent)' }}>
+            <button onClick={() => setModalOpen(false)} className="admin-btn px-4 py-2 rounded-xl text-sm font-medium border" style={{ borderColor: 'var(--color-border-light)', color: 'var(--color-text)' }}>Cancel</button>
+            <button onClick={handleSave} disabled={saving} className="admin-btn-primary px-4 py-2 rounded-xl text-sm font-medium text-white" style={{ background: 'var(--color-accent)' }}>
               {saving ? 'Saving...' : editing ? 'Update' : 'Create'}
             </button>
           </div>

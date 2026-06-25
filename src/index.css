@@ -1235,3 +1235,71 @@ select.form-input {
   0%, 100% { opacity: 0.7; }
   50% { opacity: 0; }
 }
+
+/* Admin sidebar nav item hover */
+.admin-nav-link:hover {
+  background: color-mix(in srgb, var(--color-accent) 10%, transparent) !important;
+}
+
+/* Admin border/secondary button hover */
+.admin-btn {
+  cursor: pointer;
+  font-size: 0.875rem;
+  padding: 0.625rem 1rem;
+}
+.admin-btn:hover {
+  background: color-mix(in srgb, var(--color-accent) 8%, transparent) !important;
+  border-color: var(--color-accent) !important;
+  color: var(--color-accent) !important;
+}
+
+/* Admin icon/ghost button hover */
+.admin-icon-btn {
+  cursor: pointer;
+}
+.admin-icon-btn:hover {
+  background: color-mix(in srgb, var(--color-accent) 10%, transparent) !important;
+  color: var(--color-accent) !important;
+}
+
+/* Admin primary/accent button */
+.admin-btn-primary {
+  cursor: pointer;
+  font-size: 0.875rem;
+  padding: 0.625rem 1.125rem;
+  transition: all 0.2s ease;
+}
+.admin-btn-primary:hover {
+  filter: brightness(1.1);
+  transform: translateY(-2px);
+}
+.admin-btn-primary:active {
+  filter: brightness(0.95);
+  transform: translateY(0);
+}
+.admin-btn-primary:disabled {
+  filter: brightness(0.75);
+  transform: none;
+}
+
+/* Admin form inputs - bigger */
+.admin-input {
+  font-size: 0.9375rem !important;
+  padding: 0.625rem 0.875rem !important;
+}
+
+/* Admin labels - bigger */
+.admin-label {
+  font-size: 0.8125rem !important;
+}
+
+/* Admin page description text */
+.admin-desc {
+  font-size: 0.9375rem !important;
+}
+
+/* Admin badge text */
+.admin-badge {
+  font-size: 0.75rem !important;
+  padding: 0.25rem 0.625rem !important;
+}

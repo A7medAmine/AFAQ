@@ -128,7 +128,7 @@ export default function SettingsPage() {
               <button
                 type="submit"
                 disabled={saving || !fullName.trim()}
-                className="px-4 py-2 rounded-xl text-sm font-semibold text-white transition-all"
+                className="admin-btn-primary px-4 py-2 rounded-xl text-sm font-semibold text-white"
                 style={{ background: 'var(--color-accent)' }}
               >
                 {saving ? 'Saving...' : 'Save'}
@@ -163,7 +163,7 @@ export default function SettingsPage() {
                 <button
                   type="button"
                   onClick={() => setShowCurrent(!showCurrent)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2"
+                  className="admin-icon-btn absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-md"
                   style={{ color: 'var(--color-text-muted)' }}
                 >
                   {showCurrent ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -186,7 +186,7 @@ export default function SettingsPage() {
                 <button
                   type="button"
                   onClick={() => setShowNew(!showNew)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2"
+                  className="admin-icon-btn absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-md"
                   style={{ color: 'var(--color-text-muted)' }}
                 >
                   {showNew ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -202,7 +202,7 @@ export default function SettingsPage() {
               <button
                 type="submit"
                 disabled={changingPassword || !currentPassword || newPassword.length < 8}
-                className="px-4 py-2 rounded-xl text-sm font-semibold text-white transition-all"
+                className="admin-btn-primary px-4 py-2 rounded-xl text-sm font-semibold text-white"
                 style={{ background: 'var(--color-accent)' }}
               >
                 {changingPassword ? 'Updating...' : 'Update Password'}

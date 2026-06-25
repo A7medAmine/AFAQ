@@ -130,7 +130,7 @@ export default function Dashboard() {
         >
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-base font-semibold" style={{ color: 'var(--color-text)' }}>Upcoming Events</h2>
-            <button onClick={() => navigate('/admin/events')} className="text-xs font-medium flex items-center gap-1" style={{ color: 'var(--color-accent)' }}>
+            <button onClick={() => navigate('/admin/events')} className="text-xs font-medium flex items-center gap-1 transition-all hover:gap-1.5 admin-icon-btn px-2 py-1 -mr-2 rounded-lg" style={{ color: 'var(--color-accent)' }}>
               View all <ArrowRight size={12} />
             </button>
           </div>
@@ -164,7 +164,7 @@ export default function Dashboard() {
         >
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-base font-semibold" style={{ color: 'var(--color-text)' }}>Recent Messages</h2>
-            <button onClick={() => navigate('/admin/messages')} className="text-xs font-medium flex items-center gap-1" style={{ color: 'var(--color-accent)' }}>
+            <button onClick={() => navigate('/admin/messages')} className="text-xs font-medium flex items-center gap-1 transition-all hover:gap-1.5 admin-icon-btn px-2 py-1 -mr-2 rounded-lg" style={{ color: 'var(--color-accent)' }}>
               View all <ArrowRight size={12} />
             </button>
           </div>
@@ -238,10 +238,10 @@ export default function Dashboard() {
               placeholder="Computer Science" />
           </div>
           <div className="flex justify-end gap-3 pt-4 border-t" style={{ borderColor: 'var(--color-border-light)' }}>
-            <button onClick={() => setMemberModal(false)} className="px-4 py-2 rounded-xl text-sm font-medium border"
+            <button onClick={() => setMemberModal(false)} className="admin-btn px-4 py-2 rounded-xl text-sm font-medium border transition-all hover:-translate-y-0.5"
               style={{ borderColor: 'var(--color-border-light)', color: 'var(--color-text)' }}>Cancel</button>
             <button onClick={addMember} disabled={addingMember}
-              className="px-4 py-2 rounded-xl text-sm font-medium text-white"
+              className="px-4 py-2 rounded-xl text-sm font-medium text-white transition-all hover:brightness-110 hover:-translate-y-0.5 active:brightness-95 disabled:brightness-75 disabled:hover:-translate-y-0"
               style={{ background: addingMember ? 'var(--color-accent-dark)' : 'var(--color-accent)' }}>
               {addingMember ? 'Adding...' : 'Add Member'}
             </button>
@@ -256,7 +256,7 @@ function QuickActionBtn({ icon: Icon, label, onClick }) {
   return (
     <button
       onClick={onClick}
-      className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium border transition-all hover:opacity-80"
+      className="admin-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium border transition-all hover:-translate-y-0.5 hover:shadow-sm active:translate-y-0"
       style={{ borderColor: 'var(--color-border-light)', color: 'var(--color-text)' }}
     >
       <Icon size={16} style={{ color: 'var(--color-accent)' }} />

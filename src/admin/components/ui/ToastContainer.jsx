@@ -39,7 +39,7 @@ export default function ToastContainer() {
             >
               <Icon size={18} style={{ color: colors[t.type], flexShrink: 0, marginTop: 1 }} />
               <p className="text-sm flex-1" style={{ color: 'var(--color-text)' }}>{t.message}</p>
-              <button onClick={() => removeToast(t.id)} style={{ color: 'var(--color-text-muted)' }}>
+              <button onClick={() => removeToast(t.id)} className="admin-icon-btn p-1 -mr-1 rounded-md" style={{ color: 'var(--color-text-muted)' }}>
                 <X size={14} />
               </button>
             </motion.div>

@@ -2,7 +2,7 @@ import { NavLink } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
   LayoutDashboard, Calendar, ClipboardCheck, FolderGit2, Image,
-  Mail, Megaphone, Shield, Settings, ChevronLeft, LogOut, UserCheck, Brain,
+  Mail, Megaphone, Shield, Settings, ChevronLeft, ChevronRight, LogOut, UserCheck, Brain,
 } from 'lucide-react'
 import useAdminStore from '../../store/adminStore'
 
@@ -42,9 +42,11 @@ export default function Sidebar() {
       {/* Collapsed strip — always visible on desktop */}
       <aside className="hidden lg:flex flex-col h-screen fixed left-0 top-0 z-40 border-r" style={{ width: 64, background: 'var(--color-card)', borderColor: 'var(--color-border-light)' }}>
         <div className="flex items-center justify-center h-16 border-b shrink-0" style={{ borderColor: 'var(--color-border-light)' }}>
-          <span className="text-lg font-bold" style={{ fontFamily: "'Minecraft', sans-serif", color: 'var(--color-accent)' }}>A</span>
+          <button onClick={toggle} className="admin-icon-btn w-9 h-9 flex items-center justify-center rounded-lg transition-all hover:scale-105" style={{ color: 'var(--color-text-muted)' }} title="Open sidebar">
+            <ChevronRight size={20} />
+          </button>
         </div>
-        <nav className="flex-1 overflow-y-auto p-3 space-y-1">
+        <nav className="flex-1 overflow-y-auto p-4 space-y-1">
           {NAV_ITEMS.map(item => {
             if (item.roles && !item.roles.includes(role)) return null
             const Icon = iconMap[item.icon]
@@ -53,21 +55,21 @@ export default function Sidebar() {
                 key={item.path}
                 to={item.path}
                 end={item.path === '/admin'}
-                className="flex items-center justify-center px-0 py-2.5 rounded-xl text-sm font-medium transition-all"
+                className="admin-nav-link flex items-center justify-center px-0 py-3 rounded-xl text-base font-medium transition-all hover:scale-105"
                 style={linkStyle}
               >
-                <Icon size={18} />
+                <Icon size={20} />
               </NavLink>
             )
           })}
         </nav>
-        <div className="p-3 border-t shrink-0" style={{ borderColor: 'var(--color-border-light)' }}>
+        <div className="p-4 border-t shrink-0" style={{ borderColor: 'var(--color-border-light)' }}>
           <button
             onClick={logout}
-            className="flex items-center justify-center w-full px-0 py-2.5 rounded-xl text-sm font-medium transition-all"
+            className="admin-icon-btn flex items-center justify-center w-full px-0 py-3 rounded-xl text-base font-medium transition-all hover:scale-105"
             style={{ color: 'var(--color-text-muted)' }}
           >
-            <LogOut size={18} />
+            <LogOut size={20} />
           </button>
         </div>
       </aside>
@@ -81,8 +83,8 @@ export default function Sidebar() {
         style={{ width: 240, background: 'var(--color-card)', borderColor: 'var(--color-border-light)' }}
       >
         <div className="flex items-center justify-end h-16 px-4 border-b shrink-0" style={{ borderColor: 'var(--color-border-light)' }}>
-          <button onClick={toggle} style={{ color: 'var(--color-text-muted)' }}>
-            <ChevronLeft size={20} />
+          <button onClick={toggle} className="admin-icon-btn w-9 h-9 flex items-center justify-center rounded-lg transition-all hover:scale-105" style={{ color: 'var(--color-text-muted)' }}>
+            <ChevronLeft size={22} />
           </button>
         </div>
         <nav className="flex-1 overflow-y-auto p-3 space-y-1">
@@ -95,10 +97,10 @@ export default function Sidebar() {
                 to={item.path}
                 end={item.path === '/admin'}
                 onClick={() => toggle()}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all"
+                className="admin-nav-link flex items-center gap-3.5 px-4 py-3 rounded-xl text-[15px] font-medium transition-all hover:scale-[1.02]"
                 style={linkStyle}
               >
-                <Icon size={18} className="shrink-0" />
+                <Icon size={20} className="shrink-0" />
                 <span>{item.label}</span>
               </NavLink>
             )
@@ -106,16 +108,16 @@ export default function Sidebar() {
         </nav>
         <div className="p-3 border-t shrink-0" style={{ borderColor: 'var(--color-border-light)' }}>
           {profile && (
-            <div className="px-3 py-2 mb-2 text-xs truncate" style={{ color: 'var(--color-text-muted)' }}>
+            <div className="px-4 py-2.5 mb-2 text-sm truncate" style={{ color: 'var(--color-text-muted)' }}>
               {profile.full_name || profile.email}
             </div>
           )}
           <button
             onClick={logout}
-            className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-medium transition-all"
+            className="admin-icon-btn flex items-center gap-3.5 w-full px-4 py-3 rounded-xl text-[15px] font-medium transition-all hover:scale-[1.02]"
             style={{ color: 'var(--color-text-muted)' }}
           >
-            <LogOut size={18} className="shrink-0" />
+            <LogOut size={20} className="shrink-0" />
             <span>Logout</span>
           </button>
         </div>

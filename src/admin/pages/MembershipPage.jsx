@@ -60,8 +60,8 @@ export default function MembershipPage() {
       <div className="flex gap-1">
         {row.original.status === 'pending' && (
           <>
-            <button onClick={() => updateStatus(row.original.id, 'approved')} disabled={approving[row.original.id]} className="p-1.5 rounded-lg hover:opacity-70 disabled:opacity-30" style={{ color: '#16a34a' }}><Check size={14} /></button>
-            <button onClick={() => updateStatus(row.original.id, 'rejected')} className="p-1.5 rounded-lg hover:opacity-70" style={{ color: '#dc2626' }}><X size={14} /></button>
+            <button onClick={() => updateStatus(row.original.id, 'approved')} disabled={approving[row.original.id]} className="admin-icon-btn p-1.5 rounded-lg disabled:opacity-30" style={{ color: '#16a34a' }}><Check size={14} /></button>
+            <button onClick={() => updateStatus(row.original.id, 'rejected')} className="admin-icon-btn p-1.5 rounded-lg" style={{ color: '#dc2626' }}><X size={14} /></button>
           </>
         )}
       </div>
@@ -76,7 +76,7 @@ export default function MembershipPage() {
         <div className="flex gap-2">
           {['all', 'pending', 'approved', 'rejected'].map(f => (
             <button key={f} onClick={() => setFilter(f)}
-              className="px-3 py-1.5 rounded-lg text-xs font-medium capitalize transition-all"
+              className="px-3 py-1.5 rounded-lg text-xs font-medium capitalize transition-all hover:brightness-110"
               style={{
                 background: filter === f ? 'var(--color-accent)' : 'var(--color-bg-alt)',
                 color: filter === f ? '#fff' : 'var(--color-text-muted)',

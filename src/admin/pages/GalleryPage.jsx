@@ -138,14 +138,14 @@ export default function GalleryPage() {
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
       <div className="flex items-center justify-between mb-2">
         <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>Manage gallery albums</p>
-        <button onClick={openCreate} className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-white" style={{ background: 'var(--color-accent)' }}>
+        <button onClick={openCreate} className="admin-btn-primary flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-white" style={{ background: 'var(--color-accent)' }}>
           <Plus size={16} /> New Album
         </button>
       </div>
 
       {albums.length === 0 ? (
         <EmptyState icon={ImageIcon} title="No albums yet" description="Create your first album" action={
-          <button onClick={openCreate} className="mt-4 px-4 py-2 rounded-xl text-sm font-medium text-white" style={{ background: 'var(--color-accent)' }}>Create Album</button>
+          <button onClick={openCreate} className="admin-btn-primary mt-4 px-4 py-2 rounded-xl text-sm font-medium text-white" style={{ background: 'var(--color-accent)' }}>Create Album</button>
         } />
       ) : (
         <div className="space-y-5">
@@ -166,7 +166,7 @@ export default function GalleryPage() {
                 {/* Album Header */}
                 <div
                   onClick={() => toggleExpand(album.id)}
-                  className="flex items-center justify-between p-4 cursor-pointer hover:opacity-80 transition-opacity"
+                  className="flex items-center justify-between p-4 cursor-pointer transition-all hover:bg-black/[0.02]"
                 >
                   <div className="flex items-center gap-3">
                     <div className="flex items-center justify-center w-10 h-10 rounded-xl" style={{ background: 'var(--color-bg-alt)' }}>
@@ -180,8 +180,8 @@ export default function GalleryPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <button onClick={(e) => { e.stopPropagation(); openEdit(album) }} className="p-2 rounded-xl hover:opacity-70" style={{ color: 'var(--color-text-muted)' }}><Edit3 size={14} /></button>
-                    <button onClick={(e) => { e.stopPropagation(); setDeleteId(album.id) }} className="p-2 rounded-xl hover:opacity-70" style={{ color: '#dc2626' }}><Trash2 size={14} /></button>
+                    <button onClick={(e) => { e.stopPropagation(); openEdit(album) }} className="admin-icon-btn p-2 rounded-xl" style={{ color: 'var(--color-text-muted)' }}><Edit3 size={14} /></button>
+                    <button onClick={(e) => { e.stopPropagation(); setDeleteId(album.id) }} className="admin-icon-btn p-2 rounded-xl" style={{ color: '#dc2626' }}><Trash2 size={14} /></button>
                     {isOpen ? <ChevronUp size={18} style={{ color: 'var(--color-text-muted)' }} /> : <ChevronDown size={18} style={{ color: 'var(--color-text-muted)' }} />}
                   </div>
                 </div>
@@ -216,7 +216,7 @@ export default function GalleryPage() {
                             </div>
                           </div>
                         ) : (
-                          <label className="flex items-center justify-center gap-2 mt-4 p-4 rounded-xl border-2 border-dashed cursor-pointer transition-colors hover:opacity-80" style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-muted)' }}>
+                          <label className="admin-btn flex items-center justify-center gap-2 mt-4 p-4 rounded-xl border-2 border-dashed cursor-pointer" style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-muted)' }}>
                             <Upload size={16} />
                             <span className="text-sm">Click to upload images</span>
                             <input type="file" multiple accept="image/*" onChange={handleUpload} className="hidden" />
@@ -280,8 +280,8 @@ export default function GalleryPage() {
             <textarea value={form.description} onChange={e => setForm({...form, description: e.target.value})} rows={2} className="w-full px-3 py-2 rounded-xl border text-sm" style={{ background: 'var(--color-bg)', borderColor: 'var(--color-border-light)', color: 'var(--color-text)' }} />
           </div>
           <div className="flex justify-end gap-3 pt-4 border-t" style={{ borderColor: 'var(--color-border-light)' }}>
-            <button onClick={() => setAlbumModalOpen(false)} className="px-4 py-2 rounded-xl text-sm font-medium border" style={{ borderColor: 'var(--color-border-light)', color: 'var(--color-text)' }}>Cancel</button>
-            <button onClick={handleSave} className="px-4 py-2 rounded-xl text-sm font-medium text-white" style={{ background: 'var(--color-accent)' }}>{editing ? 'Update' : 'Create'}</button>
+            <button onClick={() => setAlbumModalOpen(false)} className="admin-btn px-4 py-2 rounded-xl text-sm font-medium border" style={{ borderColor: 'var(--color-border-light)', color: 'var(--color-text)' }}>Cancel</button>
+            <button onClick={handleSave} className="admin-btn-primary px-4 py-2 rounded-xl text-sm font-medium text-white" style={{ background: 'var(--color-accent)' }}>{editing ? 'Update' : 'Create'}</button>
           </div>
         </div>
       </Modal>

@@ -51,7 +51,7 @@ export default function ResetPassword() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4" style={{ background: 'var(--color-bg)' }}>
+    <div dir="ltr" className="min-h-screen flex items-center justify-center p-4" style={{ background: 'var(--color-bg)' }}>
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
@@ -120,7 +120,7 @@ export default function ResetPassword() {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2"
+                    className="admin-icon-btn absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-md"
                     style={{ color: 'var(--color-text-muted)' }}
                   >
                     {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -130,7 +130,7 @@ export default function ResetPassword() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-2.5 rounded-xl text-sm font-semibold text-white transition-all"
+                className="admin-btn-primary w-full py-2.5 rounded-xl text-sm font-semibold text-white"
                 style={{ background: 'var(--color-accent)' }}
               >
                 {loading ? 'Updating...' : 'Update Password'}

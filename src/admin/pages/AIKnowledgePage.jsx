@@ -112,7 +112,7 @@ export default function AIKnowledgePage() {
         </div>
         <button
           onClick={() => { resetForm(); setShowForm(true) }}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium text-white transition-all hover:opacity-90"
+          className="admin-btn-primary flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium text-white"
           style={{ background: 'var(--color-accent)' }}
         >
           <Plus size={16} /> New Article
@@ -171,12 +171,12 @@ export default function AIKnowledgePage() {
             </div>
             <div className="flex gap-2 pt-2">
               <button type="submit"
-                className="px-4 py-2 rounded-xl text-sm font-medium text-white transition-all hover:opacity-90"
+                className="admin-btn-primary px-4 py-2 rounded-xl text-sm font-medium text-white"
                 style={{ background: 'var(--color-accent)' }}>
                 {editing ? 'Update' : 'Create'}
               </button>
               <button type="button" onClick={resetForm}
-                className="px-4 py-2 rounded-xl text-sm font-medium transition-all"
+                className="admin-btn px-4 py-2 rounded-xl text-sm font-medium"
                 style={{ color: 'var(--color-text-muted)' }}>
                 Cancel
               </button>
@@ -227,7 +227,7 @@ export default function AIKnowledgePage() {
                     </span>
                   )}
                   <button onClick={() => togglePublish(article)}
-                    className={`text-xs px-2 py-0.5 rounded cursor-pointer transition-all hover:opacity-80 ${article.published ? 'text-green-700 bg-green-100' : 'text-orange-700 bg-orange-100'}`}>
+                    className={`text-xs px-2 py-0.5 rounded cursor-pointer transition-all hover:brightness-110 ${article.published ? 'text-green-700 bg-green-100' : 'text-orange-700 bg-orange-100'}`}>
                     {article.published ? 'Published' : 'Draft'}
                   </button>
                 </div>
@@ -244,13 +244,13 @@ export default function AIKnowledgePage() {
               </div>
               <div className="flex gap-1 shrink-0">
                 <button onClick={() => openEdit(article)}
-                  className="p-2 rounded-xl transition-all hover:opacity-70"
+                  className="admin-icon-btn p-2 rounded-xl"
                   style={{ color: 'var(--color-text-muted)' }}>
                   <Pencil size={16} />
                 </button>
                 <button onClick={() => handleDelete(article.id)}
-                  className="p-2 rounded-xl transition-all hover:opacity-70"
-                  style={{ color: 'var(--color-danger)' }}>
+                  className="admin-icon-btn p-2 rounded-xl"
+                  style={{ color: '#dc2626' }}>
                   <Trash2 size={16} />
                 </button>
               </div>

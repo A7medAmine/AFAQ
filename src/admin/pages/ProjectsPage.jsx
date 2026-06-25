@@ -101,8 +101,8 @@ export default function ProjectsPage() {
     { header: 'Created', accessorKey: 'created_at', cell: ({ row }) => new Date(row.original.created_at).toLocaleDateString() },
     { header: '', id: 'actions', cell: ({ row }) => (
       <div className="flex gap-1">
-        <button onClick={() => openEdit(row.original)} className="p-1.5 rounded-lg hover:opacity-70" style={{ color: 'var(--color-text-muted)' }}><Edit3 size={14} /></button>
-        <button onClick={() => setDeleteId(row.original.id)} className="p-1.5 rounded-lg hover:opacity-70" style={{ color: '#dc2626' }}><Trash2 size={14} /></button>
+        <button onClick={() => openEdit(row.original)} className="admin-icon-btn p-1.5 rounded-lg" style={{ color: 'var(--color-text-muted)' }}><Edit3 size={14} /></button>
+        <button onClick={() => setDeleteId(row.original.id)} className="admin-icon-btn p-1.5 rounded-lg" style={{ color: '#dc2626' }}><Trash2 size={14} /></button>
       </div>
     )},
   ]
@@ -113,14 +113,14 @@ export default function ProjectsPage() {
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
       <div className="flex items-center justify-between mb-6">
         <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>Manage club projects</p>
-        <button onClick={openCreate} className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-white" style={{ background: 'var(--color-accent)' }}>
+        <button onClick={openCreate} className="admin-btn-primary flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-white" style={{ background: 'var(--color-accent)' }}>
           <Plus size={16} /> New Project
         </button>
       </div>
 
       {projects.length === 0 ? (
         <EmptyState icon={Edit3} title="No projects yet" description="Create your first project" action={
-          <button onClick={openCreate} className="mt-4 px-4 py-2 rounded-xl text-sm font-medium text-white" style={{ background: 'var(--color-accent)' }}>Create Project</button>
+          <button onClick={openCreate} className="admin-btn-primary mt-4 px-4 py-2 rounded-xl text-sm font-medium text-white" style={{ background: 'var(--color-accent)' }}>Create Project</button>
         } />
       ) : (
         <DataTable columns={columns} data={projects} searchPlaceholder="Search projects..." />
@@ -158,13 +158,13 @@ export default function ProjectsPage() {
                 {form.technologies.map(t => (
                   <span key={t} className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full" style={{ background: 'var(--color-bg-alt)', color: 'var(--color-text)' }}>
                     {t}
-                    <button onClick={() => removeTech(t)} className="hover:opacity-70">&times;</button>
+                    <button onClick={() => removeTech(t)} className="admin-icon-btn rounded-full w-4 h-4 flex items-center justify-center">&times;</button>
                   </span>
                 ))}
               </div>
               <div className="flex gap-2">
                 <input value={techInput} onChange={e => setTechInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addTech())} placeholder="Add technology" className="flex-1 px-3 py-2 rounded-xl border text-sm" style={{ background: 'var(--color-bg)', borderColor: 'var(--color-border-light)', color: 'var(--color-text)' }} />
-                <button onClick={addTech} className="px-3 py-2 rounded-xl text-sm border" style={{ borderColor: 'var(--color-border-light)', color: 'var(--color-text-muted)' }}>Add</button>
+                <button onClick={addTech} className="admin-btn px-3 py-2 rounded-xl text-sm border" style={{ borderColor: 'var(--color-border-light)', color: 'var(--color-text-muted)' }}>Add</button>
               </div>
             </div>
           </div>
@@ -181,7 +181,7 @@ export default function ProjectsPage() {
           <div>
             <label className="block text-xs font-medium mb-1" style={{ color: 'var(--color-text-muted)' }}>Thumbnail</label>
             <div className="flex items-center gap-3">
-              <label className="flex items-center gap-2 px-4 py-2 rounded-xl border text-sm cursor-pointer" style={{ borderColor: 'var(--color-border-light)', color: 'var(--color-text-muted)' }}>
+              <label className="admin-btn flex items-center gap-2 px-4 py-2 rounded-xl border text-sm cursor-pointer" style={{ borderColor: 'var(--color-border-light)', color: 'var(--color-text-muted)' }}>
                 <Upload size={14} /> Upload
                 <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
                   const fd = new FormData()
@@ -194,7 +194,7 @@ export default function ProjectsPage() {
               {form.thumbnail_url && (
                 <div className="relative">
                   <img src={form.thumbnail_url} alt="" className="w-16 h-16 object-cover rounded-lg border" style={{ borderColor: 'var(--color-border-light)' }} />
-                  <button onClick={() => setForm({...form, thumbnail_url: ''})} className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500 text-white text-[10px] flex items-center justify-center">&times;</button>
+                  <button onClick={() => setForm({...form, thumbnail_url: ''})} className="admin-icon-btn absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500 text-white text-[10px] flex items-center justify-center hover:bg-red-600">&times;</button>
                 </div>
               )}
             </div>
@@ -204,8 +204,8 @@ export default function ProjectsPage() {
             Published
           </label>
           <div className="flex justify-end gap-3 pt-4 border-t" style={{ borderColor: 'var(--color-border-light)' }}>
-            <button onClick={() => setModalOpen(false)} className="px-4 py-2 rounded-xl text-sm font-medium border" style={{ borderColor: 'var(--color-border-light)', color: 'var(--color-text)' }}>Cancel</button>
-            <button onClick={handleSave} disabled={saving} className="px-4 py-2 rounded-xl text-sm font-medium text-white" style={{ background: 'var(--color-accent)' }}>
+            <button onClick={() => setModalOpen(false)} className="admin-btn px-4 py-2 rounded-xl text-sm font-medium border" style={{ borderColor: 'var(--color-border-light)', color: 'var(--color-text)' }}>Cancel</button>
+            <button onClick={handleSave} disabled={saving} className="admin-btn-primary px-4 py-2 rounded-xl text-sm font-medium text-white" style={{ background: 'var(--color-accent)' }}>
               {saving ? 'Saving...' : editing ? 'Update' : 'Create'}
             </button>
           </div>

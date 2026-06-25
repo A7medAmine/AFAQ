@@ -45,7 +45,7 @@ export default function Modal({ open, onClose, title, children, size = 'md' }) {
               <h2 className="text-lg font-semibold" style={{ color: 'var(--color-text)' }}>{title}</h2>
               <button
                 onClick={onClose}
-                className="w-8 h-8 rounded-lg flex items-center justify-center hover:opacity-70"
+                className="admin-icon-btn w-8 h-8 rounded-lg flex items-center justify-center"
                 style={{ color: 'var(--color-text-muted)' }}
               >
                 <X size={16} />
