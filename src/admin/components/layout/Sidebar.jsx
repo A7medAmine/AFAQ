@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
@@ -26,11 +27,14 @@ const NAV_ITEMS = [
 ]
 
 export default function Sidebar() {
+  const [hovered, setHovered] = useState(false)
   const open = useAdminStore(s => s.sidebarOpen)
   const toggle = useAdminStore(s => s.toggleSidebar)
   const role = useAdminStore(s => s.role())
   const logout = useAdminStore(s => s.logout)
   const profile = useAdminStore(s => s.adminProfile)
+
+  const expanded = open || hovered
 
   const linkStyle = ({ isActive }) => ({
     background: isActive ? `${'var(--color-accent)'}12` : 'transparent',
@@ -38,7 +42,10 @@ export default function Sidebar() {
   })
 
   return (
-    <>
+    <div
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
       {/* Collapsed strip — always visible on desktop */}
       <aside className="hidden lg:flex flex-col h-screen fixed left-0 top-0 z-40 border-r" style={{ width: 64, background: 'var(--color-card)', borderColor: 'var(--color-border-light)' }}>
         <div className="flex items-center justify-center h-16 border-b shrink-0" style={{ borderColor: 'var(--color-border-light)' }}>
@@ -74,10 +81,10 @@ export default function Sidebar() {
         </div>
       </aside>
 
-      {/* Expanded overlay sidebar — slides in from left */}
+      {/* Expanded overlay sidebar — slides in from left on hover or click */}
       <motion.aside
         initial={false}
-        animate={{ x: open ? 0 : -240 }}
+        animate={{ x: expanded ? 0 : -240 }}
         transition={{ type: 'spring', damping: 24, stiffness: 260 }}
         className="fixed left-0 top-0 z-50 h-screen flex flex-col border-r"
         style={{ width: 240, background: 'var(--color-card)', borderColor: 'var(--color-border-light)' }}
@@ -96,7 +103,7 @@ export default function Sidebar() {
                 key={item.path}
                 to={item.path}
                 end={item.path === '/admin'}
-                onClick={() => toggle()}
+                onClick={() => { toggle(); setHovered(false) }}
                 className="admin-nav-link flex items-center gap-3.5 px-4 py-3 rounded-xl text-[15px] font-medium transition-all hover:scale-[1.02]"
                 style={linkStyle}
               >
@@ -122,6 +129,6 @@ export default function Sidebar() {
           </button>
         </div>
       </motion.aside>
-    </>
+    </div>
   )
 }

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, Edit3, Trash2, Upload, ImageIcon, ChevronDown, ChevronUp } from 'lucide-react'
+import { Plus, Edit3, Trash2, Upload, ImageIcon, ChevronDown, ChevronUp, Link2, X } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import useAdminStore from '../store/adminStore'
 const getToken = () => useAdminStore.getState().session?.access_token
@@ -136,6 +136,9 @@ export default function GalleryPage() {
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+      {/* Who We Are Image Manager */}
+      <AboutImageManager />
+
       <div className="flex items-center justify-between mb-2">
         <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>Manage gallery albums</p>
         <button onClick={openCreate} className="admin-btn-primary flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-white" style={{ background: 'var(--color-accent)' }}>
@@ -288,5 +291,128 @@ export default function GalleryPage() {
 
       <ConfirmDialog open={!!deleteId} onClose={() => setDeleteId(null)} onConfirm={handleDelete} title="Delete Album" message="This will delete the album and all its images permanently." />
     </motion.div>
+  )
+}
+
+function AboutImageManager() {
+  const [aboutImage, setAboutImage] = useState(null)
+  const [saving, setSaving] = useState(false)
+  const [urlInput, setUrlInput] = useState('')
+  const [showUrlInput, setShowUrlInput] = useState(false)
+  const addToast = useAdminStore(s => s.addToast)
+
+  useEffect(() => {
+    fetch('/api/page-content/home_intro')
+      .then(r => r.json())
+      .then(({ image_url }) => { if (image_url) setAboutImage(image_url) })
+      .catch(() => {})
+  }, [])
+
+  const saveImage = async (image_url) => {
+    setSaving(true)
+    try {
+      const res = await fetch('/api/page-content', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+        body: JSON.stringify({ section: 'home_intro', image_url }),
+      })
+      if (!res.ok) throw new Error((await res.json()).error || 'Save failed')
+      setAboutImage(image_url)
+      setUrlInput('')
+      setShowUrlInput(false)
+      addToast('About image updated')
+    } catch (e) {
+      console.error('Save error:', e)
+      addToast('Failed to save: ' + e.message)
+    }
+    setSaving(false)
+  }
+
+  const removeImage = async () => {
+    setSaving(true)
+    try {
+      const res = await fetch('/api/page-content', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+        body: JSON.stringify({ section: 'home_intro', image_url: null }),
+      })
+      if (!res.ok) throw new Error((await res.json()).error || 'Remove failed')
+      setAboutImage(null)
+      addToast('About image removed')
+    } catch (e) {
+      console.error('Remove error:', e)
+      addToast('Failed to remove')
+    }
+    setSaving(false)
+  }
+
+  const handleUpload = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setSaving(true)
+    const fd = new FormData()
+    fd.append('file', file)
+    const xhr = new XMLHttpRequest()
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        const { url } = JSON.parse(xhr.responseText)
+        saveImage(url)
+      } else {
+        addToast('Upload failed: ' + xhr.responseText)
+        setSaving(false)
+      }
+    }
+    xhr.onerror = () => { addToast('Upload failed: Network error'); setSaving(false) }
+    xhr.open('POST', '/api/upload')
+    xhr.setRequestHeader('Authorization', `Bearer ${getToken()}`)
+    xhr.send(fd)
+  }
+
+  return (
+    <div className="rounded-2xl border p-5" style={{ background: 'var(--color-card)', borderColor: 'var(--color-border-light)' }}>
+      <div className="flex items-center justify-between mb-3">
+        <div>
+          <h3 className="font-semibold text-sm" style={{ color: 'var(--color-text)' }}>Who Are We Image</h3>
+          <p className="text-xs mt-0.5" style={{ color: 'var(--color-text-muted)' }}>Hero image shown on the homepage intro section</p>
+        </div>
+      </div>
+
+      {aboutImage ? (
+        <div className="relative rounded-xl overflow-hidden border mb-3" style={{ borderColor: 'var(--color-border-light)', aspectRatio: '21/9', maxWidth: 600 }}>
+          <img src={aboutImage} alt="" className="w-full h-full object-cover" />
+          <button onClick={removeImage} disabled={saving} className="absolute top-2 right-2 p-1.5 rounded-lg bg-black/60 text-white/80 hover:bg-black/80 transition-all" title="Remove image"><X size={14} /></button>
+        </div>
+      ) : (
+        <div className="flex items-center justify-center rounded-xl border-2 border-dashed mb-3" style={{ borderColor: 'var(--color-border)', aspectRatio: '21/9', maxWidth: 600 }}>
+          <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>No image set</p>
+        </div>
+      )}
+
+      <div className="flex flex-wrap items-center gap-2 mb-3">
+        <label className="admin-btn-primary flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium text-white cursor-pointer" style={{ background: 'var(--color-accent)' }}>
+          <Upload size={14} /> Upload
+          <input type="file" accept="image/*" onChange={handleUpload} className="hidden" />
+        </label>
+        <button onClick={() => setShowUrlInput(!showUrlInput)} className="admin-btn flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium border" style={{ borderColor: 'var(--color-border-light)', color: 'var(--color-text)' }}>
+          <Link2 size={14} /> {showUrlInput ? 'Cancel' : 'URL'}
+        </button>
+      </div>
+
+      {showUrlInput && (
+        <div className="flex items-center gap-2 mt-3">
+          <input
+            value={urlInput}
+            onChange={e => setUrlInput(e.target.value)}
+            placeholder="Paste image URL..."
+            className="flex-1 px-3 py-1.5 rounded-xl border text-xs"
+            style={{ background: 'var(--color-bg)', borderColor: 'var(--color-border-light)', color: 'var(--color-text)' }}
+          />
+          <button onClick={() => saveImage(urlInput)} disabled={saving || !urlInput.trim()} className="admin-btn-primary px-3 py-1.5 rounded-xl text-xs font-medium text-white" style={{ background: saving ? 'var(--color-text-muted)' : 'var(--color-accent)' }}>
+            {saving ? 'Saving...' : 'Save URL'}
+          </button>
+        </div>
+      )}
+
+    </div>
   )
 }

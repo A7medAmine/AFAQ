@@ -177,6 +177,14 @@ export const faq = pgTable('faq', {
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
 })
 
+export const pageContent = pgTable('page_content', {
+  id: bigint({ mode: 'number' }).primaryKey().generatedAlwaysAsIdentity(),
+  section: text().notNull().unique(),
+  imageUrl: text('image_url'),
+  altText: text('alt_text'),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+})
+
 export const aiKnowledge = pgTable('ai_knowledge', {
   id: bigint({ mode: 'number' }).primaryKey().generatedAlwaysAsIdentity(),
   title: text().notNull(),

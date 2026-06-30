@@ -104,10 +104,8 @@ const upload = multer({
 
 const app = express();
 app.set("trust proxy", 1);
-app.use(express.json());
-app.use("/api/", apiLimiter);
 
-// CORS
+// CORS (must be early)
 const APP_URL = process.env.VITE_APP_URL || 'http://localhost:3000';
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', APP_URL);
@@ -118,12 +116,24 @@ app.use((req, res, next) => {
   next();
 });
 
-// --- File uploads ---
+// --- File uploads (BEFORE json parser so body stream is intact) ---
 
-app.post("/api/upload", requireAuth, (req, res) => {
-  if (!req.file) return res.status(400).json({ error: "No file" });
+const uploadRouter = express.Router();
+uploadRouter.post("/upload", (req, res, next) => {
+  upload.single("file")(req, res, (err) => {
+    if (err) return res.status(400).json({ error: err.message });
+    if (!req.file) return res.status(400).json({ error: "No file" });
+    next();
+  });
+}, requireAuth, (req, res) => {
   res.json({ url: `/uploads/${req.file.filename}` });
 });
+app.use("/api", uploadRouter);
+
+// --- JSON parser & rate limiter for remaining API routes ---
+
+app.use(express.json());
+app.use("/api/", apiLimiter);
 
 app.delete("/api/upload", requireAuth, (req, res) => {
   const { url } = req.body;
@@ -135,6 +145,41 @@ app.delete("/api/upload", requireAuth, (req, res) => {
 });
 
 app.use("/uploads", express.static(uploadDir));
+
+// --- Page content (about image, etc.) ---
+
+app.get("/api/page-content/:section", async (req, res) => {
+  const { section } = req.params;
+  const { data } = await supabaseAdmin
+    .from("page_content")
+    .select("image_url")
+    .eq("section", section)
+    .maybeSingle();
+  res.json({ image_url: data?.image_url || null });
+});
+
+app.put("/api/page-content", requireAuth, async (req, res) => {
+  const { section, image_url } = req.body;
+  if (!section) return res.status(400).json({ error: "section is required" });
+  const { data: existing } = await supabaseAdmin
+    .from("page_content")
+    .select("id")
+    .eq("section", section)
+    .maybeSingle();
+  if (existing) {
+    const { error } = await supabaseAdmin
+      .from("page_content")
+      .update({ image_url, updated_at: new Date().toISOString() })
+      .eq("id", existing.id);
+    if (error) return res.status(500).json({ error: error.message });
+  } else {
+    const { error } = await supabaseAdmin
+      .from("page_content")
+      .insert({ section, image_url, updated_at: new Date().toISOString() });
+    if (error) return res.status(500).json({ error: error.message });
+  }
+  res.json({ ok: true });
+});
 
 // --- Admin user management (service_role required) ---
 

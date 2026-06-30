@@ -36,6 +36,13 @@
       "when": 1779617642721,
       "tag": "0004_unknown_hawkeye",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1782420410112,
+      "tag": "0005_quiet_emma_frost",
+      "breakpoints": true
     }
   ]
 }

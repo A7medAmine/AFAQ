@@ -1,12 +1,27 @@
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { Users } from "lucide-react";
+import { supabase } from "../../lib/supabase";
 import SideImage from "../shared/SideImage";
 
 const spring = { type: "spring", damping: 28, stiffness: 120 };
 
 export default function IntroSection() {
   const { t } = useTranslation("home");
+  const [aboutImage, setAboutImage] = useState(null);
+  const [imgLoaded, setImgLoaded] = useState(false);
+
+  useEffect(() => {
+    supabase
+      .from("page_content")
+      .select("image_url")
+      .eq("section", "home_intro")
+      .single()
+      .then(({ data }) => {
+        if (data?.image_url) setAboutImage(data.image_url);
+      });
+  }, []);
 
   return (
     <section
@@ -70,34 +85,9 @@ export default function IntroSection() {
               pointerEvents: "none",
             }}
           />
-          <div className="relative z-10 flex items-center justify-center h-full">
-            <div className="text-center">
-              <div
-                className="inline-flex items-center justify-center rounded-full mb-4"
-                style={{
-                  width: 72,
-                  height: 72,
-                  background: "rgba(255, 255, 255, 0.08)",
-                  border: "1px solid rgba(255, 255, 255, 0.15)",
-                }}
-              >
-                <Users
-                  size={32}
-                  style={{ color: "rgba(255, 255, 255, 0.6)" }}
-                />
-              </div>
-              <p
-                className="text-lg md:text-xl font-semibold tracking-wide"
-                style={{
-                  color: "rgba(255, 255, 255, 0.6)",
-                  fontFamily: "'Minecraft', sans-serif",
-                  letterSpacing: "0.15em",
-                }}
-              >
-                AFAQ SCIENTIFIC CLUB
-              </p>
-            </div>
-          </div>
+          {aboutImage && (
+            <img src={aboutImage} alt="" className="absolute inset-0 w-full h-full object-cover z-10" />
+          )}
         </motion.div>
       </div>
     </section>

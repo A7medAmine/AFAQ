@@ -10,6 +10,7 @@ export default defineConfig({
     port: 3000,
     proxy: {
       '/api/upload': 'http://localhost:3001',
+      '/api/page-content': 'http://localhost:3001',
       '/api/admin': 'http://localhost:3001',
       '/api/email': 'http://localhost:3001',
       '/api/approve': 'http://localhost:3001',
