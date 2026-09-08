@@ -1,11 +1,14 @@
-import { supabaseAdmin } from '../db/client.js'
+import { supabaseAdmin, sanitizeFilter } from '../db/client.js'
 
 export async function searchAnnouncements(query) {
+  const safe = sanitizeFilter(query)
+  if (!safe) return []
+
   const { data, error } = await supabaseAdmin
     .from('announcements')
     .select('*')
     .eq('is_published', true)
-    .or(`title_en.ilike.%${query}%,title_ar.ilike.%${query}%,title_fr.ilike.%${query}%,content_en.ilike.%${query}%,content_ar.ilike.%${query}%,content_fr.ilike.%${query}%`)
+    .or(`title_en.ilike.%${safe}%,title_ar.ilike.%${safe}%,title_fr.ilike.%${safe}%,content_en.ilike.%${safe}%,content_ar.ilike.%${safe}%,content_fr.ilike.%${safe}%`)
     .order('created_at', { ascending: false })
     .limit(10)
 

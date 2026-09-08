@@ -163,14 +163,6 @@ function ResetPasswordDialog({ open, onClose, initialEmail }) {
     setError('')
     setSending(true)
     try {
-      const res = await fetch('/api/admin/check-email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email.trim() }),
-      })
-      const { exists } = await res.json()
-      if (!exists) throw new Error('No admin account uses that email address.')
-
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.trim(), {
         redirectTo: import.meta.env.VITE_APP_URL,
       })

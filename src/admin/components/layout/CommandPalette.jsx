@@ -124,7 +124,12 @@ export default function CommandPalette() {
     setSearching(true)
     const timer = setTimeout(async () => {
       const allowed = SOURCES.filter(s => hasPermission(role, s.permission))
-      const escaped = term.replace(/[%,()]/g, ' ')
+      const escaped = term.replace(/[,().%*:\\]/g, ' ').trim()
+      if (!escaped) {
+        setRecords([])
+        setSearching(false)
+        return
+      }
       const results = await Promise.all(
         allowed.map(async source => {
           const filter = source.match.split(',').map(col => `${col}.ilike.%${escaped}%`).join(',')

@@ -1,11 +1,14 @@
-import { supabaseAdmin } from '../db/client.js'
+import { supabaseAdmin, sanitizeFilter } from '../db/client.js'
 
 export async function searchKnowledge(query) {
+  const safe = sanitizeFilter(query)
+  if (!safe) return []
+
   const { data, error } = await supabaseAdmin
     .from('ai_knowledge')
     .select('*')
     .eq('published', true)
-    .or(`title.ilike.%${query}%,content.ilike.%${query}%,category.ilike.%${query}%,slug.ilike.%${query}%`)
+    .or(`title.ilike.%${safe}%,content.ilike.%${safe}%,category.ilike.%${safe}%,slug.ilike.%${safe}%`)
     .order('id', { ascending: true })
     .limit(20)
 

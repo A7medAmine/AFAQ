@@ -101,14 +101,17 @@ const authLimiter = rateLimit({
 
 // --- Multer with file-type whitelist (in-memory for cloud/serverless) ---
 
-const allowedExts = [".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg"];
+const allowedExts = [".jpg", ".jpeg", ".png", ".gif", ".webp"];
+const allowedMimes = ["image/jpeg", "image/png", "image/gif", "image/webp"];
 
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 15 * 1024 * 1024 }, // 15MB
   fileFilter: (req, file, cb) => {
     const ext = path.extname(file.originalname).toLowerCase();
-    if (allowedExts.includes(ext)) return cb(null, true);
+    if (allowedExts.includes(ext) && allowedMimes.includes(file.mimetype)) {
+      return cb(null, true);
+    }
     cb(new Error(`File type ${ext} not allowed`));
   },
 });
@@ -209,7 +212,11 @@ if (fs.existsSync(uploadDir)) {
 }
 
 app.get("/uploads/:filename", async (req, res) => {
-  const { filename } = req.params;
+  const filename = path.basename(req.params.filename);
+  const ext = path.extname(filename).toLowerCase();
+  if (!allowedExts.includes(ext)) {
+    return res.status(400).json({ error: "Invalid file type" });
+  }
   const localPath = path.join(uploadDir, filename);
   if (fs.existsSync(localPath)) {
     return res.sendFile(localPath);
@@ -319,19 +326,10 @@ app.delete(
 
 // --- Check admin email exists (for password reset) ---
 
-app.post('/api/admin/check-email', async (req, res) => {
+app.post('/api/admin/check-email', authLimiter, async (req, res) => {
   const { email } = req.body
   if (!email) return res.status(400).json({ error: 'Email is required.' })
-  const { data, error } = await supabaseAdmin
-    .from('admin_users')
-    .select('id')
-    .eq('email', email)
-    .maybeSingle()
-  if (error) {
-    console.error('Check email error:', error)
-    return res.status(500).json({ error: 'Server error.' })
-  }
-  res.json({ exists: !!data })
+  res.json({ ok: true, exists: true })
 })
 
 // --- Email auto-reply ---
@@ -755,7 +753,7 @@ const progresApi = axios.create({
   timeout: PROGRES_TIMEOUT,
 });
 
-app.post("/api/progres/auth", async (req, res) => {
+app.post("/api/progres/auth", authLimiter, async (req, res) => {
   const { username, password } = req.body;
   if (!username || !password) {
     return res
@@ -788,17 +786,18 @@ app.post("/api/progres/auth", async (req, res) => {
 app.get("/api/progres/student", async (req, res) => {
   const { uuid } = req.query;
   const authHeader = req.headers.authorization;
-  if (!uuid || !authHeader) {
+  if (!uuid || typeof uuid !== "string" || !/^[a-zA-Z0-9_-]{1,64}$/.test(uuid) || !authHeader) {
     return res
       .status(400)
-      .json({ error: "Missing uuid or authorization header." });
+      .json({ error: "Missing or invalid uuid / authorization header." });
   }
   try {
+    const encodedUuid = encodeURIComponent(uuid);
     const [individuRes, diasRes] = await Promise.all([
-      progresApi.get(`/infos/bac/${uuid}/individu`, {
+      progresApi.get(`/infos/bac/${encodedUuid}/individu`, {
         headers: { Authorization: authHeader },
       }),
-      progresApi.get(`/infos/bac/${uuid}/dias`, {
+      progresApi.get(`/infos/bac/${encodedUuid}/dias`, {
         headers: { Authorization: authHeader },
       }),
     ]);
@@ -893,7 +892,7 @@ app.put("/api/admin/profile", requireAuth, async (req, res) => {
   res.json({ profile: data })
 })
 
-app.put("/api/admin/password", requireAuth, async (req, res) => {
+app.put("/api/admin/password", authLimiter, requireAuth, async (req, res) => {
   const { current_password, new_password } = req.body
   if (!current_password) return res.status(400).json({ error: "Current password is required." })
   if (!new_password || new_password.length < 8) return res.status(400).json({ error: "New password must be at least 8 characters." })
