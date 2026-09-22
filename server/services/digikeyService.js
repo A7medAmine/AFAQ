@@ -87,11 +87,27 @@ function toProduct(p) {
   }
 }
 
-export async function searchProducts(keywords, limit = 10) {
+/**
+ * DigiKey category ids a search can be narrowed to. "boards" keeps results to
+ * things the club actually stocks: dev boards, maker kits, sensor kits and
+ * prototyping boards, instead of bare chips.
+ */
+export const SCOPES = {
+  boards: ['33', '47', '662', '672'],
+  all: [],
+}
+
+export async function searchProducts(keywords, limit = 10, scope = 'boards') {
+  const categories = SCOPES[scope] || SCOPES.boards
+  const body = { Keywords: keywords, Limit: limit, Offset: 0 }
+  if (categories.length) {
+    body.FilterOptionsRequest = { CategoryFilter: categories.map(Id => ({ Id })) }
+  }
+
   const data = await digikeyFetch('/products/v4/search/keyword', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ Keywords: keywords, Limit: limit, Offset: 0 }),
+    body: JSON.stringify(body),
   })
 
   const exact = (data.ExactMatches || []).map(toProduct)

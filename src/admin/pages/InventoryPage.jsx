@@ -250,6 +250,11 @@ function ItemPhoto({ item, onUpdated }) {
   )
 }
 
+const DIGIKEY_SCOPES = [
+  { value: 'boards', label: 'Boards & kits' },
+  { value: 'all', label: 'All parts' },
+]
+
 const CATEGORIES = ['Electronics', 'Tools', 'Lab equipment', 'Furniture', 'Consumables', 'Other']
 
 function AddItem({ open, onClose, onAdded }) {
@@ -357,21 +362,28 @@ function AddItem({ open, onClose, onAdded }) {
 /** Looks parts up through our /api/digikey proxy; picking one prefills the form. */
 function DigiKeySearch({ open, onPick }) {
   const [query, setQuery] = useState('')
+  const [scope, setScope] = useState('boards')
   const [results, setResults] = useState([])
   const [picked, setPicked] = useState(null)
   const [state, setState] = useState({ loading: false, error: null, searched: false })
 
   useEffect(() => {
-    if (open) { setQuery(''); setResults([]); setPicked(null); setState({ loading: false, error: null, searched: false }) }
+    if (open) { setQuery(''); setScope('boards'); setResults([]); setPicked(null); setState({ loading: false, error: null, searched: false }) }
   }, [open])
 
-  const search = async () => {
+  const search = async (inScope = scope) => {
     const q = query.trim()
     if (q.length < 2) return
     setState({ loading: true, error: null, searched: true })
-    const { ok, data, message } = await api(`/api/digikey/search?q=${encodeURIComponent(q)}&limit=8`)
+    const { ok, data, message } = await api(`/api/digikey/search?q=${encodeURIComponent(q)}&limit=8&scope=${inScope}`)
     setResults(ok ? data.products : [])
     setState({ loading: false, error: ok ? null : message, searched: true })
+  }
+
+  // Re-run the current search when the scope flips, so results match the tab.
+  const changeScope = value => {
+    setScope(value)
+    if (state.searched) search(value)
   }
 
   const pick = p => { setPicked(p.digikeyNumber || p.partNumber); onPick(p) }
@@ -387,13 +399,16 @@ function DigiKeySearch({ open, onPick }) {
           onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); search() } }}
           placeholder="ESP32, LM7805, Arduino Uno…"
         />
-        <Button icon={Search} onClick={search} busy={state.loading} busyLabel="Searching…" disabled={query.trim().length < 2}>
+        <Button icon={Search} onClick={() => search()} busy={state.loading} busyLabel="Searching…" disabled={query.trim().length < 2}>
           Search
         </Button>
       </div>
-      <p className="text-[12px]" style={{ color: 'var(--adm-silk-faint)' }}>
-        Search by part number or keywords, then pick a result to fill the form.
-      </p>
+      <div className="flex flex-wrap items-center gap-3">
+        <FilterTabs options={DIGIKEY_SCOPES} value={scope} onChange={changeScope} label="DigiKey search scope" />
+        <p className="text-[12px]" style={{ color: 'var(--adm-silk-faint)' }}>
+          Pick a result to fill the form.
+        </p>
+      </div>
 
       {state.error && <p className="text-[13px]" style={{ color: 'var(--adm-fault)' }}>{state.error}</p>}
       {state.searched && !state.loading && !state.error && !results.length && (

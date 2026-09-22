@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { searchProducts } from '../services/digikeyService.js'
+import { SCOPES, searchProducts } from '../services/digikeyService.js'
 import { requireAuth, requireRole } from '../middleware/auth.js'
 
 const router = Router()
@@ -13,9 +13,10 @@ router.get('/search', async (req, res) => {
   if (q.length > 250) return res.status(400).json({ error: 'Search is too long.' })
 
   const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 10, 1), 25)
+  const scope = Object.hasOwn(SCOPES, req.query.scope) ? req.query.scope : 'boards'
 
   try {
-    res.json(await searchProducts(q, limit))
+    res.json(await searchProducts(q, limit, scope))
   } catch (error) {
     console.error('DigiKey search error:', error.message, error.detail || '')
     const status = error.status === 429 ? 429 : 502
