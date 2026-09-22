@@ -7,6 +7,7 @@ import DataTable from '../components/ui/DataTable'
 import EmptyState, { ErrorState } from '../components/ui/EmptyState'
 import Panel from '../components/ui/Panel'
 import Button from '../components/ui/Button'
+import ExportMenu from '../components/ui/ExportMenu'
 import { StatusBadge } from '../components/ui/Badge'
 import { TextArea, TextField } from '../components/ui/Field'
 import QrScanner from '../components/ui/QrScanner'
@@ -28,7 +29,7 @@ export default function BorrowingPage() {
     const { ok, data, message } = await read(
       supabase
         .from('borrow_records')
-        .select('*, item:inventory_items(name, asset_code), member:membership_applications(full_name)')
+        .select('*, item:inventory_items(name, asset_code), member:members(full_name)')
         .order('checked_out_at', { ascending: false })
     )
     if (!ok) { setState({ loading: false, error: message }); return }
@@ -55,6 +56,21 @@ export default function BorrowingPage() {
         eyebrow="Operate"
         title="Borrowing"
         description="Check tools and equipment in and out by scanning the item's QR label and the member's card."
+        actions={tab === 'history' && (
+          <ExportMenu
+            filename={`borrowing-history-${new Date().toISOString().slice(0, 10)}`}
+            title="Borrowing history"
+            subtitle={formatDateTime(new Date())}
+            headers={['Item', 'Asset code', 'Borrower', 'Checked out', 'Due', 'Returned', 'Status']}
+            rows={withOverdue.map(r => [
+              r.item?.name, r.item?.asset_code, r.member?.full_name || r.borrower_name,
+              formatDateTime(r.checked_out_at), r.expected_return_at ? formatDate(r.expected_return_at) : '',
+              r.returned_at ? formatDateTime(r.returned_at) : '', r.computedStatus,
+            ])}
+            statusColumnIndex={6}
+            disabled={!withOverdue.length}
+          />
+        )}
       />
 
       <div className="flex items-center gap-4 mb-6">
@@ -114,7 +130,7 @@ function CheckOutForm({ onDone }) {
     let member = null
     if (memberCode.trim()) {
       const { data } = await supabase
-        .from('membership_applications').select('id, full_name').eq('member_code', memberCode.trim()).maybeSingle()
+        .from('members').select('id, full_name').eq('member_code', memberCode.trim()).maybeSingle()
       member = data
       if (!member) { addToast('No member with that code.', 'error'); setBusy(false); return }
     }

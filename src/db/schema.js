@@ -75,7 +75,21 @@ export const membershipApplications = pgTable('membership_applications', {
   interests: text().array(),
   motivation: text(),
   status: text().default('pending'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+})
+
+export const members = pgTable('members', {
+  id: bigint({ mode: 'number' }).primaryKey().generatedAlwaysAsIdentity(),
+  applicationId: bigint('application_id', { mode: 'number' }).references(() => membershipApplications.id, { onDelete: 'set null' }),
   memberCode: text('member_code').unique(),
+  fullName: text('full_name').notNull(),
+  email: text().notNull(),
+  phone: text(),
+  studentId: text('student_id'),
+  department: text(),
+  studyYear: text('study_year'),
+  skills: text().array(),
+  interests: text().array(),
   photoUrl: text('photo_url'),
   cardQrCode: text('card_qr_code'),
   cardIssuedAt: timestamp('card_issued_at', { withTimezone: true }),
@@ -192,7 +206,7 @@ export const pageContent = pgTable('page_content', {
 
 export const inventoryItems = pgTable('inventory_items', {
   id: bigint({ mode: 'number' }).primaryKey().generatedAlwaysAsIdentity(),
-  assetCode: text('asset_code').notNull().unique(),
+  assetCode: text('asset_code').unique(),
   name: text().notNull(),
   category: text(),
   serial: text(),
@@ -211,7 +225,7 @@ export const inventoryItems = pgTable('inventory_items', {
 export const borrowRecords = pgTable('borrow_records', {
   id: bigint({ mode: 'number' }).primaryKey().generatedAlwaysAsIdentity(),
   itemId: bigint('item_id', { mode: 'number' }).notNull().references(() => inventoryItems.id, { onDelete: 'cascade' }),
-  memberId: bigint('member_id', { mode: 'number' }).references(() => membershipApplications.id, { onDelete: 'set null' }),
+  memberId: bigint('member_id', { mode: 'number' }).references(() => members.id, { onDelete: 'set null' }),
   borrowerName: text('borrower_name'),
   checkedOutAt: timestamp('checked_out_at', { withTimezone: true }).defaultNow(),
   expectedReturnAt: timestamp('expected_return_at', { withTimezone: true }),

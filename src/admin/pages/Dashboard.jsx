@@ -103,7 +103,7 @@ export default function Dashboard() {
     },
     {
       id: 'membership', label: 'Applications pending', count: counts.pendingMembership,
-      to: '/admin/membership?status=pending', permission: 'membership.manage',
+      to: '/admin/applications?status=pending', permission: 'membership.manage',
     },
     {
       id: 'messages', label: 'Messages unread', count: counts.unreadMessages,
@@ -351,13 +351,12 @@ function AddMemberModal({ open, onClose, onAdded }) {
 
     setSaving(true)
     const { ok } = await run(
-      supabase.from('membership_applications').insert({
+      supabase.from('members').insert({
         full_name: form.full_name.trim(),
         email: form.email.trim(),
         phone: form.phone.trim() || null,
         department: form.department.trim() || null,
         student_id: form.student_id.trim() || null,
-        status: 'approved',
       }),
       { success: `${form.full_name.trim()} added to the club.`, failure: 'The member was not added.' }
     )
@@ -370,7 +369,7 @@ function AddMemberModal({ open, onClose, onAdded }) {
       open={open}
       onClose={onClose}
       title="Add a member"
-      description="For people who joined in person. They are saved as approved."
+      description="For people who joined in person. No email is sent; issue a card from the Members page."
       footer={
         <>
           <Button onClick={onClose} data-dialog-dismiss="true">Cancel</Button>

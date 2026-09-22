@@ -3,13 +3,14 @@ import { Brain, Eye, EyeOff, Loader2, Pencil, Plus, Trash2 } from 'lucide-react'
 import { api } from '../lib/db'
 import useAdminStore from '../store/adminStore'
 import useQueryParam from '../hooks/useQueryParam'
-import { formatDate } from '../lib/format'
+import { formatDate, formatDateTime } from '../lib/format'
 import PageHeader, { FilterTabs } from '../components/ui/PageHeader'
 import DataTable from '../components/ui/DataTable'
 import Modal from '../components/ui/Modal'
 import ConfirmDialog from '../components/ui/ConfirmDialog'
 import EmptyState, { ErrorState } from '../components/ui/EmptyState'
 import Button, { IconButton } from '../components/ui/Button'
+import ExportMenu from '../components/ui/ExportMenu'
 import Badge, { StatusBadge } from '../components/ui/Badge'
 import Panel from '../components/ui/Panel'
 import { CheckField, TextArea, TextField } from '../components/ui/Field'
@@ -161,7 +162,23 @@ export default function AIKnowledgePage() {
         eyebrow="Console"
         title="AI knowledge"
         description="What the website assistant knows. It answers visitors using the published articles here and nothing else."
-        actions={<Button variant="primary" icon={Plus} onClick={() => setEditor({ article: null })}>New article</Button>}
+        actions={
+          <>
+            <ExportMenu
+              filename={`ai-knowledge-${status}-${new Date().toISOString().slice(0, 10)}`}
+              title="AI knowledge"
+              subtitle={`${FILTERS.find(f => f.value === status)?.label || 'All'} · ${formatDateTime(new Date())}`}
+              headers={['Title', 'Category', 'Keywords', 'Status', 'Updated']}
+              rows={filtered.map(a => [
+                a.title, a.category, (a.keywords || []).join(', '),
+                a.published ? 'published' : 'draft', formatDate(a.updated_at || a.created_at),
+              ])}
+              statusColumnIndex={3}
+              disabled={!filtered.length}
+            />
+            <Button variant="primary" icon={Plus} onClick={() => setEditor({ article: null })}>New article</Button>
+          </>
+        }
       />
 
       {state.error ? (

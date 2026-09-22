@@ -2,13 +2,14 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Loader2, Shield, ShieldOff, Trash2, UserPlus } from 'lucide-react'
 import { api, logActivity, read, run, supabase } from '../lib/db'
 import useAdminStore from '../store/adminStore'
-import { formatDate, initials } from '../lib/format'
+import { formatDate, formatDateTime, initials } from '../lib/format'
 import PageHeader from '../components/ui/PageHeader'
 import DataTable from '../components/ui/DataTable'
 import Modal from '../components/ui/Modal'
 import ConfirmDialog from '../components/ui/ConfirmDialog'
 import EmptyState, { ErrorState } from '../components/ui/EmptyState'
 import Button, { IconButton } from '../components/ui/Button'
+import ExportMenu from '../components/ui/ExportMenu'
 import Badge, { StatusBadge } from '../components/ui/Badge'
 import Panel from '../components/ui/Panel'
 import { SelectField, TextField } from '../components/ui/Field'
@@ -150,7 +151,20 @@ export default function AdminUsersPage() {
         eyebrow="Console"
         title="Admins"
         description="Who can sign in to this console, and what each of them may change."
-        actions={<Button variant="primary" icon={UserPlus} onClick={() => setAddOpen(true)}>Add an admin</Button>}
+        actions={
+          <>
+            <ExportMenu
+              filename={`admins-${new Date().toISOString().slice(0, 10)}`}
+              title="Admins"
+              subtitle={formatDateTime(new Date())}
+              headers={['Name', 'Email', 'Role', 'Access', 'Added']}
+              rows={admins.map(a => [a.full_name, a.email, a.role?.label, a.is_active ? 'active' : 'inactive', formatDate(a.created_at)])}
+              statusColumnIndex={3}
+              disabled={!admins.length}
+            />
+            <Button variant="primary" icon={UserPlus} onClick={() => setAddOpen(true)}>Add an admin</Button>
+          </>
+        }
       />
 
       {state.error ? (

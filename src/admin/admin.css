@@ -716,6 +716,30 @@ select.adm-input {
   }
 }
 
+.adm-export-choice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  justify-content: center;
+  padding: 9px 12px;
+  border: 1px solid var(--adm-trace);
+  background: var(--adm-panel);
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--adm-silk-dim);
+  cursor: pointer;
+}
+.adm-export-choice:hover {
+  background: var(--adm-panel-hover);
+}
+.adm-export-choice[data-active] {
+  background: var(--adm-signal-wash);
+  border-color: var(--adm-signal-edge);
+  color: var(--adm-signal);
+}
+
 /* Print sheets (member cards, inventory labels) share the admin console
    route so they get real data/auth, but printing the sidebar/topnav/toasts
    along with them is never what anyone wants. */

@@ -1,14 +1,14 @@
 import { NavLink } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
-  ArrowLeftRight, Boxes, Brain, Calendar, CircuitBoard, ClipboardCheck, Gauge, Images, Mail, Megaphone,
+  ArrowLeftRight, Boxes, Brain, Calendar, CircuitBoard, ClipboardCheck, Gauge, IdCard, Images, Mail, Megaphone,
   PanelLeftClose, PanelLeftOpen, ScrollText, Shield, SlidersHorizontal, UserCheck, X,
 } from 'lucide-react'
 import useAdminStore from '../../store/adminStore'
 import { NAV_GROUPS, navItemsFor } from '../../lib/permissions'
 
 const ICONS = {
-  Gauge, Calendar, ClipboardCheck, UserCheck, Mail,
+  Gauge, Calendar, ClipboardCheck, UserCheck, IdCard, Mail,
   CircuitBoard, Images, Megaphone, Boxes, ArrowLeftRight,
   Shield, Brain, ScrollText, SlidersHorizontal,
 }
@@ -16,7 +16,7 @@ const ICONS = {
 /** Queues surface as a count on the nav item that clears them. */
 const BADGE_KEY = {
   '/admin/registrations': 'pendingRegistrations',
-  '/admin/membership': 'pendingMembership',
+  '/admin/applications': 'pendingMembership',
   '/admin/messages': 'unreadMessages',
   '/admin/borrowing': 'overdueBorrows',
 }

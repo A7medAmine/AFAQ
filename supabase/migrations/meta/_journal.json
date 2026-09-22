@@ -57,6 +57,20 @@
       "when": 1790113966461,
       "tag": "0007_acoustic_layla_miller",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1790116308718,
+      "tag": "0008_lame_jetstream",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1790117138895,
+      "tag": "0009_split_members_from_applications",
+      "breakpoints": true
     }
   ]
 }

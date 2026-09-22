@@ -1,0 +1,1 @@
+ALTER TABLE "inventory_items" ALTER COLUMN "asset_code" DROP NOT NULL;

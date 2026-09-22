@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import QRCode from 'qrcode'
-import { Boxes, Download, IdCard, Loader2, PackagePlus, Trash2, Upload } from 'lucide-react'
+import { Boxes, IdCard, Loader2, PackagePlus, Search, Trash2, Upload } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import { logActivity, read, run, supabase, uploadFile } from '../lib/db'
+import { api, logActivity, read, run, supabase, uploadFile } from '../lib/db'
 import useAdminStore from '../store/adminStore'
 import useQueryParam from '../hooks/useQueryParam'
-import { downloadCSV, formatDate } from '../lib/format'
+import { formatDate, formatDateTime } from '../lib/format'
 import PageHeader, { FilterTabs } from '../components/ui/PageHeader'
 import DataTable from '../components/ui/DataTable'
 import Drawer, { DetailRow } from '../components/ui/Drawer'
@@ -13,9 +13,10 @@ import Modal from '../components/ui/Modal'
 import ConfirmDialog from '../components/ui/ConfirmDialog'
 import EmptyState, { ErrorState } from '../components/ui/EmptyState'
 import Button from '../components/ui/Button'
+import ExportMenu from '../components/ui/ExportMenu'
 import { StatusBadge } from '../components/ui/Badge'
 import Panel from '../components/ui/Panel'
-import { SelectField, TextField } from '../components/ui/Field'
+import { SelectField, TextArea, TextField } from '../components/ui/Field'
 
 const FILTERS = [
   { value: 'all', label: 'All' },
@@ -72,14 +73,8 @@ export default function InventoryPage() {
     if (ok) { logActivity('retired', 'inventory_items', item.id, { name: item.name }); await load(); setRemove(null); setDetail(null) }
   }
 
-  const exportCSV = () => {
-    downloadCSV(
-      `inventory-${status}-${new Date().toISOString().slice(0, 10)}.csv`,
-      ['Asset code', 'Name', 'Category', 'Serial', 'Condition', 'Location', 'Status', 'Added'],
-      filtered.map(r => [r.asset_code, r.name, r.category, r.serial, r.condition, r.location, r.status, formatDate(r.created_at)])
-    )
-    addToast(`Exported ${filtered.length} rows.`)
-  }
+  const exportHeaders = ['Asset code', 'Name', 'Category', 'Serial', 'Condition', 'Location', 'Status', 'Added']
+  const exportRows = filtered.map(r => [r.asset_code, r.name, r.category, r.serial, r.condition, r.location, r.status, formatDate(r.created_at)])
 
   const columns = useMemo(() => [
     {
@@ -119,9 +114,15 @@ export default function InventoryPage() {
         description="Electronics, tools and everything else the club owns. Each item gets a QR label to scan for borrowing."
         actions={
           <>
-            <Button icon={Download} onClick={exportCSV} disabled={!filtered.length}>
-              Export {filtered.length ? `${filtered.length} rows` : 'CSV'}
-            </Button>
+            <ExportMenu
+              filename={`inventory-${status}-${new Date().toISOString().slice(0, 10)}`}
+              title="Inventory"
+              subtitle={`${FILTERS.find(f => f.value === status)?.label || 'All'} · ${formatDateTime(new Date())}`}
+              headers={exportHeaders}
+              rows={exportRows}
+              statusColumnIndex={6}
+              disabled={!filtered.length}
+            />
             <Button variant="primary" icon={PackagePlus} onClick={() => setAddOpen(true)}>Add item</Button>
           </>
         }
@@ -252,7 +253,7 @@ function ItemPhoto({ item, onUpdated }) {
 const CATEGORIES = ['Electronics', 'Tools', 'Lab equipment', 'Furniture', 'Consumables', 'Other']
 
 function AddItem({ open, onClose, onAdded }) {
-  const blank = { name: '', category: 'Electronics', serial: '', condition: 'good', location: '', value: '' }
+  const blank = { name: '', category: 'Electronics', serial: '', condition: 'good', location: '', value: '', notes: '', photo_url: '' }
   const [form, setForm] = useState(blank)
   const [errors, setErrors] = useState({})
   const [saving, setSaving] = useState(false)
@@ -262,6 +263,25 @@ function AddItem({ open, onClose, onAdded }) {
   const set = (key, value) => {
     setForm(f => ({ ...f, [key]: value }))
     setErrors(e => ({ ...e, [key]: undefined }))
+  }
+
+  const applyProduct = p => {
+    setForm(f => ({
+      ...f,
+      name: p.description || p.partNumber || f.name,
+      category: 'Electronics',
+      photo_url: p.photoUrl || '',
+      notes: [
+        p.detailedDescription,
+        p.manufacturer && `Manufacturer: ${p.manufacturer}`,
+        p.partNumber && `Part number: ${p.partNumber}`,
+        p.digikeyNumber && `DigiKey #: ${p.digikeyNumber}`,
+        p.unitPrice != null && `DigiKey unit price: $${p.unitPrice}`,
+        p.datasheetUrl && `Datasheet: ${p.datasheetUrl}`,
+        p.productUrl && `Product page: ${p.productUrl}`,
+      ].filter(Boolean).join('\n'),
+    }))
+    setErrors({})
   }
 
   const submit = async () => {
@@ -276,6 +296,8 @@ function AddItem({ open, onClose, onAdded }) {
         condition: form.condition,
         location: form.location.trim() || null,
         value: form.value ? Number(form.value) : null,
+        notes: form.notes.trim() || null,
+        photo_url: form.photo_url || null,
         status: 'available',
       }).select().single(),
       { failure: 'The item was not added.' }
@@ -309,6 +331,7 @@ function AddItem({ open, onClose, onAdded }) {
       }
     >
       <div className="space-y-4">
+        <DigiKeySearch open={open} onPick={applyProduct} />
         <TextField label="Name" required value={form.name} error={errors.name}
           onChange={e => set('name', e.target.value)} placeholder="Arduino Uno R3" />
         <div className="grid sm:grid-cols-2 gap-4">
@@ -325,7 +348,91 @@ function AddItem({ open, onClose, onAdded }) {
           <TextField label="Location" value={form.location} onChange={e => set('location', e.target.value)} placeholder="Lab shelf 2" />
           <TextField label="Value (DA)" type="number" value={form.value} onChange={e => set('value', e.target.value)} />
         </div>
+        <TextArea label="Notes" rows={4} value={form.notes} onChange={e => set('notes', e.target.value)} />
       </div>
     </Modal>
+  )
+}
+
+/** Looks parts up through our /api/digikey proxy; picking one prefills the form. */
+function DigiKeySearch({ open, onPick }) {
+  const [query, setQuery] = useState('')
+  const [results, setResults] = useState([])
+  const [picked, setPicked] = useState(null)
+  const [state, setState] = useState({ loading: false, error: null, searched: false })
+
+  useEffect(() => {
+    if (open) { setQuery(''); setResults([]); setPicked(null); setState({ loading: false, error: null, searched: false }) }
+  }, [open])
+
+  const search = async () => {
+    const q = query.trim()
+    if (q.length < 2) return
+    setState({ loading: true, error: null, searched: true })
+    const { ok, data, message } = await api(`/api/digikey/search?q=${encodeURIComponent(q)}&limit=8`)
+    setResults(ok ? data.products : [])
+    setState({ loading: false, error: ok ? null : message, searched: true })
+  }
+
+  const pick = p => { setPicked(p.digikeyNumber || p.partNumber); onPick(p) }
+
+  return (
+    <div className="rounded-lg p-3 space-y-3" style={{ background: 'var(--adm-panel-raise)' }}>
+      <div className="flex items-end gap-2">
+        <TextField
+          className="flex-1"
+          label="Find on DigiKey"
+          value={query}
+          onChange={e => setQuery(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); search() } }}
+          placeholder="ESP32, LM7805, Arduino Uno…"
+        />
+        <Button icon={Search} onClick={search} busy={state.loading} busyLabel="Searching…" disabled={query.trim().length < 2}>
+          Search
+        </Button>
+      </div>
+      <p className="text-[12px]" style={{ color: 'var(--adm-silk-faint)' }}>
+        Search by part number or keywords, then pick a result to fill the form.
+      </p>
+
+      {state.error && <p className="text-[13px]" style={{ color: 'var(--adm-fault)' }}>{state.error}</p>}
+      {state.searched && !state.loading && !state.error && !results.length && (
+        <p className="text-[13px]" style={{ color: 'var(--adm-silk-faint)' }}>No parts found.</p>
+      )}
+
+      {results.length > 0 && (
+        <ul className="space-y-1 overflow-y-auto" style={{ maxHeight: 260 }}>
+          {results.map(p => {
+            const id = p.digikeyNumber || p.partNumber
+            return (
+              <li key={id}>
+                <button
+                  type="button"
+                  onClick={() => pick(p)}
+                  className="w-full flex items-center gap-3 rounded-md p-2 text-left"
+                  style={{
+                    background: picked === id ? 'var(--adm-panel)' : 'transparent',
+                    outline: picked === id ? '1px solid var(--adm-silk-faint)' : 'none',
+                  }}
+                >
+                  <span className="rounded overflow-hidden shrink-0" style={{ width: 40, height: 40, background: 'var(--adm-panel)' }}>
+                    {p.photoUrl ? <img src={p.photoUrl} alt="" className="w-full h-full object-contain" loading="lazy" /> : null}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-semibold adm-truncate">{p.description || p.partNumber}</span>
+                    <span className="adm-data block text-[11px] adm-truncate" style={{ color: 'var(--adm-silk-faint)' }}>
+                      {[p.manufacturer, p.partNumber, p.category].filter(Boolean).join(' · ')}
+                    </span>
+                  </span>
+                  {p.unitPrice != null && (
+                    <span className="adm-data text-[12px] shrink-0" style={{ color: 'var(--adm-silk-dim)' }}>${p.unitPrice}</span>
+                  )}
+                </button>
+              </li>
+            )
+          })}
+        </ul>
+      )}
+    </div>
   )
 }

@@ -5,13 +5,14 @@ import {
 import { deleteUploadedFile, logActivity, read, run, supabase, uploadFile } from '../lib/db'
 import useAdminStore from '../store/adminStore'
 import useQueryParam from '../hooks/useQueryParam'
-import { formatDate, isPast, toDateInput, toForm } from '../lib/format'
+import { formatDate, formatDateTime, isPast, toDateInput, toForm } from '../lib/format'
 import PageHeader, { FilterTabs } from '../components/ui/PageHeader'
 import DataTable from '../components/ui/DataTable'
 import Modal from '../components/ui/Modal'
 import ConfirmDialog from '../components/ui/ConfirmDialog'
 import EmptyState, { ErrorState } from '../components/ui/EmptyState'
 import Button, { IconButton } from '../components/ui/Button'
+import ExportMenu from '../components/ui/ExportMenu'
 import Badge, { StatusBadge } from '../components/ui/Badge'
 import Panel from '../components/ui/Panel'
 import { CheckField, LocalizedField, TextField } from '../components/ui/Field'
@@ -244,7 +245,24 @@ export default function EventsPage() {
         eyebrow="Operate"
         title="Events"
         description="Workshops, talks and competitions. Publishing puts an event on the public site; opening registration lets people sign up."
-        actions={<Button variant="primary" icon={CalendarPlus} onClick={() => setEditor({ event: null })}>New event</Button>}
+        actions={
+          <>
+            <ExportMenu
+              filename={`events-${status}-${new Date().toISOString().slice(0, 10)}`}
+              title="Events"
+              subtitle={`${FILTERS.find(f => f.value === status)?.label || 'All'} · ${formatDateTime(new Date())}`}
+              headers={['Title', 'Date', 'Time', 'Seats taken', 'Capacity', 'Registration', 'Visibility']}
+              rows={filtered.map(e => [
+                e.title_en, formatDate(e.date), e.time ? e.time.slice(0, 5) : '',
+                seats[e.id]?.approved || 0, e.max_participants || '—',
+                e.registration_open ? 'open' : 'closed', e.is_published ? 'published' : 'draft',
+              ])}
+              statusColumnIndex={6}
+              disabled={!filtered.length}
+            />
+            <Button variant="primary" icon={CalendarPlus} onClick={() => setEditor({ event: null })}>New event</Button>
+          </>
+        }
       />
 
       {state.error ? (

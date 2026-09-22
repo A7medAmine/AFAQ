@@ -4,7 +4,7 @@ import { api, logActivity, read, run, supabase } from '../lib/db'
 import useAdminStore from '../store/adminStore'
 import useCounts from '../hooks/useCounts'
 import useQueryParam from '../hooks/useQueryParam'
-import { downloadCSV, downloadDataUrl, formatDate, formatDateTime } from '../lib/format'
+import { downloadDataUrl, formatDate, formatDateTime } from '../lib/format'
 import PageHeader, { FilterTabs } from '../components/ui/PageHeader'
 import DataTable from '../components/ui/DataTable'
 import Drawer, { DetailRow, TagList } from '../components/ui/Drawer'
@@ -12,6 +12,7 @@ import Modal from '../components/ui/Modal'
 import ConfirmDialog from '../components/ui/ConfirmDialog'
 import EmptyState, { ErrorState } from '../components/ui/EmptyState'
 import Button, { IconButton } from '../components/ui/Button'
+import ExportMenu from '../components/ui/ExportMenu'
 import { StatusBadge } from '../components/ui/Badge'
 import Panel from '../components/ui/Panel'
 
@@ -130,17 +131,11 @@ export default function RegistrationsPage() {
     refreshCounts()
   }
 
-  const exportCSV = () => {
-    downloadCSV(
-      `registrations-${status}-${new Date().toISOString().slice(0, 10)}.csv`,
-      ['Name', 'Email', 'Phone', 'Student ID', 'Department', 'Study year', 'Event', 'Skills', 'Interests', 'Motivation', 'Status', 'Registered'],
-      filtered.map(r => [
-        r.full_name, r.email, r.phone, r.student_id, r.department, r.study_year,
-        r.event?.title_en, r.skills, r.interests, r.motivation, r.status, formatDateTime(r.created_at),
-      ])
-    )
-    addToast(`Exported ${filtered.length} rows.`)
-  }
+  const exportHeaders = ['Name', 'Email', 'Phone', 'Student ID', 'Department', 'Study year', 'Event', 'Skills', 'Interests', 'Motivation', 'Status', 'Registered']
+  const exportRows = filtered.map(r => [
+    r.full_name, r.email, r.phone, r.student_id, r.department, r.study_year,
+    r.event?.title_en, r.skills, r.interests, r.motivation, r.status, formatDateTime(r.created_at),
+  ])
 
   const columns = useMemo(() => [
     {
@@ -208,9 +203,15 @@ export default function RegistrationsPage() {
         title="Event registrations"
         description="Approving a registration emails the person their entry pass. Open a row to read what they submitted."
         actions={
-          <Button icon={Download} onClick={exportCSV} disabled={!filtered.length}>
-            Export {filtered.length ? `${filtered.length} rows` : 'CSV'}
-          </Button>
+          <ExportMenu
+            filename={`registrations-${status}-${new Date().toISOString().slice(0, 10)}`}
+            title="Event registrations"
+            subtitle={`${FILTERS.find(f => f.value === status)?.label || 'All'} · ${formatDateTime(new Date())}`}
+            headers={exportHeaders}
+            rows={exportRows}
+            statusColumnIndex={10}
+            disabled={!filtered.length}
+          />
         }
       />
 

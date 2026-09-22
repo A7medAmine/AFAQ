@@ -20,7 +20,7 @@ const PERMISSION_LABELS = {
   'admin_users.manage': 'Add and remove admins',
   'events.manage': 'Create and publish events',
   'events.registrations.manage': 'Approve event registrations',
-  'membership.manage': 'Approve membership applications',
+  'membership.manage': 'Approve membership applications and manage members',
   'projects.manage': 'Create and publish projects',
   'gallery.manage': 'Manage gallery albums and photos',
   'messages.view': 'Read contact messages',

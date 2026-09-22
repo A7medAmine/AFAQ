@@ -3,13 +3,14 @@ import { CircuitBoard, Code2, Eye, EyeOff, ImageOff, Link2, Loader2, Pencil, Plu
 import { deleteUploadedFile, logActivity, read, run, supabase, uploadFile } from '../lib/db'
 import useAdminStore from '../store/adminStore'
 import useQueryParam from '../hooks/useQueryParam'
-import { formatDate, toForm } from '../lib/format'
+import { formatDate, formatDateTime, toForm } from '../lib/format'
 import PageHeader, { FilterTabs } from '../components/ui/PageHeader'
 import DataTable from '../components/ui/DataTable'
 import Modal from '../components/ui/Modal'
 import ConfirmDialog from '../components/ui/ConfirmDialog'
 import EmptyState, { ErrorState } from '../components/ui/EmptyState'
 import Button, { IconButton } from '../components/ui/Button'
+import ExportMenu from '../components/ui/ExportMenu'
 import { StatusBadge } from '../components/ui/Badge'
 import Panel from '../components/ui/Panel'
 import { CheckField, LocalizedField, SelectField, TextField } from '../components/ui/Field'
@@ -207,7 +208,23 @@ export default function ProjectsPage() {
         eyebrow="Publish"
         title="Projects"
         description="What the club has built. Published projects appear in the public projects gallery."
-        actions={<Button variant="primary" icon={Plus} onClick={() => setEditor({ project: null })}>New project</Button>}
+        actions={
+          <>
+            <ExportMenu
+              filename={`projects-${status}-${new Date().toISOString().slice(0, 10)}`}
+              title="Projects"
+              subtitle={`${FILTERS.find(f => f.value === status)?.label || 'All'} · ${formatDateTime(new Date())}`}
+              headers={['Title', 'Category', 'Technologies', 'Repository', 'Demo', 'Visibility', 'Created']}
+              rows={filtered.map(p => [
+                p.title_en, p.category, (p.technologies || []).join(', '), p.github_url, p.demo_url,
+                p.is_published ? 'published' : 'draft', formatDate(p.created_at),
+              ])}
+              statusColumnIndex={5}
+              disabled={!filtered.length}
+            />
+            <Button variant="primary" icon={Plus} onClick={() => setEditor({ project: null })}>New project</Button>
+          </>
+        }
       />
 
       {state.error ? (

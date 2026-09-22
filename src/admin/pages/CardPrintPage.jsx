@@ -23,7 +23,7 @@ export default function CardPrintPage() {
     let cancelled = false
     const load = async () => {
       const { ok, data, message } = await read(
-        supabase.from('membership_applications').select('*').eq('id', id).single()
+        supabase.from('members').select('*').eq('id', id).single()
       )
       if (cancelled) return
       if (!ok) { setState({ loading: false, error: message }); return }
@@ -44,7 +44,7 @@ export default function CardPrintPage() {
         <EmptyState
           icon={IdCard}
           title="No card issued yet"
-          description="Approve this member (or re-approve) from the Membership page to generate a card."
+          description="Issue a card for this member from the Members page to generate one."
         />
       </Panel>
     )
@@ -53,8 +53,8 @@ export default function CardPrintPage() {
   return (
     <div>
       <div className="adm-no-print flex items-center justify-between mb-6">
-        <Link to="/admin/membership" className="adm-btn adm-btn-ghost">
-          <ArrowLeft size={15} /> Back to membership
+        <Link to="/admin/members" className="adm-btn adm-btn-ghost">
+          <ArrowLeft size={15} /> Back to members
         </Link>
         <div className="flex items-center gap-2">
           <StatusBadge status={member.card_status} />

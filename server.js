@@ -12,6 +12,7 @@ import rateLimit from 'express-rate-limit'
 import ws from 'ws'
 import aiRoutes from './server/routes/ai.js'
 import aiKnowledgeRoutes from './server/routes/aiKnowledge.js'
+import digikeyRoutes from './server/routes/digikey.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const uploadDir = path.resolve(__dirname, "upload");
@@ -684,6 +685,32 @@ app.post(
   }
 );
 
+async function issueMemberCard(memberId) {
+  const { data: existing, error: fetchErr } = await supabaseAdmin
+    .from("members")
+    .select("*")
+    .eq("id", memberId)
+    .single();
+  if (fetchErr || !existing) throw new Error("Member not found");
+
+  const memberCode = existing.member_code || `AFQ-${String(existing.id).padStart(5, "0")}`;
+  const verifyUrl = `${process.env.VITE_APP_URL || ""}/verify/${memberCode}`;
+  const cardQrCode = await QRCodeLib.toDataURL(verifyUrl, { width: 300, margin: 2 });
+
+  const { error: updateErr } = await supabaseAdmin
+    .from("members")
+    .update({
+      member_code: memberCode,
+      card_qr_code: cardQrCode,
+      card_issued_at: new Date().toISOString(),
+      card_status: "active",
+    })
+    .eq("id", memberId);
+  if (updateErr) throw updateErr;
+
+  return { ...existing, member_code: memberCode, card_qr_code: cardQrCode, card_status: "active" };
+}
+
 app.post(
   "/api/approve/membership",
   requireAuth,
@@ -692,42 +719,57 @@ app.post(
     const { id } = req.body;
     if (!id) return res.status(400).json({ error: "Missing id" });
 
-    const { data: app, error: fetchErr } = await supabaseAdmin
+    const { data: application, error: fetchErr } = await supabaseAdmin
       .from("membership_applications")
       .select("*")
       .eq("id", id)
       .single();
-    if (fetchErr || !app) {
+    if (fetchErr || !application) {
       console.error("Fetch application error:", fetchErr);
       return res.status(404).json({ error: "Application not found" });
     }
 
-    const memberCode = app.member_code || `AFQ-${String(app.id).padStart(5, "0")}`;
-    const verifyUrl = `${process.env.VITE_APP_URL || ""}/verify/${memberCode}`;
-    const cardQrCode = await QRCodeLib.toDataURL(verifyUrl, {
-      width: 300,
-      margin: 2,
-    });
-
-    const { error: updateErr } = await supabaseAdmin
-      .from("membership_applications")
-      .update({
-        status: "approved",
-        member_code: memberCode,
-        card_qr_code: cardQrCode,
-        card_issued_at: new Date().toISOString(),
-        card_status: "active",
+    const { data: inserted, error: insertErr } = await supabaseAdmin
+      .from("members")
+      .insert({
+        application_id: application.id,
+        full_name: application.full_name,
+        email: application.email,
+        phone: application.phone,
+        student_id: application.student_id,
+        department: application.department,
+        study_year: application.study_year,
+        skills: application.skills,
+        interests: application.interests,
       })
+      .select("*")
+      .single();
+    if (insertErr) {
+      console.error("Create member error:", insertErr);
+      return res.status(500).json({ error: "Failed to create member" });
+    }
+
+    const { error: statusErr } = await supabaseAdmin
+      .from("membership_applications")
+      .update({ status: "approved" })
       .eq("id", id);
-    if (updateErr) {
-      console.error("Update application error:", updateErr);
+    if (statusErr) {
+      console.error("Update application error:", statusErr);
       return res.status(500).json({ error: "Failed to approve application" });
     }
 
-    const safeName = escapeHtml(app.full_name);
+    let member;
+    try {
+      member = await issueMemberCard(inserted.id);
+    } catch (err) {
+      console.error("Issue card error:", err);
+      return res.status(500).json({ error: "Member created but the card could not be issued" });
+    }
+
+    const safeName = escapeHtml(application.full_name);
 
     await sendEmail({
-      to: app.email,
+      to: application.email,
       subject: "Membership Approved — Welcome to AFAQ!",
       html: `
       <div style="font-family: Arial, sans-serif; max-width: 560px; margin: 0 auto;">
@@ -752,12 +794,24 @@ app.post(
     `,
     });
 
-    res.json({
-      ok: true,
-      member_code: memberCode,
-      card_qr_code: cardQrCode,
-      card_status: "active",
-    });
+    res.json({ ok: true, member });
+  }
+);
+
+app.post(
+  "/api/members/issue-card",
+  requireAuth,
+  requireRole("super_admin", "event_manager"),
+  async (req, res) => {
+    const { id } = req.body;
+    if (!id) return res.status(400).json({ error: "Missing id" });
+    try {
+      const member = await issueMemberCard(id);
+      res.json({ ok: true, member });
+    } catch (err) {
+      console.error("Issue card error:", err);
+      res.status(500).json({ error: "Failed to issue card" });
+    }
   }
 );
 
@@ -766,7 +820,7 @@ app.post(
 app.get("/api/members/verify/:memberCode", async (req, res) => {
   const { memberCode } = req.params;
   const { data: member, error } = await supabaseAdmin
-    .from("membership_applications")
+    .from("members")
     .select("full_name, photo_url, card_status, member_code")
     .eq("member_code", memberCode)
     .single();
@@ -957,6 +1011,10 @@ app.use("/api/ai", aiRoutes);
 // --- AI Knowledge ---
 
 app.use("/api/ai-knowledge", aiKnowledgeRoutes);
+
+// --- DigiKey product lookup (inventory) ---
+
+app.use("/api/digikey", digikeyRoutes);
 
 // --- SPA fallback (production) ---
 

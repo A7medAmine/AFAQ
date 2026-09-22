@@ -11,6 +11,7 @@ import Drawer, { DetailRow } from '../components/ui/Drawer'
 import ConfirmDialog from '../components/ui/ConfirmDialog'
 import EmptyState, { ErrorState } from '../components/ui/EmptyState'
 import Button, { IconButton } from '../components/ui/Button'
+import ExportMenu from '../components/ui/ExportMenu'
 import Panel from '../components/ui/Panel'
 
 const FILTERS = [
@@ -175,9 +176,20 @@ export default function MessagesPage() {
         title="Messages"
         description="Everything sent through the contact form. Opening a message marks it read."
         actions={
-          <Button icon={CheckCheck} onClick={markAllRead} disabled={!unread.length}>
-            Mark all read{unread.length ? ` (${unread.length})` : ''}
-          </Button>
+          <>
+            <ExportMenu
+              filename={`messages-${status}-${new Date().toISOString().slice(0, 10)}`}
+              title="Messages"
+              subtitle={`${FILTERS.find(f => f.value === status)?.label || 'All'} · ${formatDateTime(new Date())}`}
+              headers={['Name', 'Email', 'Subject', 'Message', 'Status', 'Received']}
+              rows={filtered.map(m => [m.name, m.email, m.subject, m.message, m.is_read ? 'read' : 'unread', formatDateTime(m.created_at)])}
+              statusColumnIndex={4}
+              disabled={!filtered.length}
+            />
+            <Button icon={CheckCheck} onClick={markAllRead} disabled={!unread.length}>
+              Mark all read{unread.length ? ` (${unread.length})` : ''}
+            </Button>
+          </>
         }
       />
 

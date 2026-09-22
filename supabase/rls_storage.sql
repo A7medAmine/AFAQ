@@ -15,6 +15,7 @@ ALTER TABLE gallery_images ENABLE ROW LEVEL SECURITY;
 ALTER TABLE announcements ENABLE ROW LEVEL SECURITY;
 ALTER TABLE contact_messages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE membership_applications ENABLE ROW LEVEL SECURITY;
+ALTER TABLE members ENABLE ROW LEVEL SECURITY;
 ALTER TABLE activity_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE inventory_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE borrow_records ENABLE ROW LEVEL SECURITY;
@@ -138,6 +139,12 @@ CREATE POLICY "admin_all_membership_applications" ON membership_applications
 DROP POLICY IF EXISTS "public_insert_membership_applications" ON membership_applications;
 CREATE POLICY "public_insert_membership_applications" ON membership_applications
   FOR INSERT WITH CHECK (auth.role() = 'anon' OR auth.role() = 'authenticated');
+
+-- The roster holds contact details, so only admins who manage membership see it.
+-- Public card verification goes through the server with the service role.
+DROP POLICY IF EXISTS "admin_all_members" ON members;
+CREATE POLICY "admin_all_members" ON members
+  FOR ALL USING (has_role('event_manager'));
 
 DROP POLICY IF EXISTS "admin_read_activity_logs" ON activity_logs;
 CREATE POLICY "admin_read_activity_logs" ON activity_logs

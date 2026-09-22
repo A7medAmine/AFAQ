@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
-  ArrowLeftRight, Boxes, Brain, Calendar, CircuitBoard, ClipboardCheck, CornerDownLeft, Gauge, Images,
+  ArrowLeftRight, Boxes, Brain, Calendar, CircuitBoard, ClipboardCheck, CornerDownLeft, Gauge, IdCard, Images,
   Loader2, Mail, Megaphone, ScrollText, Search, Shield, SlidersHorizontal, UserCheck,
 } from 'lucide-react'
 import useAdminStore from '../../store/adminStore'
@@ -10,7 +10,7 @@ import { hasPermission, navItemsFor } from '../../lib/permissions'
 import { supabase } from '../../lib/db'
 
 const ICONS = {
-  Gauge, Calendar, ClipboardCheck, UserCheck, Mail,
+  Gauge, Calendar, ClipboardCheck, UserCheck, IdCard, Mail,
   CircuitBoard, Images, Megaphone, Boxes, ArrowLeftRight, Shield, Brain, ScrollText, SlidersHorizontal,
 }
 
@@ -32,10 +32,16 @@ const SOURCES = [
     title: r => r.full_name, subtitle: r => `${r.email} · ${r.status}`,
   },
   {
-    table: 'membership_applications', permission: 'membership.manage', path: '/admin/membership',
-    icon: UserCheck, group: 'Membership',
+    table: 'membership_applications', permission: 'membership.manage', path: '/admin/applications',
+    icon: UserCheck, group: 'Applications',
     columns: 'id, full_name, email, status', match: 'full_name,email',
     title: r => r.full_name, subtitle: r => `${r.email} · ${r.status}`,
+  },
+  {
+    table: 'members', permission: 'membership.manage', path: '/admin/members',
+    icon: IdCard, group: 'Members',
+    columns: 'id, full_name, email, member_code', match: 'full_name,email,member_code',
+    title: r => r.full_name, subtitle: r => r.member_code || r.email,
   },
   {
     table: 'projects', permission: 'projects.manage', path: '/admin/projects',

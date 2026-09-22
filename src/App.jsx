@@ -18,7 +18,8 @@ import ResetPassword from './admin/pages/ResetPassword'
 import Dashboard from './admin/pages/Dashboard'
 import EventsPage from './admin/pages/EventsPage'
 import RegistrationsPage from './admin/pages/RegistrationsPage'
-import MembershipPage from './admin/pages/MembershipPage'
+import ApplicationsPage from './admin/pages/ApplicationsPage'
+import MembersPage from './admin/pages/MembersPage'
 import CardPrintPage from './admin/pages/CardPrintPage'
 import VerifyMember from './pages/VerifyMember'
 import InventoryPage from './admin/pages/InventoryPage'
@@ -82,10 +83,13 @@ export default function App() {
           <Route path="registrations" element={
             <RoleGuard permission="events.registrations.manage"><RegistrationsPage /></RoleGuard>
           } />
-          <Route path="membership" element={
-            <RoleGuard permission="membership.manage"><MembershipPage /></RoleGuard>
+          <Route path="applications" element={
+            <RoleGuard permission="membership.manage"><ApplicationsPage /></RoleGuard>
           } />
-          <Route path="membership/:id/card" element={
+          <Route path="members" element={
+            <RoleGuard permission="membership.manage"><MembersPage /></RoleGuard>
+          } />
+          <Route path="members/:id/card" element={
             <RoleGuard permission="membership.manage"><CardPrintPage /></RoleGuard>
           } />
           <Route path="inventory" element={
