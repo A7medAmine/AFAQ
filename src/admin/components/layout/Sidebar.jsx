@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
-  Brain, Calendar, CircuitBoard, ClipboardCheck, Gauge, Images, Mail, Megaphone,
+  ArrowLeftRight, Boxes, Brain, Calendar, CircuitBoard, ClipboardCheck, Gauge, Images, Mail, Megaphone,
   PanelLeftClose, PanelLeftOpen, ScrollText, Shield, SlidersHorizontal, UserCheck, X,
 } from 'lucide-react'
 import useAdminStore from '../../store/adminStore'
@@ -9,7 +9,7 @@ import { NAV_GROUPS, navItemsFor } from '../../lib/permissions'
 
 const ICONS = {
   Gauge, Calendar, ClipboardCheck, UserCheck, Mail,
-  CircuitBoard, Images, Megaphone,
+  CircuitBoard, Images, Megaphone, Boxes, ArrowLeftRight,
   Shield, Brain, ScrollText, SlidersHorizontal,
 }
 
@@ -18,6 +18,7 @@ const BADGE_KEY = {
   '/admin/registrations': 'pendingRegistrations',
   '/admin/membership': 'pendingMembership',
   '/admin/messages': 'unreadMessages',
+  '/admin/borrowing': 'overdueBorrows',
 }
 
 function NavList({ expanded, onNavigate }) {

@@ -15,7 +15,7 @@ export default function ToastContainer() {
 
   return (
     <div
-      className="fixed bottom-5 right-5 z-[80] flex flex-col gap-2 w-[min(360px,calc(100vw-40px))]"
+      className="adm-no-print fixed bottom-5 right-5 z-[80] flex flex-col gap-2 w-[min(360px,calc(100vw-40px))]"
       role="status"
       aria-live="polite"
     >

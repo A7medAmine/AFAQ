@@ -702,9 +702,22 @@ app.post(
       return res.status(404).json({ error: "Application not found" });
     }
 
+    const memberCode = app.member_code || `AFQ-${String(app.id).padStart(5, "0")}`;
+    const verifyUrl = `${process.env.VITE_APP_URL || ""}/verify/${memberCode}`;
+    const cardQrCode = await QRCodeLib.toDataURL(verifyUrl, {
+      width: 300,
+      margin: 2,
+    });
+
     const { error: updateErr } = await supabaseAdmin
       .from("membership_applications")
-      .update({ status: "approved" })
+      .update({
+        status: "approved",
+        member_code: memberCode,
+        card_qr_code: cardQrCode,
+        card_issued_at: new Date().toISOString(),
+        card_status: "active",
+      })
       .eq("id", id);
     if (updateErr) {
       console.error("Update application error:", updateErr);
@@ -739,9 +752,35 @@ app.post(
     `,
     });
 
-    res.json({ ok: true });
+    res.json({
+      ok: true,
+      member_code: memberCode,
+      card_qr_code: cardQrCode,
+      card_status: "active",
+    });
   }
 );
+
+// --- Public member card verification ---
+
+app.get("/api/members/verify/:memberCode", async (req, res) => {
+  const { memberCode } = req.params;
+  const { data: member, error } = await supabaseAdmin
+    .from("membership_applications")
+    .select("full_name, photo_url, card_status, member_code")
+    .eq("member_code", memberCode)
+    .single();
+  if (error || !member) {
+    return res.status(404).json({ valid: false, error: "Not found" });
+  }
+  res.json({
+    valid: member.card_status === "active",
+    fullName: member.full_name,
+    photoUrl: member.photo_url,
+    cardStatus: member.card_status,
+    memberCode: member.member_code,
+  });
+});
 
 // --- Progres MESRS API proxy ---
 

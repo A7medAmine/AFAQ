@@ -21,6 +21,15 @@ const STATUS = {
   new: { tone: 'signal', label: 'New' },
   read: { tone: 'neutral', label: 'Read' },
   scheduled: { tone: 'signal', label: 'Scheduled' },
+  available: { tone: 'ok', label: 'Available' },
+  borrowed: { tone: 'signal', label: 'Borrowed' },
+  repair: { tone: 'wait', label: 'In repair' },
+  retired: { tone: 'neutral', label: 'Retired' },
+  overdue: { tone: 'fault', label: 'Overdue' },
+  returned: { tone: 'neutral', label: 'Returned' },
+  suspended: { tone: 'fault', label: 'Suspended' },
+  lost: { tone: 'fault', label: 'Lost' },
+  none: { tone: 'neutral', label: 'No card' },
 }
 
 export function StatusBadge({ status }) {

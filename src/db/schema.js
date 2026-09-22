@@ -75,6 +75,11 @@ export const membershipApplications = pgTable('membership_applications', {
   interests: text().array(),
   motivation: text(),
   status: text().default('pending'),
+  memberCode: text('member_code').unique(),
+  photoUrl: text('photo_url'),
+  cardQrCode: text('card_qr_code'),
+  cardIssuedAt: timestamp('card_issued_at', { withTimezone: true }),
+  cardStatus: text('card_status').default('none'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
 })
 
@@ -183,6 +188,38 @@ export const pageContent = pgTable('page_content', {
   imageUrl: text('image_url'),
   altText: text('alt_text'),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+})
+
+export const inventoryItems = pgTable('inventory_items', {
+  id: bigint({ mode: 'number' }).primaryKey().generatedAlwaysAsIdentity(),
+  assetCode: text('asset_code').notNull().unique(),
+  name: text().notNull(),
+  category: text(),
+  serial: text(),
+  condition: text().default('good'),
+  purchaseDate: date('purchase_date'),
+  value: integer(),
+  location: text(),
+  photoUrl: text('photo_url'),
+  status: text().default('available'),
+  qrCode: text('qr_code'),
+  notes: text(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+})
+
+export const borrowRecords = pgTable('borrow_records', {
+  id: bigint({ mode: 'number' }).primaryKey().generatedAlwaysAsIdentity(),
+  itemId: bigint('item_id', { mode: 'number' }).notNull().references(() => inventoryItems.id, { onDelete: 'cascade' }),
+  memberId: bigint('member_id', { mode: 'number' }).references(() => membershipApplications.id, { onDelete: 'set null' }),
+  borrowerName: text('borrower_name'),
+  checkedOutAt: timestamp('checked_out_at', { withTimezone: true }).defaultNow(),
+  expectedReturnAt: timestamp('expected_return_at', { withTimezone: true }),
+  returnedAt: timestamp('returned_at', { withTimezone: true }),
+  conditionNoteOut: text('condition_note_out'),
+  conditionNoteIn: text('condition_note_in'),
+  status: text().default('active'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
 })
 
 export const aiKnowledge = pgTable('ai_knowledge', {

@@ -19,6 +19,11 @@ import Dashboard from './admin/pages/Dashboard'
 import EventsPage from './admin/pages/EventsPage'
 import RegistrationsPage from './admin/pages/RegistrationsPage'
 import MembershipPage from './admin/pages/MembershipPage'
+import CardPrintPage from './admin/pages/CardPrintPage'
+import VerifyMember from './pages/VerifyMember'
+import InventoryPage from './admin/pages/InventoryPage'
+import LabelPrintPage from './admin/pages/LabelPrintPage'
+import BorrowingPage from './admin/pages/BorrowingPage'
 import ProjectsPage from './admin/pages/ProjectsPage'
 import GalleryPage from './admin/pages/GalleryPage'
 import MessagesPage from './admin/pages/MessagesPage'
@@ -62,6 +67,8 @@ export default function App() {
           <Route path="/contact" element={<Contact />} />
         </Route>
 
+        <Route path="/verify/:memberCode" element={<VerifyMember />} />
+
         {/* Admin Routes */}
         <Route path="/admin/login" element={<Login />} />
         <Route path="/admin/reset-password" element={<ResetPassword />} />
@@ -77,6 +84,18 @@ export default function App() {
           } />
           <Route path="membership" element={
             <RoleGuard permission="membership.manage"><MembershipPage /></RoleGuard>
+          } />
+          <Route path="membership/:id/card" element={
+            <RoleGuard permission="membership.manage"><CardPrintPage /></RoleGuard>
+          } />
+          <Route path="inventory" element={
+            <RoleGuard permission="inventory.manage"><InventoryPage /></RoleGuard>
+          } />
+          <Route path="inventory/:id/label" element={
+            <RoleGuard permission="inventory.manage"><LabelPrintPage /></RoleGuard>
+          } />
+          <Route path="borrowing" element={
+            <RoleGuard permission="inventory.manage"><BorrowingPage /></RoleGuard>
           } />
           <Route path="projects" element={
             <RoleGuard permission="projects.manage"><ProjectsPage /></RoleGuard>

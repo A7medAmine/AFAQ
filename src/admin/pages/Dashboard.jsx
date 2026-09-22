@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
-  ArrowRight, CalendarPlus, CircuitBoard, ImagePlus, Megaphone, RefreshCw, UserRoundPlus,
+  ArrowRight, CalendarPlus, CircuitBoard, ImagePlus, Megaphone, PackagePlus, RefreshCw, UserRoundPlus,
 } from 'lucide-react'
 import { read, run, supabase } from '../lib/db'
 import useAdminStore from '../store/adminStore'
@@ -113,6 +113,10 @@ export default function Dashboard() {
       id: 'drafts', label: 'Unpublished drafts', count: counts.drafts,
       to: '/admin/events?status=draft', permission: 'events.manage', tone: 'wait',
     },
+    {
+      id: 'overdue-borrows', label: 'Items overdue', count: counts.overdueBorrows,
+      to: '/admin/borrowing', permission: 'inventory.manage', tone: 'fault',
+    },
   ].filter(c => hasPermission(role, c.permission))
 
   const quickActions = [
@@ -121,6 +125,7 @@ export default function Dashboard() {
     { label: 'New project', icon: CircuitBoard, permission: 'projects.manage', onClick: () => navigate('/admin/projects?new=1') },
     { label: 'New album', icon: ImagePlus, permission: 'gallery.manage', onClick: () => navigate('/admin/gallery?new=1') },
     { label: 'Post an announcement', icon: Megaphone, permission: 'announcements.manage', onClick: () => navigate('/admin/announcements?new=1') },
+    { label: 'Add inventory item', icon: PackagePlus, permission: 'inventory.manage', onClick: () => navigate('/admin/inventory?new=1') },
   ].filter(a => hasPermission(role, a.permission))
 
   const firstName = (profile?.full_name || '').split(' ')[0]

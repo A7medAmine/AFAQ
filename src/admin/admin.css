@@ -715,3 +715,21 @@ select.adm-input {
     transition-duration: 0.001ms !important;
   }
 }
+
+/* Print sheets (member cards, inventory labels) share the admin console
+   route so they get real data/auth, but printing the sidebar/topnav/toasts
+   along with them is never what anyone wants. */
+@media print {
+  .adm-chassis > aside,
+  .adm-chassis header,
+  .adm-toast-container,
+  .adm-no-print {
+    display: none !important;
+  }
+  .adm-content {
+    margin-left: 0 !important;
+  }
+  .adm-chassis {
+    background: #fff !important;
+  }
+}

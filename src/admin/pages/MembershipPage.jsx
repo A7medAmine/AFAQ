@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Check, Download, Loader2, UserCheck, UserRoundPlus, X } from 'lucide-react'
-import { api, logActivity, read, run, supabase } from '../lib/db'
+import { Check, Download, FileText, IdCard, Loader2, UserCheck, UserRoundPlus, Upload, X } from 'lucide-react'
+import jsPDF from 'jspdf'
+import autoTable from 'jspdf-autotable'
+import { Link } from 'react-router-dom'
+import { api, logActivity, read, run, supabase, uploadFile } from '../lib/db'
 import useAdminStore from '../store/adminStore'
 import useCounts from '../hooks/useCounts'
 import useQueryParam from '../hooks/useQueryParam'
@@ -118,6 +121,52 @@ export default function MembershipPage() {
     addToast(`Exported ${filtered.length} rows.`)
   }
 
+  const exportPDF = () => {
+    const filterLabel = FILTERS.find(f => f.value === status)?.label || 'All'
+    const STATUS_COLOR = { approved: [23, 146, 79], pending: [201, 122, 4], rejected: [216, 64, 47] }
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' })
+    const pageWidth = doc.internal.pageSize.getWidth()
+
+    doc.setFillColor(36, 96, 231)
+    doc.rect(0, 0, pageWidth, 64, 'F')
+    doc.setTextColor(255, 255, 255)
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(16)
+    doc.text('AFAQ Scientific Club', 32, 30)
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(10)
+    doc.text(`Members · ${filterLabel} · ${filtered.length} ${filtered.length === 1 ? 'row' : 'rows'}`, 32, 46)
+    doc.text(formatDateTime(new Date()), pageWidth - 32, 46, { align: 'right' })
+
+    autoTable(doc, {
+      startY: 84,
+      margin: { left: 32, right: 32 },
+      head: [['Name', 'Email', 'Student ID', 'Department', 'Status', 'Applied']],
+      body: filtered.map(r => [
+        r.full_name || '—', r.email || '—', r.student_id || '—', r.department || '—',
+        (r.status || '—').replace(/^\w/, c => c.toUpperCase()), formatDate(r.created_at),
+      ]),
+      styles: { font: 'helvetica', fontSize: 9, cellPadding: 6, textColor: [10, 18, 32] },
+      headStyles: { fillColor: [10, 18, 32], textColor: 255, fontStyle: 'bold' },
+      alternateRowStyles: { fillColor: [244, 245, 240] },
+      didParseCell: cell => {
+        if (cell.section === 'body' && cell.column.index === 4) {
+          const color = STATUS_COLOR[filtered[cell.row.index]?.status]
+          if (color) { cell.cell.styles.textColor = color; cell.cell.styles.fontStyle = 'bold' }
+        }
+      },
+      didDrawPage: () => {
+        const pages = doc.internal.getNumberOfPages()
+        doc.setFontSize(8)
+        doc.setTextColor(140, 148, 158)
+        doc.text(`Page ${doc.internal.getCurrentPageInfo().pageNumber} of ${pages}`, pageWidth - 32, doc.internal.pageSize.getHeight() - 16, { align: 'right' })
+      },
+    })
+
+    doc.save(`members-${status}-${new Date().toISOString().slice(0, 10)}.pdf`)
+    addToast(`Exported ${filtered.length} rows as PDF.`)
+  }
+
   const columns = useMemo(() => [
     {
       header: 'Name',
@@ -176,6 +225,7 @@ export default function MembershipPage() {
             <Button icon={Download} onClick={exportCSV} disabled={!filtered.length}>
               Export {filtered.length ? `${filtered.length} rows` : 'CSV'}
             </Button>
+            <Button icon={FileText} onClick={exportPDF} disabled={!filtered.length}>PDF</Button>
             <Button variant="primary" icon={UserRoundPlus} onClick={() => setAddOpen(true)}>Add a member</Button>
           </>
         }
@@ -231,7 +281,7 @@ export default function MembershipPage() {
         subtitle={detail ? `Applied ${formatDateTime(detail.created_at)}` : ''}
         badge={detail && <StatusBadge status={detail.status} />}
         footer={
-          detail?.status === 'pending' && (
+          detail?.status === 'pending' ? (
             <>
               <Button icon={X} onClick={async () => { if (await setStatusFor(detail, 'rejected')) setDetail(null) }}>
                 Reject
@@ -243,17 +293,40 @@ export default function MembershipPage() {
                 Approve
               </Button>
             </>
-          )
+          ) : detail?.status === 'approved' ? (
+            detail.card_qr_code ? (
+              <Link to={`/admin/membership/${detail.id}/card`} className="adm-btn adm-btn-primary">
+                <IdCard size={15} /> Print card
+              </Link>
+            ) : (
+              <Button
+                variant="primary" icon={IdCard} busy={working[detail.id]} busyLabel="Issuing…"
+                onClick={async () => {
+                  setWorking(w => ({ ...w, [detail.id]: true }))
+                  const { ok, data } = await api('/api/approve/membership', { method: 'POST', body: { id: detail.id } })
+                  setWorking(w => ({ ...w, [detail.id]: false }))
+                  if (ok) { await load(); setDetail(d => d && { ...d, ...data }) }
+                }}
+              >
+                Issue card
+              </Button>
+            )
+          ) : null
         }
       >
         {detail && (
           <div className="space-y-5">
+            <PhotoUpload member={detail} onUpdated={photo_url => {
+              setDetail(d => d && { ...d, photo_url })
+              setRows(rs => rs.map(r => r.id === detail.id ? { ...r, photo_url } : r))
+            }} />
             <div className="grid grid-cols-2 gap-4">
               <DetailRow label="Email" mono>{detail.email}</DetailRow>
               <DetailRow label="Phone" mono>{detail.phone || '—'}</DetailRow>
               <DetailRow label="Student ID" mono>{detail.student_id || '—'}</DetailRow>
               <DetailRow label="Study year">{detail.study_year || '—'}</DetailRow>
               <DetailRow label="Department">{detail.department || '—'}</DetailRow>
+              {detail.member_code && <DetailRow label="Member code" mono>{detail.member_code}</DetailRow>}
             </div>
             <DetailRow label="Skills"><TagList items={detail.skills} empty="None listed" /></DetailRow>
             <DetailRow label="Interests"><TagList items={detail.interests} empty="None listed" /></DetailRow>
@@ -284,6 +357,45 @@ export default function MembershipPage() {
             : ''
         }
       />
+    </div>
+  )
+}
+
+function PhotoUpload({ member, onUpdated }) {
+  const addToast = useAdminStore(s => s.addToast)
+  const [busy, setBusy] = useState(false)
+
+  const pick = async e => {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    setBusy(true)
+    try {
+      const url = await uploadFile(file)
+      const { ok } = await run(
+        supabase.from('membership_applications').update({ photo_url: url }).eq('id', member.id),
+        { failure: 'The photo did not save.' }
+      )
+      if (ok) onUpdated(url)
+    } catch (err) {
+      addToast(err.message, 'error')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div className="flex items-center gap-3">
+      <div className="rounded-full overflow-hidden shrink-0" style={{ width: 56, height: 56, background: 'var(--adm-panel-raise)' }}>
+        {member.photo_url
+          ? <img src={member.photo_url} alt="" className="w-full h-full object-cover" />
+          : null}
+      </div>
+      <label className="adm-btn adm-btn-sm" style={{ cursor: busy ? 'default' : 'pointer' }}>
+        {busy ? <Loader2 size={14} className="adm-spin" /> : <Upload size={14} />}
+        {member.photo_url ? 'Replace photo' : 'Add photo'}
+        <input type="file" accept="image/*" className="sr-only" disabled={busy} onChange={pick} />
+      </label>
     </div>
   )
 }

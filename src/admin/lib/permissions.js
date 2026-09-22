@@ -18,6 +18,7 @@ export const PERMISSIONS = {
     'ai_knowledge.manage',
     'activity.view',
     'settings.manage',
+    'inventory.manage',
   ],
   [ROLES.EVENT_MANAGER]: [
     'events.manage',
@@ -25,6 +26,7 @@ export const PERMISSIONS = {
     'membership.manage',
     'announcements.manage',
     'messages.view',
+    'inventory.manage',
   ],
   [ROLES.MEDIA_MANAGER]: [
     'gallery.manage',
@@ -58,6 +60,8 @@ export const NAV_ITEMS = [
   { label: 'Registrations', path: '/admin/registrations', icon: 'ClipboardCheck', group: 'operate', permission: 'events.registrations.manage' },
   { label: 'Membership', path: '/admin/membership', icon: 'UserCheck', group: 'operate', permission: 'membership.manage' },
   { label: 'Messages', path: '/admin/messages', icon: 'Mail', group: 'operate', permission: 'messages.view' },
+  { label: 'Inventory', path: '/admin/inventory', icon: 'Boxes', group: 'operate', permission: 'inventory.manage' },
+  { label: 'Borrowing', path: '/admin/borrowing', icon: 'ArrowLeftRight', group: 'operate', permission: 'inventory.manage' },
 
   { label: 'Projects', path: '/admin/projects', icon: 'CircuitBoard', group: 'publish', permission: 'projects.manage' },
   { label: 'Gallery', path: '/admin/gallery', icon: 'Images', group: 'publish', permission: 'gallery.manage' },

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
-  Brain, Calendar, CircuitBoard, ClipboardCheck, CornerDownLeft, Gauge, Images,
+  ArrowLeftRight, Boxes, Brain, Calendar, CircuitBoard, ClipboardCheck, CornerDownLeft, Gauge, Images,
   Loader2, Mail, Megaphone, ScrollText, Search, Shield, SlidersHorizontal, UserCheck,
 } from 'lucide-react'
 import useAdminStore from '../../store/adminStore'
@@ -11,7 +11,7 @@ import { supabase } from '../../lib/db'
 
 const ICONS = {
   Gauge, Calendar, ClipboardCheck, UserCheck, Mail,
-  CircuitBoard, Images, Megaphone, Shield, Brain, ScrollText, SlidersHorizontal,
+  CircuitBoard, Images, Megaphone, Boxes, ArrowLeftRight, Shield, Brain, ScrollText, SlidersHorizontal,
 }
 
 /**

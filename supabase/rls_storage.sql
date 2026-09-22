@@ -16,6 +16,8 @@ ALTER TABLE announcements ENABLE ROW LEVEL SECURITY;
 ALTER TABLE contact_messages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE membership_applications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE activity_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE inventory_items ENABLE ROW LEVEL SECURITY;
+ALTER TABLE borrow_records ENABLE ROW LEVEL SECURITY;
 
 -- 2. Helper functions for RLS
 CREATE OR REPLACE FUNCTION public.has_role(required_role TEXT)
@@ -140,6 +142,21 @@ CREATE POLICY "public_insert_membership_applications" ON membership_applications
 DROP POLICY IF EXISTS "admin_read_activity_logs" ON activity_logs;
 CREATE POLICY "admin_read_activity_logs" ON activity_logs
   FOR SELECT USING (EXISTS (
+    SELECT 1 FROM admin_users WHERE user_id = auth.uid() AND is_active = true
+  ));
+
+-- Inventory isn't owned by one existing role (event/media/project manager),
+-- so any active admin can manage it for now. Tighten to a dedicated role
+-- later if the club wants a separate inventory-keeper position.
+DROP POLICY IF EXISTS "admin_all_inventory_items" ON inventory_items;
+CREATE POLICY "admin_all_inventory_items" ON inventory_items
+  FOR ALL USING (EXISTS (
+    SELECT 1 FROM admin_users WHERE user_id = auth.uid() AND is_active = true
+  ));
+
+DROP POLICY IF EXISTS "admin_all_borrow_records" ON borrow_records;
+CREATE POLICY "admin_all_borrow_records" ON borrow_records
+  FOR ALL USING (EXISTS (
     SELECT 1 FROM admin_users WHERE user_id = auth.uid() AND is_active = true
   ));
 

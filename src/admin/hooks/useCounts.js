@@ -20,12 +20,13 @@ export default function useCounts() {
 
   const refresh = useCallback(async () => {
     setLoading(true)
-    const [registrations, membership, messages, eventDrafts, projectDrafts] = await Promise.all([
+    const [registrations, membership, messages, eventDrafts, projectDrafts, overdueBorrows] = await Promise.all([
       read(head('event_registrations', q => q.eq('status', 'pending'))),
       read(head('membership_applications', q => q.eq('status', 'pending'))),
       read(head('contact_messages', q => q.eq('is_read', false))),
       read(head('events', q => q.eq('is_published', false))),
       read(head('projects', q => q.eq('is_published', false))),
+      read(head('borrow_records', q => q.eq('status', 'active').lt('expected_return_at', new Date().toISOString()))),
     ])
 
     setCounts({
@@ -33,6 +34,7 @@ export default function useCounts() {
       pendingMembership: membership.count,
       unreadMessages: messages.count,
       drafts: eventDrafts.count + projectDrafts.count,
+      overdueBorrows: overdueBorrows.count,
     })
     setLoading(false)
   }, [setCounts])
