@@ -19,6 +19,7 @@ export const PERMISSIONS = {
     'activity.view',
     'settings.manage',
     'inventory.manage',
+    'tasks.manage',
   ],
   [ROLES.EVENT_MANAGER]: [
     'events.manage',
@@ -27,6 +28,7 @@ export const PERMISSIONS = {
     'announcements.manage',
     'messages.view',
     'inventory.manage',
+    'tasks.manage',
   ],
   [ROLES.MEDIA_MANAGER]: [
     'gallery.manage',
@@ -37,6 +39,7 @@ export const PERMISSIONS = {
     'projects.manage',
     'announcements.manage',
     'messages.view',
+    'tasks.manage',
   ],
 }
 
@@ -60,6 +63,7 @@ export const NAV_ITEMS = [
   { label: 'Registrations', path: '/admin/registrations', icon: 'ClipboardCheck', group: 'operate', permission: 'events.registrations.manage' },
   { label: 'Applications', path: '/admin/applications', icon: 'UserCheck', group: 'operate', permission: 'membership.manage' },
   { label: 'Members', path: '/admin/members', icon: 'IdCard', group: 'operate', permission: 'membership.manage' },
+  { label: 'Tasks', path: '/admin/tasks', icon: 'ListChecks', group: 'operate', permission: 'tasks.manage' },
   { label: 'Messages', path: '/admin/messages', icon: 'Mail', group: 'operate', permission: 'messages.view' },
   { label: 'Inventory', path: '/admin/inventory', icon: 'Boxes', group: 'operate', permission: 'inventory.manage' },
   { label: 'Borrowing', path: '/admin/borrowing', icon: 'ArrowLeftRight', group: 'operate', permission: 'inventory.manage' },

@@ -1,6 +1,6 @@
 import {
   pgTable, bigint, text, boolean, uuid, timestamp, time, date,
-  jsonb, integer,
+  jsonb, integer, primaryKey,
 } from 'drizzle-orm/pg-core'
 
 export const adminRoles = pgTable('admin_roles', {
@@ -91,9 +91,21 @@ export const members = pgTable('members', {
   skills: text().array(),
   interests: text().array(),
   photoUrl: text('photo_url'),
+  // HR record: team/cell and lifecycle (active → alumni, etc.). Office roles
+  // (president, treasurer, team lead…) live in member_positions with terms.
+  team: text(),
+  status: text().default('active'),
+  joinedAt: date('joined_at').defaultNow(),
+  leftAt: date('left_at'),
+  birthDate: date('birth_date'),
+  gender: text(),
+  notes: text(),
+  // member_code is assigned by the `members_assign_code` trigger on insert
+  // (see migration 0010), so every member has a printable card from day one.
   cardQrCode: text('card_qr_code'),
   cardIssuedAt: timestamp('card_issued_at', { withTimezone: true }),
-  cardStatus: text('card_status').default('none'),
+  cardStatus: text('card_status').default('active'),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
 })
 
@@ -248,3 +260,57 @@ export const aiKnowledge = pgTable('ai_knowledge', {
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
 })
 
+
+// Office held by a member for a term — president, treasurer, team lead, etc.
+// A position is current while term_end is null or still in the future, and
+// keeping past terms gives the club its board history for free.
+export const memberPositions = pgTable('member_positions', {
+  id: bigint({ mode: 'number' }).primaryKey().generatedAlwaysAsIdentity(),
+  memberId: bigint('member_id', { mode: 'number' }).notNull().references(() => members.id, { onDelete: 'cascade' }),
+  title: text().notNull(),
+  team: text(),
+  termStart: date('term_start').notNull().defaultNow(),
+  termEnd: date('term_end'),
+  notes: text(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+})
+
+// Responsibilities handed to members, optionally tied to a project.
+export const memberTasks = pgTable('member_tasks', {
+  id: bigint({ mode: 'number' }).primaryKey().generatedAlwaysAsIdentity(),
+  title: text().notNull(),
+  description: text(),
+  assigneeId: bigint('assignee_id', { mode: 'number' }).references(() => members.id, { onDelete: 'set null' }),
+  projectId: bigint('project_id', { mode: 'number' }).references(() => projects.id, { onDelete: 'set null' }),
+  status: text().default('todo'),
+  priority: text().default('normal'),
+  dueDate: date('due_date'),
+  completedAt: timestamp('completed_at', { withTimezone: true }),
+  createdBy: uuid('created_by'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+})
+
+// Custom roles the club defines on top of the built-in offices in
+// src/admin/lib/hr.js. member_positions.title stores the role name as-is, so
+// deleting a role here only removes it from the pickers; past terms keep it.
+export const memberRoles = pgTable('member_roles', {
+  id: bigint({ mode: 'number' }).primaryKey().generatedAlwaysAsIdentity(),
+  name: text().notNull().unique(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+})
+
+// Ad-hoc groups of members (a workshop cohort, a trip, a committee). Unlike
+// members.team, a member can belong to any number of groups.
+export const memberGroups = pgTable('member_groups', {
+  id: bigint({ mode: 'number' }).primaryKey().generatedAlwaysAsIdentity(),
+  name: text().notNull().unique(),
+  description: text(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+})
+
+export const memberGroupMembers = pgTable('member_group_members', {
+  groupId: bigint('group_id', { mode: 'number' }).notNull().references(() => memberGroups.id, { onDelete: 'cascade' }),
+  memberId: bigint('member_id', { mode: 'number' }).notNull().references(() => members.id, { onDelete: 'cascade' }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+}, t => [primaryKey({ columns: [t.groupId, t.memberId] })])

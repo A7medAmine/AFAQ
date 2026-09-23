@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { Routes, Route, useLocation, useNavigate } from 'react-router-dom'
+import { Navigate, Routes, Route, useLocation, useNavigate } from 'react-router-dom'
 import Layout from './components/layout/Layout'
 import ScrollToTop from './components/shared/ScrollToTop'
 import Home from './pages/Home'
@@ -21,6 +21,7 @@ import RegistrationsPage from './admin/pages/RegistrationsPage'
 import ApplicationsPage from './admin/pages/ApplicationsPage'
 import MembersPage from './admin/pages/MembersPage'
 import CardPrintPage from './admin/pages/CardPrintPage'
+import TasksPage from './admin/pages/TasksPage'
 import VerifyMember from './pages/VerifyMember'
 import InventoryPage from './admin/pages/InventoryPage'
 import LabelPrintPage from './admin/pages/LabelPrintPage'
@@ -91,6 +92,13 @@ export default function App() {
           } />
           <Route path="members/:id/card" element={
             <RoleGuard permission="membership.manage"><CardPrintPage /></RoleGuard>
+          } />
+          <Route path="members/cards" element={
+            <RoleGuard permission="membership.manage"><CardPrintPage /></RoleGuard>
+          } />
+          <Route path="board" element={<Navigate to="/admin/members" replace />} />
+          <Route path="tasks" element={
+            <RoleGuard permission="tasks.manage"><TasksPage /></RoleGuard>
           } />
           <Route path="inventory" element={
             <RoleGuard permission="inventory.manage"><InventoryPage /></RoleGuard>

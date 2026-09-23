@@ -4,7 +4,7 @@ import { motion } from 'framer-motion'
 import {
   ArrowRight, CalendarPlus, CircuitBoard, ImagePlus, Megaphone, PackagePlus, RefreshCw, UserRoundPlus,
 } from 'lucide-react'
-import { read, run, supabase } from '../lib/db'
+import { read, supabase } from '../lib/db'
 import useAdminStore from '../store/adminStore'
 import useCounts from '../hooks/useCounts'
 import { hasPermission } from '../lib/permissions'
@@ -15,9 +15,8 @@ import StatusRail from '../components/ui/StatusRail'
 import IntakeChart, { buildIntakeSeries } from '../components/ui/IntakeChart'
 import { StatusBadge } from '../components/ui/Badge'
 import Button from '../components/ui/Button'
-import Modal from '../components/ui/Modal'
-import { TextField } from '../components/ui/Field'
 import { SkeletonPanel } from '../components/ui/Skeleton'
+import MemberFormModal from '../components/hr/MemberFormModal'
 import { ErrorState } from '../components/ui/EmptyState'
 
 const since = days => {
@@ -315,98 +314,12 @@ export default function Dashboard() {
         </>
       )}
 
-      <AddMemberModal
+      <MemberFormModal
         open={memberModal}
+        member={null}
         onClose={() => setMemberModal(false)}
-        onAdded={refreshAll}
+        onSaved={refreshAll}
       />
     </div>
-  )
-}
-
-/** Walk-in members joined at a stand get added by hand, already approved. */
-function AddMemberModal({ open, onClose, onAdded }) {
-  const [form, setForm] = useState({ full_name: '', email: '', phone: '', department: '', student_id: '' })
-  const [errors, setErrors] = useState({})
-  const [saving, setSaving] = useState(false)
-
-  useEffect(() => {
-    if (open) {
-      setForm({ full_name: '', email: '', phone: '', department: '', student_id: '' })
-      setErrors({})
-    }
-  }, [open])
-
-  const set = (key, value) => {
-    setForm(f => ({ ...f, [key]: value }))
-    setErrors(e => ({ ...e, [key]: undefined }))
-  }
-
-  const submit = async () => {
-    const next = {}
-    if (!form.full_name.trim()) next.full_name = 'Enter the member’s name.'
-    if (!form.email.trim()) next.email = 'Enter an email address.'
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) next.email = 'That is not a valid email address.'
-    if (Object.keys(next).length) { setErrors(next); return }
-
-    setSaving(true)
-    const { ok } = await run(
-      supabase.from('members').insert({
-        full_name: form.full_name.trim(),
-        email: form.email.trim(),
-        phone: form.phone.trim() || null,
-        department: form.department.trim() || null,
-        student_id: form.student_id.trim() || null,
-      }),
-      { success: `${form.full_name.trim()} added to the club.`, failure: 'The member was not added.' }
-    )
-    setSaving(false)
-    if (ok) { onClose(); onAdded() }
-  }
-
-  return (
-    <Modal
-      open={open}
-      onClose={onClose}
-      title="Add a member"
-      description="For people who joined in person. No email is sent; issue a card from the Members page."
-      footer={
-        <>
-          <Button onClick={onClose} data-dialog-dismiss="true">Cancel</Button>
-          <Button variant="primary" onClick={submit} busy={saving} busyLabel="Adding…">Add member</Button>
-        </>
-      }
-    >
-      <div className="space-y-4">
-        <TextField
-          label="Full name" required
-          value={form.full_name} error={errors.full_name}
-          onChange={e => set('full_name', e.target.value)}
-          placeholder="Ahmed Mansouri"
-        />
-        <TextField
-          label="Email" type="email" required
-          value={form.email} error={errors.email}
-          onChange={e => set('email', e.target.value)}
-          placeholder="ahmed@univ-bouira.dz"
-        />
-        <div className="grid sm:grid-cols-2 gap-4">
-          <TextField
-            label="Phone" value={form.phone}
-            onChange={e => set('phone', e.target.value)}
-            placeholder="+213 6XX XXX XXX"
-          />
-          <TextField
-            label="Student ID" value={form.student_id}
-            onChange={e => set('student_id', e.target.value)}
-          />
-        </div>
-        <TextField
-          label="Department" value={form.department}
-          onChange={e => set('department', e.target.value)}
-          placeholder="Computer Science"
-        />
-      </div>
-    </Modal>
   )
 }

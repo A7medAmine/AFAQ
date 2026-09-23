@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { CircuitBoard, Code2, Eye, EyeOff, ImageOff, Link2, Loader2, Pencil, Plus, Trash2, Upload, X } from 'lucide-react'
+import { CircuitBoard, Code2, Eye, EyeOff, ImageOff, Link2, ListChecks, Loader2, Pencil, Plus, Trash2, Upload, X } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { isOpenTask } from '../lib/hr'
 import { deleteUploadedFile, logActivity, read, run, supabase, uploadFile } from '../lib/db'
 import useAdminStore from '../store/adminStore'
 import useQueryParam from '../hooks/useQueryParam'
@@ -46,7 +48,7 @@ export default function ProjectsPage() {
   const load = useCallback(async () => {
     setState(s => ({ ...s, error: null }))
     const { ok, data, message } = await read(
-      supabase.from('projects').select('*').order('created_at', { ascending: false })
+      supabase.from('projects').select('*, member_tasks(status)').order('created_at', { ascending: false })
     )
     if (!ok) { setState({ loading: false, error: message }); return }
     setProjects(data || [])
@@ -172,6 +174,24 @@ export default function ProjectsPage() {
           {!row.original.github_url && !row.original.demo_url && '—'}
         </span>
       ),
+    },
+    {
+      header: 'Tasks',
+      id: 'tasks',
+      accessorFn: p => (p.member_tasks || []).filter(isOpenTask).length,
+      cell: ({ row }) => {
+        const tasks = row.original.member_tasks || []
+        const open = tasks.filter(isOpenTask).length
+        return (
+          <Link to={`/admin/tasks?project=${row.original.id}&status=${open ? 'open' : 'all'}`}
+            onClick={e => e.stopPropagation()}
+            className="inline-flex items-center gap-1 text-[12px] font-semibold"
+            style={{ color: tasks.length ? 'var(--adm-signal)' : 'var(--adm-silk-faint)' }}>
+            <ListChecks size={13} />
+            {tasks.length ? `${open} open / ${tasks.length}` : 'Add'}
+          </Link>
+        )
+      },
     },
     { header: 'Visibility', accessorKey: 'is_published', cell: ({ row }) => (
       <StatusBadge status={row.original.is_published ? 'published' : 'draft'} />

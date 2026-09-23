@@ -30,6 +30,10 @@ const STATUS = {
   suspended: { tone: 'fault', label: 'Suspended' },
   lost: { tone: 'fault', label: 'Lost' },
   none: { tone: 'neutral', label: 'No card' },
+  alumni: { tone: 'neutral', label: 'Alumni' },
+  todo: { tone: 'wait', label: 'To do' },
+  in_progress: { tone: 'signal', label: 'In progress' },
+  done: { tone: 'ok', label: 'Done' },
 }
 
 export function StatusBadge({ status }) {

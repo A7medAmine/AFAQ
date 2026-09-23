@@ -1,6 +1,7 @@
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import * as or from './openRouterService.js'
 import * as zen from './openCodeZenService.js'
+import * as custom from './customProviderService.js'
 
 const getGenAI = () => {
   const key = process.env.GEMINI_API_KEY
@@ -83,7 +84,22 @@ function buildChat(model, context) {
 export async function* generateResponseStream(userMessage, context) {
   let lastError = null
 
-  // 1) OpenCode Zen (primary, free models)
+  // 0) Custom OpenAI-compatible provider (primary)
+  let customYielded = false
+  try {
+    for await (const chunk of custom.generateCustomStream(userMessage, context)) {
+      customYielded = true
+      yield chunk
+    }
+    if (customYielded) return
+  } catch (error) {
+    console.error('Custom provider error:', error.message)
+    // Already streamed partial output: stop rather than duplicate from a fallback.
+    if (customYielded) return
+    lastError = error
+  }
+
+  // 1) OpenCode Zen (fallback, free models)
   try {
     let yielded = false
     for await (const chunk of zen.generateZenStream(userMessage, context)) {
@@ -139,7 +155,16 @@ export async function generateResponse(userMessage, context) {
   let allQuota = true
   let lastRetryAfter = 60
 
-  // 1) OpenCode Zen (primary, free models)
+  // 0) Custom OpenAI-compatible provider (primary)
+  try {
+    const customResult = await custom.generateCustomResponse(userMessage, context)
+    if (customResult) return customResult
+  } catch (error) {
+    console.error('Custom provider error:', error.message)
+    lastError = error
+  }
+
+  // 1) OpenCode Zen (fallback, free models)
   try {
     const zenResult = await zen.generateZenResponse(userMessage, context)
     if (zenResult) return zenResult

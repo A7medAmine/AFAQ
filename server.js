@@ -685,32 +685,6 @@ app.post(
   }
 );
 
-async function issueMemberCard(memberId) {
-  const { data: existing, error: fetchErr } = await supabaseAdmin
-    .from("members")
-    .select("*")
-    .eq("id", memberId)
-    .single();
-  if (fetchErr || !existing) throw new Error("Member not found");
-
-  const memberCode = existing.member_code || `AFQ-${String(existing.id).padStart(5, "0")}`;
-  const verifyUrl = `${process.env.VITE_APP_URL || ""}/verify/${memberCode}`;
-  const cardQrCode = await QRCodeLib.toDataURL(verifyUrl, { width: 300, margin: 2 });
-
-  const { error: updateErr } = await supabaseAdmin
-    .from("members")
-    .update({
-      member_code: memberCode,
-      card_qr_code: cardQrCode,
-      card_issued_at: new Date().toISOString(),
-      card_status: "active",
-    })
-    .eq("id", memberId);
-  if (updateErr) throw updateErr;
-
-  return { ...existing, member_code: memberCode, card_qr_code: cardQrCode, card_status: "active" };
-}
-
 app.post(
   "/api/approve/membership",
   requireAuth,
@@ -758,14 +732,6 @@ app.post(
       return res.status(500).json({ error: "Failed to approve application" });
     }
 
-    let member;
-    try {
-      member = await issueMemberCard(inserted.id);
-    } catch (err) {
-      console.error("Issue card error:", err);
-      return res.status(500).json({ error: "Member created but the card could not be issued" });
-    }
-
     const safeName = escapeHtml(application.full_name);
 
     await sendEmail({
@@ -794,24 +760,7 @@ app.post(
     `,
     });
 
-    res.json({ ok: true, member });
-  }
-);
-
-app.post(
-  "/api/members/issue-card",
-  requireAuth,
-  requireRole("super_admin", "event_manager"),
-  async (req, res) => {
-    const { id } = req.body;
-    if (!id) return res.status(400).json({ error: "Missing id" });
-    try {
-      const member = await issueMemberCard(id);
-      res.json({ ok: true, member });
-    } catch (err) {
-      console.error("Issue card error:", err);
-      res.status(500).json({ error: "Failed to issue card" });
-    }
+    res.json({ ok: true, member: inserted });
   }
 );
 
@@ -821,17 +770,20 @@ app.get("/api/members/verify/:memberCode", async (req, res) => {
   const { memberCode } = req.params;
   const { data: member, error } = await supabaseAdmin
     .from("members")
-    .select("full_name, photo_url, card_status, member_code")
+    .select("full_name, photo_url, card_status, member_code, status")
     .eq("member_code", memberCode)
     .single();
   if (error || !member) {
     return res.status(404).json({ valid: false, error: "Not found" });
   }
   res.json({
-    valid: member.card_status === "active",
+    // A card only verifies while both the card and the membership are active,
+    // so marking someone alumni or suspended revokes their card without a reprint.
+    valid: member.card_status === "active" && (member.status || "active") === "active",
     fullName: member.full_name,
     photoUrl: member.photo_url,
     cardStatus: member.card_status,
+    memberStatus: member.status,
     memberCode: member.member_code,
   });
 });

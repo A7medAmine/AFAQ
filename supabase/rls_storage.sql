@@ -16,6 +16,8 @@ ALTER TABLE announcements ENABLE ROW LEVEL SECURITY;
 ALTER TABLE contact_messages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE membership_applications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE members ENABLE ROW LEVEL SECURITY;
+ALTER TABLE member_positions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE member_tasks ENABLE ROW LEVEL SECURITY;
 ALTER TABLE activity_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE inventory_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE borrow_records ENABLE ROW LEVEL SECURITY;
@@ -145,6 +147,15 @@ CREATE POLICY "public_insert_membership_applications" ON membership_applications
 DROP POLICY IF EXISTS "admin_all_members" ON members;
 CREATE POLICY "admin_all_members" ON members
   FOR ALL USING (has_role('event_manager'));
+
+DROP POLICY IF EXISTS "admin_all_member_positions" ON member_positions;
+CREATE POLICY "admin_all_member_positions" ON member_positions
+  FOR ALL USING (has_role('event_manager'));
+
+-- Tasks link to projects, so project managers can assign and track them too.
+DROP POLICY IF EXISTS "admin_all_member_tasks" ON member_tasks;
+CREATE POLICY "admin_all_member_tasks" ON member_tasks
+  FOR ALL USING (has_role('event_manager') OR has_role('project_manager'));
 
 DROP POLICY IF EXISTS "admin_read_activity_logs" ON activity_logs;
 CREATE POLICY "admin_read_activity_logs" ON activity_logs

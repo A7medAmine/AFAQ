@@ -743,6 +743,11 @@ select.adm-input {
 /* Print sheets (member cards, inventory labels) share the admin console
    route so they get real data/auth, but printing the sidebar/topnav/toasts
    along with them is never what anyone wants. */
+@page {
+  size: A4;
+  margin: 8mm;
+}
+
 @media print {
   .adm-chassis > aside,
   .adm-chassis header,

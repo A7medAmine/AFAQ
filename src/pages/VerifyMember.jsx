@@ -47,7 +47,11 @@ export default function VerifyMember() {
               background: state.data.valid ? '#DCFCE7' : '#FEE2E2',
               color: state.data.valid ? '#166534' : '#991B1B',
             }}>
-              {state.data.valid ? 'Active member' : `Card ${state.data.cardStatus}`}
+              {state.data.valid
+                ? 'Active member'
+                : state.data.memberStatus && state.data.memberStatus !== 'active'
+                  ? `Membership ${state.data.memberStatus}`
+                  : `Card ${state.data.cardStatus}`}
             </p>
           </>
         )}

@@ -71,6 +71,27 @@
       "when": 1790117138895,
       "tag": "0009_split_members_from_applications",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1790200170292,
+      "tag": "0010_member_hr_positions_tasks",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1790201816312,
+      "tag": "0011_member_roles",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1790202139059,
+      "tag": "0012_member_groups",
+      "breakpoints": true
     }
   ]
 }

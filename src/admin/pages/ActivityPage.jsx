@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
-  Calendar, CircuitBoard, Images, Mail, Megaphone, ScrollText, Shield, UserCheck,
+  Calendar, CircuitBoard, Crown, IdCard, Images, ListChecks, Mail, Megaphone, ScrollText, Shield, UserCheck,
 } from 'lucide-react'
 import { read, supabase } from '../lib/db'
 import { formatDateTime, relativeTime } from '../lib/format'
@@ -21,6 +21,10 @@ const ENTITY = {
   membership_applications: { icon: UserCheck, label: 'Application' },
   contact_messages: { icon: Mail, label: 'Message' },
   admin_users: { icon: Shield, label: 'Admin' },
+  members: { icon: IdCard, label: 'Member' },
+  member_positions: { icon: Crown, label: 'Role assignment' },
+  member_roles: { icon: Crown, label: 'Role' },
+  member_tasks: { icon: ListChecks, label: 'Task' },
   ai_knowledge: { icon: ScrollText, label: 'AI article' },
 }
 
