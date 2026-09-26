@@ -1,6 +1,6 @@
 import {
   pgTable, bigint, text, boolean, uuid, timestamp, time, date,
-  jsonb, integer, numeric, primaryKey,
+  jsonb, integer, numeric, primaryKey, index, unique,
 } from 'drizzle-orm/pg-core'
 
 export const adminRoles = pgTable('admin_roles', {
@@ -100,6 +100,8 @@ export const members = pgTable('members', {
   birthDate: date('birth_date'),
   gender: text(),
   notes: text(),
+  // Left out of bulk notification emails (announcements, events).
+  emailOptOut: boolean('email_opt_out').notNull().default(false),
   // member_code is assigned by the `members_assign_code` trigger on insert
   // (see migration 0010), so every member has a printable card from day one.
   cardQrCode: text('card_qr_code'),
@@ -350,3 +352,64 @@ export const financeBudgets = pgTable('finance_budgets', {
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
 })
+
+// Reusable layouts for notification emails. `kind` says which composer offers
+// the template (announcement, event or general). The structured fields are
+// rendered by src/lib/emailTemplate.js; when `custom_html` is set it replaces
+// the built-in layout entirely. Both accept {{variables}}.
+export const emailTemplates = pgTable('email_templates', {
+  id: bigint({ mode: 'number' }).primaryKey().generatedAlwaysAsIdentity(),
+  name: text().notNull(),
+  kind: text().notNull().default('general'),
+  subject: text().notNull(),
+  headerText: text('header_text'),
+  heading: text(),
+  body: text(),
+  buttonLabel: text('button_label'),
+  buttonUrl: text('button_url'),
+  footer: text(),
+  accentColor: text('accent_color').notNull().default('#0F172A'),
+  customHtml: text('custom_html'),
+  isDefault: boolean('is_default').notNull().default(false),
+  createdBy: uuid('created_by'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+})
+
+// One bulk send. The template and the shared variables (title, date, link…)
+// are snapshotted at creation, so editing the template or the announcement
+// mid-send cannot change what later recipients get. Sending is driven in
+// batches by the console (serverless functions cannot keep working after
+// they respond), so an interrupted send is resumed, not lost.
+export const emailCampaigns = pgTable('email_campaigns', {
+  id: bigint({ mode: 'number' }).primaryKey().generatedAlwaysAsIdentity(),
+  subject: text().notNull(),
+  templateId: bigint('template_id', { mode: 'number' }).references(() => emailTemplates.id, { onDelete: 'set null' }),
+  template: jsonb().notNull(),
+  variables: jsonb().notNull(),
+  sourceType: text('source_type'),
+  sourceId: bigint('source_id', { mode: 'number' }),
+  language: text().notNull().default('en'),
+  audience: jsonb().notNull(),
+  total: integer().notNull().default(0),
+  sent: integer().notNull().default(0),
+  failed: integer().notNull().default(0),
+  status: text().notNull().default('queued'),
+  createdBy: uuid('created_by'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  completedAt: timestamp('completed_at', { withTimezone: true }),
+})
+
+export const emailDeliveries = pgTable('email_deliveries', {
+  id: bigint({ mode: 'number' }).primaryKey().generatedAlwaysAsIdentity(),
+  campaignId: bigint('campaign_id', { mode: 'number' }).notNull().references(() => emailCampaigns.id, { onDelete: 'cascade' }),
+  memberId: bigint('member_id', { mode: 'number' }).references(() => members.id, { onDelete: 'set null' }),
+  email: text().notNull(),
+  name: text(),
+  status: text().notNull().default('queued'),
+  error: text(),
+  sentAt: timestamp('sent_at', { withTimezone: true }),
+}, t => [
+  unique('email_deliveries_campaign_email_key').on(t.campaignId, t.email),
+  index('email_deliveries_campaign_status_idx').on(t.campaignId, t.status),
+])

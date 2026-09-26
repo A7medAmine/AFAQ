@@ -34,6 +34,7 @@ const ProjectsPage = lazy(() => import('./admin/pages/ProjectsPage'))
 const GalleryPage = lazy(() => import('./admin/pages/GalleryPage'))
 const MessagesPage = lazy(() => import('./admin/pages/MessagesPage'))
 const AnnouncementsPage = lazy(() => import('./admin/pages/AnnouncementsPage'))
+const EmailPage = lazy(() => import('./admin/pages/EmailPage'))
 const AdminUsersPage = lazy(() => import('./admin/pages/AdminUsersPage'))
 const SettingsPage = lazy(() => import('./admin/pages/SettingsPage'))
 const AIKnowledgePage = lazy(() => import('./admin/pages/AIKnowledgePage'))
@@ -144,6 +145,9 @@ export default function App() {
             } />
             <Route path="announcements" element={
               <RoleGuard permission="announcements.manage"><AnnouncementsPage /></RoleGuard>
+            } />
+            <Route path="email" element={
+              <RoleGuard permission="email.send"><EmailPage /></RoleGuard>
             } />
             <Route path="admins" element={
               <RoleGuard permission="admin_users.manage"><AdminUsersPage /></RoleGuard>

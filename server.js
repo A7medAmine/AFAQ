@@ -6,13 +6,14 @@ import fs from 'fs'
 import { fileURLToPath } from 'url'
 import { createClient } from '@supabase/supabase-js'
 import axios from 'axios'
-import nodemailer from 'nodemailer'
 import QRCodeLib from 'qrcode'
 import rateLimit from 'express-rate-limit'
 import ws from 'ws'
 import aiRoutes from './server/routes/ai.js'
 import aiKnowledgeRoutes from './server/routes/aiKnowledge.js'
 import digikeyRoutes from './server/routes/digikey.js'
+import emailRoutes from './server/routes/email.js'
+import { sendEmail } from './server/services/mailer.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const uploadDir = path.resolve(__dirname, "upload");
@@ -92,6 +93,9 @@ const apiLimiter = rateLimit({
   max: 100,
   standardHeaders: true,
   legacyHeaders: false,
+  // A bulk email is sent as one authenticated request per batch; a big send
+  // would otherwise lock the admin out of the whole API for 15 minutes.
+  skip: (req) => /^\/email\/campaigns\/\d+\/process$/.test(req.path),
 });
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -334,33 +338,6 @@ app.post('/api/admin/check-email', authLimiter, async (req, res) => {
 })
 
 // --- Email auto-reply ---
-
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || "smtp.gmail.com",
-  port: parseInt(process.env.SMTP_PORT || "587"),
-  secure: process.env.SMTP_PORT === "465",
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-});
-
-const sendEmail = async ({ to, subject, html }) => {
-  if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
-    console.log(
-      `[EMAIL SKIPPED] No SMTP configured. Would send to ${to}: ${subject}`
-    );
-    return { ok: true, skipped: true };
-  }
-  await transporter.sendMail({
-    from:
-      process.env.EMAIL_FROM || '"AFAQ Scientific Club" <noreply@afaq-club.dz>',
-    to,
-    subject,
-    html,
-  });
-  return { ok: true };
-};
 
 app.post("/api/email/registration-confirmation", async (req, res) => {
   const { email, name, event_title, date } = req.body;
@@ -967,6 +944,10 @@ app.use("/api/ai-knowledge", aiKnowledgeRoutes);
 // --- DigiKey product lookup (inventory) ---
 
 app.use("/api/digikey", digikeyRoutes);
+
+// --- Bulk notification emails (templates, campaigns) ---
+
+app.use("/api/email", emailRoutes);
 
 // --- SPA fallback (production) ---
 

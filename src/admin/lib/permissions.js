@@ -16,6 +16,7 @@ export const PERMISSIONS = {
     'gallery.manage',
     'messages.view',
     'announcements.manage',
+    'email.send',
     'ai_knowledge.manage',
     'activity.view',
     'settings.manage',
@@ -28,6 +29,7 @@ export const PERMISSIONS = {
     'events.registrations.manage',
     'membership.manage',
     'announcements.manage',
+    'email.send',
     'messages.view',
     'inventory.manage',
     'tasks.manage',
@@ -35,11 +37,13 @@ export const PERMISSIONS = {
   [ROLES.MEDIA_MANAGER]: [
     'gallery.manage',
     'announcements.manage',
+    'email.send',
     'messages.view',
   ],
   [ROLES.PROJECT_MANAGER]: [
     'projects.manage',
     'announcements.manage',
+    'email.send',
     'messages.view',
     'tasks.manage',
   ],
@@ -78,6 +82,7 @@ export const NAV_ITEMS = [
   { label: 'Projects', path: '/admin/projects', icon: 'CircuitBoard', group: 'publish', permission: 'projects.manage' },
   { label: 'Gallery', path: '/admin/gallery', icon: 'Images', group: 'publish', permission: 'gallery.manage' },
   { label: 'Announcements', path: '/admin/announcements', icon: 'Megaphone', group: 'publish', permission: 'announcements.manage' },
+  { label: 'Email', path: '/admin/email', icon: 'Send', group: 'publish', permission: 'email.send' },
 
   { label: 'Admins', path: '/admin/admins', icon: 'Shield', group: 'console', permission: 'admin_users.manage' },
   { label: 'AI knowledge', path: '/admin/ai-knowledge', icon: 'Brain', group: 'console', permission: 'ai_knowledge.manage' },

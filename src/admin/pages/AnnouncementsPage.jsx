@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
-import { CalendarClock, Eye, EyeOff, Loader2, Megaphone, Pencil, Pin, PinOff, Plus, Trash2 } from 'lucide-react'
+import { CalendarClock, Eye, EyeOff, Loader2, Megaphone, Pencil, Pin, PinOff, Plus, Send, Trash2 } from 'lucide-react'
 import { logActivity, read, run, supabase } from '../lib/db'
 import useAdminStore from '../store/adminStore'
 import useQueryParam from '../hooks/useQueryParam'
+import { hasPermission } from '../lib/permissions'
+import ComposeEmailModal from '../components/email/ComposeEmailModal'
 import { formatDateTime, relativeTime, toForm } from '../lib/format'
 import PageHeader, { FilterTabs } from '../components/ui/PageHeader'
 import Panel from '../components/ui/Panel'
@@ -35,6 +37,8 @@ const stateOf = a => (!a.is_published ? 'draft' : isScheduled(a) ? 'scheduled' :
 
 export default function AnnouncementsPage() {
   const adminProfile = useAdminStore(s => s.adminProfile)
+  const canEmail = hasPermission(useAdminStore(s => s.role()), 'email.send')
+  const [emailing, setEmailing] = useState(null)
 
   const [items, setItems] = useState([])
   const [state, setState] = useState({ loading: true, error: null })
@@ -175,6 +179,9 @@ export default function AnnouncementsPage() {
                       off: 'Hidden from the site.',
                     })}
                   />
+                  {canEmail && (
+                    <IconButton icon={Send} label="Email members" onClick={() => setEmailing(item)} />
+                  )}
                   <IconButton icon={Pencil} label="Edit" onClick={() => setEditor({ item })} />
                   <IconButton icon={Trash2} label="Delete" danger onClick={() => setPendingDelete(item)} />
                 </div>
@@ -191,6 +198,12 @@ export default function AnnouncementsPage() {
         onClose={() => setEditor(null)}
         onSaved={() => { setEditor(null); load() }}
         createdBy={adminProfile?.user_id}
+      />
+
+      <ComposeEmailModal
+        open={!!emailing}
+        source={emailing ? { type: 'announcement', record: emailing } : null}
+        onClose={() => setEmailing(null)}
       />
 
       <ConfirmDialog

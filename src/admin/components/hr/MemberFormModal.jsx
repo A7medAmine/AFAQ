@@ -4,7 +4,7 @@ import { toDateInput } from '../../lib/format'
 import { CARD_STATUSES, GENDERS, MEMBER_STATUSES, splitList } from '../../lib/hr'
 import Modal from '../ui/Modal'
 import Button from '../ui/Button'
-import { SelectField, TextArea, TextField } from '../ui/Field'
+import { CheckField, SelectField, TextArea, TextField } from '../ui/Field'
 import RoleField, { NEW_ROLE, saveRole } from './RoleField'
 
 const blank = () => ({
@@ -12,7 +12,7 @@ const blank = () => ({
   team: '', status: 'active', card_status: 'active',
   joined_at: toDateInput(), left_at: '', birth_date: '', gender: '',
   skills: '', interests: '', notes: '',
-  role: '', new_role: '',
+  role: '', new_role: '', email_opt_out: false,
 })
 
 const fromMember = m => ({
@@ -32,6 +32,7 @@ const fromMember = m => ({
   skills: (m.skills || []).join(', '),
   interests: (m.interests || []).join(', '),
   notes: m.notes || '',
+  email_opt_out: !!m.email_opt_out,
 })
 
 /**
@@ -89,6 +90,7 @@ export default function MemberFormModal({ open, member, teams = [], customRoles 
       skills: splitList(form.skills),
       interests: splitList(form.interests),
       notes: text(form.notes),
+      email_opt_out: form.email_opt_out,
     }
 
     setSaving(true)
@@ -194,6 +196,14 @@ export default function MemberFormModal({ open, member, teams = [], customRoles 
             placeholder="Robotics, AI" hint="Separate with commas." className="sm:col-span-2" />
           <TextArea label="Internal notes" value={form.notes} onChange={e => set('notes', e.target.value)}
             hint="Only admins see this." className="sm:col-span-2" />
+          <div className="sm:col-span-2">
+            <CheckField
+              label="No notification emails"
+              description="Leave this member out when announcements and events are emailed to members."
+              checked={form.email_opt_out}
+              onChange={v => set('email_opt_out', v)}
+            />
+          </div>
         </Section>
       </div>
     </Modal>

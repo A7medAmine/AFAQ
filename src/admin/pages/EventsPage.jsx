@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
-  CalendarPlus, Copy, Eye, EyeOff, ImageOff, Loader2, Pencil, ToggleLeft, ToggleRight, Trash2, Upload, Users,
+  CalendarPlus, Copy, Eye, EyeOff, ImageOff, Loader2, Pencil, Send, ToggleLeft, ToggleRight, Trash2, Upload, Users,
 } from 'lucide-react'
 import { deleteUploadedFile, logActivity, read, run, supabase, uploadFile } from '../lib/db'
 import useAdminStore from '../store/adminStore'
 import useQueryParam from '../hooks/useQueryParam'
+import { hasPermission } from '../lib/permissions'
+import ComposeEmailModal from '../components/email/ComposeEmailModal'
 import { formatDate, formatDateTime, isPast, toDateInput, toForm } from '../lib/format'
 import PageHeader, { FilterTabs } from '../components/ui/PageHeader'
 import DataTable from '../components/ui/DataTable'
@@ -44,6 +46,8 @@ export default function EventsPage() {
   const [newFlag, setNewFlag] = useQueryParam('new')
 
   const [editor, setEditor] = useState(null)   // { event | null }
+  const [emailing, setEmailing] = useState(null)
+  const canEmail = hasPermission(useAdminStore(s => s.role()), 'email.send')
   const [pendingDelete, setPendingDelete] = useState(null)
   const [working, setWorking] = useState({})
 
@@ -230,6 +234,9 @@ export default function EventsPage() {
                 off: 'Registration is closed.',
               })}
             />
+            {canEmail && (
+              <IconButton icon={Send} label="Email members" onClick={() => setEmailing(event)} />
+            )}
             <IconButton icon={Copy} label="Duplicate" onClick={() => duplicate(event)} />
             <IconButton icon={Pencil} label="Edit" onClick={() => setEditor({ event })} />
             <IconButton icon={Trash2} label="Delete" danger onClick={() => setPendingDelete(event)} />
@@ -237,7 +244,7 @@ export default function EventsPage() {
         )
       },
     },
-  ], [seats, working]) // eslint-disable-line react-hooks/exhaustive-deps
+  ], [seats, working, canEmail]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div>
@@ -307,6 +314,12 @@ export default function EventsPage() {
         onSaved={() => { setEditor(null); load() }}
         addToast={addToast}
         createdBy={adminProfile?.user_id}
+      />
+
+      <ComposeEmailModal
+        open={!!emailing}
+        source={emailing ? { type: 'event', record: emailing } : null}
+        onClose={() => setEmailing(null)}
       />
 
       <ConfirmDialog
