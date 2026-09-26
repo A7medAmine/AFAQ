@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { Suspense, useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
 import Sidebar from './Sidebar'
 import TopNav from './TopNav'
@@ -29,7 +29,10 @@ export default function AdminLayout({ children }) {
       <div className="adm-content min-h-screen flex flex-col">
         <TopNav />
         <main className="flex-1 px-4 sm:px-6 py-6 sm:py-8">
-          <div className="mx-auto w-full" style={{ maxWidth: 1240 }}>{children}</div>
+          <div className="mx-auto w-full" style={{ maxWidth: 1240 }}>
+            {/* Screens are lazy chunks; keep the chrome up while one loads. */}
+            <Suspense fallback={null}>{children}</Suspense>
+          </div>
         </main>
       </div>
 
