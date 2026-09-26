@@ -92,6 +92,20 @@
       "when": 1790202139059,
       "tag": "0012_member_groups",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1790202877410,
+      "tag": "0013_finance",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1790203359256,
+      "tag": "0014_finance_drop_member",
+      "breakpoints": true
     }
   ]
 }

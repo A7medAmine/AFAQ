@@ -1,6 +1,6 @@
 import {
   pgTable, bigint, text, boolean, uuid, timestamp, time, date,
-  jsonb, integer, primaryKey,
+  jsonb, integer, numeric, primaryKey,
 } from 'drizzle-orm/pg-core'
 
 export const adminRoles = pgTable('admin_roles', {
@@ -314,3 +314,39 @@ export const memberGroupMembers = pgTable('member_group_members', {
   memberId: bigint('member_id', { mode: 'number' }).notNull().references(() => members.id, { onDelete: 'cascade' }),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
 }, t => [primaryKey({ columns: [t.groupId, t.memberId] })])
+
+// Club money in and out, in dinars. `kind` is income or expense; `category`
+// is one of the values in src/admin/lib/finance.js. A row can be tied to the
+// event or project it was spent on or raised for, which is what budgets
+// measure their actuals against.
+export const financeTransactions = pgTable('finance_transactions', {
+  id: bigint({ mode: 'number' }).primaryKey().generatedAlwaysAsIdentity(),
+  kind: text().notNull(),
+  category: text().notNull(),
+  amount: numeric({ precision: 12, scale: 2 }).notNull(),
+  occurredOn: date('occurred_on').notNull().defaultNow(),
+  description: text(),
+  counterparty: text(),
+  paymentMethod: text('payment_method'),
+  reference: text(),
+  receiptUrl: text('receipt_url'),
+  eventId: bigint('event_id', { mode: 'number' }).references(() => events.id, { onDelete: 'set null' }),
+  projectId: bigint('project_id', { mode: 'number' }).references(() => projects.id, { onDelete: 'set null' }),
+  createdBy: uuid('created_by'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+})
+
+// What an event or project is expected to cost and bring in. Actuals are not
+// stored: they are the sum of finance_transactions sharing its event/project.
+export const financeBudgets = pgTable('finance_budgets', {
+  id: bigint({ mode: 'number' }).primaryKey().generatedAlwaysAsIdentity(),
+  name: text().notNull(),
+  eventId: bigint('event_id', { mode: 'number' }).references(() => events.id, { onDelete: 'cascade' }),
+  projectId: bigint('project_id', { mode: 'number' }).references(() => projects.id, { onDelete: 'cascade' }),
+  plannedIncome: numeric('planned_income', { precision: 12, scale: 2 }).notNull().default('0'),
+  plannedExpense: numeric('planned_expense', { precision: 12, scale: 2 }).notNull().default('0'),
+  notes: text(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+})

@@ -240,6 +240,7 @@ export default function ProjectsPage() {
                 p.is_published ? 'published' : 'draft', formatDate(p.created_at),
               ])}
               statusColumnIndex={5}
+              enumColumns={[1, 5]}
               disabled={!filtered.length}
             />
             <Button variant="primary" icon={Plus} onClick={() => setEditor({ project: null })}>New project</Button>

@@ -230,6 +230,7 @@ export default function MembersPage() {
               headers={exportHeaders}
               rows={exportRows}
               statusColumnIndex={9}
+              enumColumns={[9, 10]}
               disabled={!filtered.length}
             />
             <Button icon={Shield} onClick={() => setRolesOpen(true)}>Roles</Button>

@@ -73,65 +73,39 @@ export function downloadCSV(filename, headers, rows) {
   URL.revokeObjectURL(url)
 }
 
-const PDF_STATUS_COLOR = {
-  approved: [23, 146, 79], available: [23, 146, 79], active: [23, 146, 79], returned: [23, 146, 79], resolved: [23, 146, 79],
-  pending: [201, 122, 4], borrowed: [201, 122, 4], repair: [201, 122, 4], draft: [201, 122, 4],
-  rejected: [216, 64, 47], overdue: [216, 64, 47], retired: [216, 64, 47], cancelled: [216, 64, 47], lost: [216, 64, 47],
-}
-
 /**
- * One branded PDF export shared by every admin table — same club-blue header
- * band and dark striped table regardless of which page calls it, so exports
- * look like one system instead of each page inventing its own.
+ * One PDF export shared by every admin table, so exports look like one
+ * system instead of each page inventing its own.
  *
- * `rows` are arrays already shaped for the table (same shape `downloadCSV`
- * takes), so a page can pass the exact headers/rows it built for CSV.
- * `statusColumnIndex`, if given, colors that column like the on-screen
- * StatusBadge instead of plain text.
+ * `headers`/`rows` arrive already in the document's language (ExportMenu
+ * translates them) and in reading order; for Arabic the columns are laid out
+ * right to left. `statusColumnIndex`, if given, sets that column in bold.
  */
-export async function exportPDF({ filename, title, subtitle, headers, rows, statusColumnIndex, orientation = 'landscape' }) {
-  const [{ default: jsPDF }, { default: autoTable }] = await Promise.all([
-    import('jspdf'), import('jspdf-autotable'),
-  ])
+export async function exportPDF({ filename, title, subtitle, headers, rows, statusColumnIndex, orientation = 'landscape', lang = 'en' }) {
+  const { createPdf, drawFooters, drawHeader, mirror, sourceIndex, tableTheme } = await import('./pdf')
+  const { doc, autoTable } = await createPdf({ orientation })
+  const margin = 36
 
-  const doc = new jsPDF({ orientation, unit: 'pt', format: 'a4' })
-  const pageWidth = doc.internal.pageSize.getWidth()
-
-  doc.setFillColor(36, 96, 231)
-  doc.rect(0, 0, pageWidth, 64, 'F')
-  doc.setTextColor(255, 255, 255)
-  doc.setFont('helvetica', 'bold')
-  doc.setFontSize(16)
-  doc.text('AFAQ Scientific Club', 32, 30)
-  doc.setFont('helvetica', 'normal')
-  doc.setFontSize(10)
-  doc.text(title, 32, 46)
-  doc.text(subtitle, pageWidth - 32, 46, { align: 'right' })
+  const startY = drawHeader(doc, { lang, title, subtitle, margin })
+  const theme = tableTheme(lang)
 
   autoTable(doc, {
-    startY: 84,
-    margin: { left: 32, right: 32 },
-    head: [headers],
-    body: rows,
-    styles: { font: 'helvetica', fontSize: 9, cellPadding: 6, textColor: [10, 18, 32], overflow: 'ellipsize' },
-    headStyles: { fillColor: [10, 18, 32], textColor: 255, fontStyle: 'bold' },
-    alternateRowStyles: { fillColor: [244, 245, 240] },
+    ...theme,
+    startY,
+    margin: { left: margin, right: margin, top: margin, bottom: 44 },
+    head: [mirror(lang, headers)],
+    body: rows.map(r => mirror(lang, r.map(v => (v === null || v === undefined ? '' : String(v))))),
+    styles: { ...theme.styles, overflow: 'ellipsize' },
+    alternateRowStyles: { fillColor: [251, 251, 252] },
     didParseCell: cell => {
-      if (statusColumnIndex == null || cell.section !== 'body' || cell.column.index !== statusColumnIndex) return
-      const raw = String(rows[cell.row.index]?.[statusColumnIndex] || '').toLowerCase()
-      const color = PDF_STATUS_COLOR[raw]
-      if (color) { cell.cell.styles.textColor = color; cell.cell.styles.fontStyle = 'bold' }
-    },
-    didDrawPage: () => {
-      doc.setFontSize(8)
-      doc.setTextColor(140, 148, 158)
-      doc.text(
-        `Page ${doc.internal.getCurrentPageInfo().pageNumber} of ${doc.internal.getNumberOfPages()}`,
-        pageWidth - 32, doc.internal.pageSize.getHeight() - 16, { align: 'right' }
-      )
+      if (statusColumnIndex == null || cell.section !== 'body') return
+      if (sourceIndex(lang, cell.column.index, headers.length) !== statusColumnIndex) return
+      cell.cell.styles.fontStyle = 'bold'
+      cell.cell.styles.textColor = [17, 24, 39]
     },
   })
 
+  drawFooters(doc, { lang, margin })
   doc.save(filename)
 }
 

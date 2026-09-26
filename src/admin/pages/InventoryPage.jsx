@@ -121,6 +121,7 @@ export default function InventoryPage() {
               headers={exportHeaders}
               rows={exportRows}
               statusColumnIndex={6}
+              enumColumns={[2, 4, 6]}
               disabled={!filtered.length}
             />
             <Button variant="primary" icon={PackagePlus} onClick={() => setAddOpen(true)}>Add item</Button>

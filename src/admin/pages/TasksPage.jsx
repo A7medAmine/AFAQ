@@ -225,6 +225,7 @@ export default function TasksPage() {
               headers={exportHeaders}
               rows={exportRows}
               statusColumnIndex={5}
+              enumColumns={[3, 5]}
               disabled={!filtered.length}
             />
             <Button variant="primary" icon={Plus} onClick={() => setEditor({ task: null })}>New task</Button>

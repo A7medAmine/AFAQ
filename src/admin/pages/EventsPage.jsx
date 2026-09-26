@@ -258,6 +258,7 @@ export default function EventsPage() {
                 e.registration_open ? 'open' : 'closed', e.is_published ? 'published' : 'draft',
               ])}
               statusColumnIndex={6}
+              enumColumns={[5, 6]}
               disabled={!filtered.length}
             />
             <Button variant="primary" icon={CalendarPlus} onClick={() => setEditor({ event: null })}>New event</Button>

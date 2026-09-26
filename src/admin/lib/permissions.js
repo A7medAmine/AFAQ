@@ -3,6 +3,7 @@ export const ROLES = {
   EVENT_MANAGER: 'event_manager',
   MEDIA_MANAGER: 'media_manager',
   PROJECT_MANAGER: 'project_manager',
+  TREASURER: 'treasurer',
 }
 
 export const PERMISSIONS = {
@@ -20,6 +21,7 @@ export const PERMISSIONS = {
     'settings.manage',
     'inventory.manage',
     'tasks.manage',
+    'finance.manage',
   ],
   [ROLES.EVENT_MANAGER]: [
     'events.manage',
@@ -40,6 +42,10 @@ export const PERMISSIONS = {
     'announcements.manage',
     'messages.view',
     'tasks.manage',
+  ],
+  [ROLES.TREASURER]: [
+    'finance.manage',
+    'messages.view',
   ],
 }
 
@@ -67,6 +73,7 @@ export const NAV_ITEMS = [
   { label: 'Messages', path: '/admin/messages', icon: 'Mail', group: 'operate', permission: 'messages.view' },
   { label: 'Inventory', path: '/admin/inventory', icon: 'Boxes', group: 'operate', permission: 'inventory.manage' },
   { label: 'Borrowing', path: '/admin/borrowing', icon: 'ArrowLeftRight', group: 'operate', permission: 'inventory.manage' },
+  { label: 'Finance', path: '/admin/finance', icon: 'Wallet', group: 'operate', permission: 'finance.manage' },
 
   { label: 'Projects', path: '/admin/projects', icon: 'CircuitBoard', group: 'publish', permission: 'projects.manage' },
   { label: 'Gallery', path: '/admin/gallery', icon: 'Images', group: 'publish', permission: 'gallery.manage' },
