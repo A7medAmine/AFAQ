@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { ArrowLeftRight, Camera, PackageCheck, PackageMinus, ScrollText } from 'lucide-react'
-import { logActivity, read, run, supabase } from '../lib/db'
+import { PackageCheck, PackageMinus, ScrollText } from 'lucide-react'
+import { logActivity, read, supabase } from '../lib/db'
 import useAdminStore from '../store/adminStore'
 import PageHeader, { FilterTabs } from '../components/ui/PageHeader'
 import DataTable from '../components/ui/DataTable'
@@ -11,6 +11,7 @@ import ExportMenu from '../components/ui/ExportMenu'
 import { StatusBadge } from '../components/ui/Badge'
 import { TextArea, TextField } from '../components/ui/Field'
 import QrScanner from '../components/ui/QrScanner'
+import SearchPicker, { normalizeCode } from '../components/ui/SearchPicker'
 import { formatDate, formatDateTime } from '../lib/format'
 
 const TABS = [
@@ -19,43 +20,64 @@ const TABS = [
   { value: 'history', label: 'History' },
 ]
 
+// A due date picked as "YYYY-MM-DD" means the end of that day locally —
+// `new Date('YYYY-MM-DD')` is UTC midnight and flagged loans overdue early.
+function endOfDay(dateString) {
+  return new Date(`${dateString}T23:59:59`).toISOString()
+}
+
+function isOverdue(record, now = Date.now()) {
+  return record.status === 'active' && record.expected_return_at && new Date(record.expected_return_at).getTime() < now
+}
+
 export default function BorrowingPage() {
   const [tab, setTab] = useState('checkout')
   const [rows, setRows] = useState([])
+  const [items, setItems] = useState([])
+  const [members, setMembers] = useState([])
   const [state, setState] = useState({ loading: true, error: null })
 
   const load = useCallback(async () => {
     setState(s => ({ ...s, error: null }))
-    const { ok, data, message } = await read(
-      supabase
-        .from('borrow_records')
-        .select('*, item:inventory_items(name, asset_code), member:members(full_name)')
-        .order('checked_out_at', { ascending: false })
-    )
-    if (!ok) { setState({ loading: false, error: message }); return }
-    setRows(data || [])
+    const [records, itemList, memberList] = await Promise.all([
+      read(
+        supabase
+          .from('borrow_records')
+          .select('*, item:inventory_items(id, name, asset_code, category, location, status), member:members(full_name, member_code)')
+          .order('checked_out_at', { ascending: false })
+      ),
+      read(
+        supabase.from('inventory_items')
+          .select('id, name, asset_code, category, location, status')
+          .neq('status', 'retired')
+          .order('name')
+      ),
+      read(supabase.from('members').select('id, full_name, member_code, department').order('full_name')),
+    ])
+    const failed = [records, itemList, memberList].find(r => !r.ok)
+    if (failed) { setState({ loading: false, error: failed.message }); return }
+    setRows(records.data || [])
+    setItems(itemList.data || [])
+    setMembers(memberList.data || [])
     setState({ loading: false, error: null })
   }, [])
 
   useEffect(() => { load() }, [load])
 
-  const now = Date.now()
-  const withOverdue = useMemo(() => rows.map(r => ({
-    ...r,
-    computedStatus: r.status === 'active' && r.expected_return_at && new Date(r.expected_return_at).getTime() < now
-      ? 'overdue'
-      : r.status,
-  })), [rows, now])
+  const withOverdue = useMemo(() => {
+    const now = Date.now()
+    return rows.map(r => ({ ...r, computedStatus: isOverdue(r, now) ? 'overdue' : r.status }))
+  }, [rows])
 
-  const activeCount = rows.filter(r => r.status === 'active').length
-  const overdueCount = withOverdue.filter(r => r.computedStatus === 'overdue').length
+  const activeLoans = useMemo(() => withOverdue.filter(r => r.status === 'active' && r.item), [withOverdue])
+  const overdueCount = activeLoans.filter(r => r.computedStatus === 'overdue').length
 
   return (
     <div>
       <PageHeader
         eyebrow="Operate"
         title="Borrowing"
-        description="Check tools and equipment in and out by scanning the item's QR label and the member's card."
+        description="Check tools and equipment in and out. Search by name, type a code, or scan the item's label and the member's card."
         actions={tab === 'history' && (
           <ExportMenu
             filename={`borrowing-history-${new Date().toISOString().slice(0, 10)}`}
@@ -80,145 +102,275 @@ export default function BorrowingPage() {
           onChange={setTab}
           label="Section"
         />
-        {activeCount > 0 && (
-          <span className="text-xs" style={{ color: 'var(--adm-silk-faint)' }}>
-            {activeCount} out{overdueCount > 0 ? `, ${overdueCount} overdue` : ''}
+        {activeLoans.length > 0 && (
+          <span className="text-xs" style={{ color: overdueCount ? 'var(--adm-fault)' : 'var(--adm-silk-faint)' }}>
+            {activeLoans.length} out{overdueCount > 0 ? `, ${overdueCount} overdue` : ''}
           </span>
         )}
       </div>
 
-      {tab === 'checkout' && <CheckOutForm onDone={() => { load(); setTab('history') }} />}
-      {tab === 'return' && <ReturnForm onDone={() => { load(); setTab('history') }} />}
-      {tab === 'history' && (
-        state.error ? (
-          <Panel><ErrorState message={state.error} onRetry={load} /></Panel>
-        ) : (
-          <HistoryTable rows={withOverdue} loading={state.loading} />
-        )
+      {state.error ? (
+        <Panel><ErrorState message={state.error} onRetry={load} /></Panel>
+      ) : (
+        <>
+          {tab === 'checkout' && <CheckOutForm items={items} members={members} loading={state.loading} onDone={load} />}
+          {tab === 'return' && <ReturnForm loans={activeLoans} items={items} loading={state.loading} onDone={load} />}
+          {tab === 'history' && <HistoryTable rows={withOverdue} loading={state.loading} />}
+        </>
       )}
     </div>
   )
 }
 
-function CodeInput({ label, value, onChange, onScan, placeholder }) {
+function ItemOption({ item }) {
   return (
-    <div className="flex items-end gap-2">
-      <TextField label={label} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} className="flex-1" />
-      <Button type="button" onClick={onScan} icon={Camera}>Scan</Button>
-    </div>
+    <span className="min-w-0 block">
+      <span className="block text-sm font-semibold adm-truncate">{item.name}</span>
+      <span className="adm-data block text-[11px] adm-truncate" style={{ color: 'var(--adm-silk-faint)' }}>
+        {[item.asset_code, item.category, item.location].filter(Boolean).join(' · ')}
+      </span>
+    </span>
   )
 }
 
-function CheckOutForm({ onDone }) {
+function MemberOption({ member }) {
+  return (
+    <span className="min-w-0 block">
+      <span className="block text-sm font-semibold adm-truncate">{member.full_name}</span>
+      <span className="adm-data block text-[11px] adm-truncate" style={{ color: 'var(--adm-silk-faint)' }}>
+        {member.guest ? 'Guest, not a member' : [member.member_code, member.department].filter(Boolean).join(' · ')}
+      </span>
+    </span>
+  )
+}
+
+const itemKey = i => i.id
+const itemCode = i => i.asset_code
+const itemText = i => [i.name, i.asset_code, i.category, i.location].join(' ')
+const memberKey = m => m.id
+const memberCode = m => m.member_code
+const memberText = m => [m.full_name, m.member_code, m.department].join(' ')
+
+function CheckOutForm({ items, members, loading, onDone }) {
   const addToast = useAdminStore(s => s.addToast)
-  const [assetCode, setAssetCode] = useState('')
-  const [memberCode, setMemberCode] = useState('')
+  const [item, setItem] = useState(null)
+  const [borrower, setBorrower] = useState(null)
   const [expectedReturn, setExpectedReturn] = useState('')
   const [note, setNote] = useState('')
   const [scanning, setScanning] = useState(null)
   const [busy, setBusy] = useState(false)
 
-  const submit = async () => {
-    if (!assetCode.trim()) { addToast('Scan or type the item code.', 'error'); return }
+  // Available items first so the suggestions lead with what can be lent.
+  const sortedItems = useMemo(
+    () => [...items].sort((a, b) => (a.status === 'available' ? 0 : 1) - (b.status === 'available' ? 0 : 1)),
+    [items]
+  )
+
+  const onScanned = raw => {
+    const code = normalizeCode(raw)
+    if (scanning === 'item') {
+      const match = items.find(i => i.asset_code?.toUpperCase() === code)
+      if (!match) addToast(`No item with code ${code}.`, 'error')
+      else if (match.status !== 'available') addToast(`${match.name} is not available (${match.status}).`, 'error')
+      else setItem(match)
+    } else {
+      const match = members.find(m => m.member_code?.toUpperCase() === code)
+      if (match) setBorrower(match)
+      else addToast(`No member with code ${code}.`, 'error')
+    }
+    setScanning(null)
+  }
+
+  const submit = async e => {
+    e.preventDefault()
+    if (!item) { addToast('Pick the item being borrowed.', 'error'); return }
     setBusy(true)
 
-    const { data: item, error: itemErr } = await supabase
-      .from('inventory_items').select('*').eq('asset_code', assetCode.trim()).maybeSingle()
-    if (itemErr || !item) { addToast('No item with that code.', 'error'); setBusy(false); return }
-    if (item.status !== 'available') { addToast(`${item.name} is not available (${item.status}).`, 'error'); setBusy(false); return }
-
-    let member = null
-    if (memberCode.trim()) {
-      const { data } = await supabase
-        .from('members').select('id, full_name').eq('member_code', memberCode.trim()).maybeSingle()
-      member = data
-      if (!member) { addToast('No member with that code.', 'error'); setBusy(false); return }
+    // Flip the status only while it is still available, so the same item
+    // can't be lent twice from two screens.
+    const { data: claimed, error: claimErr } = await supabase
+      .from('inventory_items').update({ status: 'borrowed' })
+      .eq('id', item.id).eq('status', 'available').select('id')
+    if (claimErr || !claimed?.length) {
+      addToast(claimErr ? 'The checkout was not recorded.' : `${item.name} is no longer available.`, 'error')
+      setBusy(false)
+      onDone()
+      return
     }
 
+    const member = borrower && !borrower.guest ? borrower : null
     const { error: insertErr } = await supabase.from('borrow_records').insert({
       item_id: item.id,
       member_id: member?.id ?? null,
-      borrower_name: member?.full_name ?? null,
-      expected_return_at: expectedReturn ? new Date(expectedReturn).toISOString() : null,
+      borrower_name: borrower?.full_name ?? null,
+      expected_return_at: expectedReturn ? endOfDay(expectedReturn) : null,
       condition_note_out: note.trim() || null,
       status: 'active',
     })
-    if (insertErr) { addToast('The checkout was not recorded.', 'error'); setBusy(false); return }
+    if (insertErr) {
+      await supabase.from('inventory_items').update({ status: 'available' }).eq('id', item.id)
+      addToast('The checkout was not recorded.', 'error')
+      setBusy(false)
+      return
+    }
 
-    await supabase.from('inventory_items').update({ status: 'borrowed' }).eq('id', item.id)
-    logActivity('checked_out', 'inventory_items', item.id, { name: item.name, borrower: member?.full_name })
-
-    addToast(`${item.name} checked out${member ? ` to ${member.full_name}` : ''}.`)
-    setAssetCode(''); setMemberCode(''); setExpectedReturn(''); setNote('')
+    logActivity('checked_out', 'inventory_items', item.id, { name: item.name, borrower: borrower?.full_name })
+    addToast(`${item.name} checked out${borrower ? ` to ${borrower.full_name}` : ''}.`)
+    setItem(null); setBorrower(null); setExpectedReturn(''); setNote('')
     setBusy(false)
     onDone()
   }
 
   return (
-    <Panel>
-      <div className="space-y-4 max-w-md">
-        <CodeInput label="Item asset code" value={assetCode} onChange={setAssetCode} onScan={() => setScanning('item')} placeholder="INV-00001" />
-        <CodeInput label="Member code (optional)" value={memberCode} onChange={setMemberCode} onScan={() => setScanning('member')} placeholder="AFQ-00001" />
-        <TextField label="Expected return date" type="date" value={expectedReturn} onChange={e => setExpectedReturn(e.target.value)} />
+    <Panel className="p-5 sm:p-6">
+      <form onSubmit={submit} className="space-y-4 max-w-lg">
+        <SearchPicker
+          label="Item"
+          placeholder={loading ? 'Loading inventory…' : 'Search by name or asset code…'}
+          options={sortedItems}
+          value={item}
+          onChange={setItem}
+          getKey={itemKey}
+          getCode={itemCode}
+          getSearchText={itemText}
+          renderOption={i => <ItemOption item={i} />}
+          isDisabled={i => (i.status !== 'available' ? i.status : null)}
+          onScan={() => setScanning('item')}
+          emptyText="No item matches. Add it from Inventory first."
+          autoFocus
+        />
+        <SearchPicker
+          label="Borrower (optional)"
+          placeholder="Search member by name or code…"
+          options={members}
+          value={borrower}
+          onChange={setBorrower}
+          getKey={memberKey}
+          getCode={memberCode}
+          getSearchText={memberText}
+          renderOption={m => <MemberOption member={m} />}
+          onScan={() => setScanning('member')}
+          onFreeText={name => setBorrower({ id: `guest:${name}`, full_name: name, guest: true })}
+          freeTextLabel={name => `Lend to “${name}” (not a member)`}
+          emptyText="No member matches."
+        />
+        <TextField
+          label="Expected return date"
+          type="date"
+          value={expectedReturn}
+          min={new Date().toISOString().slice(0, 10)}
+          onChange={e => setExpectedReturn(e.target.value)}
+        />
         <TextArea label="Condition notes" value={note} onChange={e => setNote(e.target.value)} placeholder="Working, minor scuff on the case…" />
-        <Button variant="primary" icon={PackageMinus} busy={busy} busyLabel="Checking out…" onClick={submit}>Check out</Button>
-      </div>
+        <Button type="submit" variant="primary" icon={PackageMinus} busy={busy} busyLabel="Checking out…" disabled={!item}>Check out</Button>
+      </form>
 
       <QrScanner
         open={!!scanning}
         onClose={() => setScanning(null)}
-        title={scanning === 'item' ? 'Scan item QR' : 'Scan member card'}
-        onResult={code => { scanning === 'item' ? setAssetCode(code) : setMemberCode(code); setScanning(null) }}
+        title={scanning === 'item' ? 'Scan item label' : 'Scan member card'}
+        onResult={onScanned}
       />
     </Panel>
   )
 }
 
-function ReturnForm({ onDone }) {
+const loanKey = r => r.id
+const loanCode = r => r.item?.asset_code
+const loanText = r => [r.item?.name, r.item?.asset_code, r.member?.full_name, r.borrower_name, r.member?.member_code].join(' ')
+
+function LoanOption({ loan }) {
+  const who = loan.member?.full_name || loan.borrower_name
+  return (
+    <span className="flex items-center gap-3 min-w-0">
+      <span className="min-w-0 flex-1 block">
+        <span className="block text-sm font-semibold adm-truncate">{loan.item?.name}</span>
+        <span className="adm-data block text-[11px] adm-truncate" style={{ color: 'var(--adm-silk-faint)' }}>
+          {[
+            loan.item?.asset_code,
+            who ? `with ${who}` : null,
+            loan.expected_return_at ? `due ${formatDate(loan.expected_return_at)}` : null,
+          ].filter(Boolean).join(' · ')}
+        </span>
+      </span>
+      {loan.computedStatus === 'overdue' && <StatusBadge status="overdue" />}
+    </span>
+  )
+}
+
+function ReturnForm({ loans, items, loading, onDone }) {
   const addToast = useAdminStore(s => s.addToast)
-  const [assetCode, setAssetCode] = useState('')
+  const [loan, setLoan] = useState(null)
   const [note, setNote] = useState('')
   const [scanning, setScanning] = useState(false)
   const [busy, setBusy] = useState(false)
 
-  const submit = async () => {
-    if (!assetCode.trim()) { addToast('Scan or type the item code.', 'error'); return }
+  // Items marked borrowed with no open record (a half-finished checkout) were
+  // stuck forever before — offer them too so they can be released.
+  const options = useMemo(() => {
+    const open = new Set(loans.map(l => l.item_id))
+    const orphans = items
+      .filter(i => i.status === 'borrowed' && !open.has(i.id))
+      .map(i => ({ id: `orphan:${i.id}`, orphan: true, item_id: i.id, item: i, status: 'active', computedStatus: 'active' }))
+    return [...loans, ...orphans]
+  }, [loans, items])
+
+  const onScanned = raw => {
+    const code = normalizeCode(raw)
+    const match = options.find(l => l.item?.asset_code?.toUpperCase() === code)
+    if (match) setLoan(match)
+    else addToast(`Nothing checked out with code ${code}.`, 'error')
+    setScanning(false)
+  }
+
+  const submit = async e => {
+    e.preventDefault()
+    if (!loan) { addToast('Pick the item being returned.', 'error'); return }
     setBusy(true)
 
-    const { data: item, error: itemErr } = await supabase
-      .from('inventory_items').select('*').eq('asset_code', assetCode.trim()).maybeSingle()
-    if (itemErr || !item) { addToast('No item with that code.', 'error'); setBusy(false); return }
+    if (!loan.orphan) {
+      const { error } = await supabase.from('borrow_records').update({
+        status: 'returned', returned_at: new Date().toISOString(), condition_note_in: note.trim() || null,
+      }).eq('id', loan.id)
+      if (error) { addToast('The return was not recorded.', 'error'); setBusy(false); return }
+    }
+    const { error: itemErr } = await supabase.from('inventory_items').update({ status: 'available' }).eq('id', loan.item_id)
+    if (itemErr) addToast('Return logged, but the item is still marked borrowed.', 'error')
+    else addToast(`${loan.item.name} marked returned.`)
 
-    const { data: record } = await supabase
-      .from('borrow_records').select('*').eq('item_id', item.id).eq('status', 'active')
-      .order('checked_out_at', { ascending: false }).limit(1).maybeSingle()
-    if (!record) { addToast(`${item.name} is not checked out.`, 'error'); setBusy(false); return }
-
-    await supabase.from('borrow_records').update({
-      status: 'returned', returned_at: new Date().toISOString(), condition_note_in: note.trim() || null,
-    }).eq('id', record.id)
-    await supabase.from('inventory_items').update({ status: 'available' }).eq('id', item.id)
-    logActivity('returned', 'inventory_items', item.id, { name: item.name })
-
-    addToast(`${item.name} marked returned.`)
-    setAssetCode(''); setNote('')
+    logActivity('returned', 'inventory_items', loan.item_id, { name: loan.item.name })
+    setLoan(null); setNote('')
     setBusy(false)
     onDone()
   }
 
   return (
-    <Panel>
-      <div className="space-y-4 max-w-md">
-        <CodeInput label="Item asset code" value={assetCode} onChange={setAssetCode} onScan={() => setScanning(true)} placeholder="INV-00001" />
+    <Panel className="p-5 sm:p-6">
+      <form onSubmit={submit} className="space-y-4 max-w-lg">
+        <SearchPicker
+          label="Item"
+          placeholder={loading ? 'Loading loans…' : 'Search by item, code or borrower…'}
+          options={options}
+          value={loan}
+          onChange={setLoan}
+          getKey={loanKey}
+          getCode={loanCode}
+          getSearchText={loanText}
+          renderOption={l => <LoanOption loan={l} />}
+          onScan={() => setScanning(true)}
+          emptyText={options.length ? 'No borrowed item matches.' : 'Nothing is checked out right now.'}
+          limit={20}
+          autoFocus
+        />
         <TextArea label="Return condition notes" value={note} onChange={e => setNote(e.target.value)} placeholder="Returned in good condition…" />
-        <Button variant="primary" icon={PackageCheck} busy={busy} busyLabel="Returning…" onClick={submit}>Mark returned</Button>
-      </div>
+        <Button type="submit" variant="primary" icon={PackageCheck} busy={busy} busyLabel="Returning…" disabled={!loan}>Mark returned</Button>
+      </form>
 
       <QrScanner
         open={scanning}
         onClose={() => setScanning(false)}
-        title="Scan item QR"
-        onResult={code => { setAssetCode(code); setScanning(false) }}
+        title="Scan item label"
+        onResult={onScanned}
       />
     </Panel>
   )

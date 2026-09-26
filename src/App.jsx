@@ -127,6 +127,9 @@ export default function App() {
             <Route path="inventory/:id/label" element={
               <RoleGuard permission="inventory.manage"><LabelPrintPage /></RoleGuard>
             } />
+            <Route path="inventory/labels" element={
+              <RoleGuard permission="inventory.manage"><LabelPrintPage /></RoleGuard>
+            } />
             <Route path="borrowing" element={
               <RoleGuard permission="inventory.manage"><BorrowingPage /></RoleGuard>
             } />

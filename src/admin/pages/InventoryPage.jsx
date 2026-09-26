@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import QRCode from 'qrcode'
-import { Boxes, IdCard, Loader2, PackagePlus, Search, Trash2, Upload } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { Boxes, IdCard, Loader2, PackagePlus, Printer, Search, Trash2, Upload } from 'lucide-react'
+import { Link, useNavigate } from 'react-router-dom'
 import { api, logActivity, read, run, supabase, uploadFile } from '../lib/db'
 import useAdminStore from '../store/adminStore'
 import useQueryParam from '../hooks/useQueryParam'
@@ -27,6 +27,7 @@ const FILTERS = [
 ]
 
 export default function InventoryPage() {
+  const navigate = useNavigate()
   const addToast = useAdminStore(s => s.addToast)
 
   const [rows, setRows] = useState([])
@@ -71,6 +72,11 @@ export default function InventoryPage() {
       { success: `${item.name} retired.`, failure: 'The item was not updated.' }
     )
     if (ok) { logActivity('retired', 'inventory_items', item.id, { name: item.name }); await load(); setRemove(null); setDetail(null) }
+  }
+
+  const printLabels = items => {
+    const ids = items.filter(i => i.asset_code).map(i => i.id)
+    if (ids.length) navigate(`/admin/inventory/labels?ids=${ids.join(',')}`)
   }
 
   const exportHeaders = ['Asset code', 'Name', 'Category', 'Serial', 'Condition', 'Location', 'Status', 'Added']
@@ -124,6 +130,9 @@ export default function InventoryPage() {
               enumColumns={[2, 4, 6]}
               disabled={!filtered.length}
             />
+            <Button icon={Printer} disabled={!filtered.length} onClick={() => printLabels(filtered)}>
+              Print {filtered.length === rows.length ? 'all' : filtered.length} labels
+            </Button>
             <Button variant="primary" icon={PackagePlus} onClick={() => setAddOpen(true)}>Add item</Button>
           </>
         }
@@ -139,6 +148,12 @@ export default function InventoryPage() {
           initialSearch={search}
           getRowId={row => String(row.id)}
           onRowClick={setDetail}
+          enableSelection
+          bulkActions={selected => (
+            <Button size="sm" variant="primary" icon={Printer} onClick={() => printLabels(selected)}>
+              Print {selected.length} label{selected.length === 1 ? '' : 's'}
+            </Button>
+          )}
           searchPlaceholder="Search by name, asset code, location…"
           toolbar={<FilterTabs options={filterOptions} value={status} onChange={setStatus} label="Status filter" />}
           emptyState={
