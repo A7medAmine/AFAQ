@@ -7,6 +7,7 @@ import ProgresButton from '../components/registration/ProgresButton'
 import {
   FormError, SelectField, TextAreaField, TextField,
 } from '../components/forms/Field'
+import SEO from '../components/SEO'
 
 const spring = { type: 'spring', damping: 22, stiffness: 200 }
 const fastSpring = { type: 'spring', damping: 16, stiffness: 300 }
@@ -151,12 +152,6 @@ export default function JoinUs() {
       return
     }
 
-    fetch('/api/email/membership-confirmation', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, name: form.full_name.trim() }),
-    }).catch(() => {})
-
     setStatus('success')
     setForm(initialForm)
   }
@@ -192,6 +187,7 @@ export default function JoinUs() {
 
   return (
     <div className="relative">
+      <SEO title={t('hero.title')} description={t('hero.subtitle')} path="/join" />
       <section className="pt-24 pb-16 md:pt-32 md:pb-20" style={{ background: 'var(--color-bg-alt)' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={spring} className="eyebrow eyebrow-center mb-4">
@@ -438,7 +434,7 @@ export default function JoinUs() {
                   )}
                 </div>
 
-                <div className="text-center mt-6">
+                {/* <div className="text-center mt-6">
                   <ProgresButton onSuccess={handleProgresSuccess} />
                   {showAutoFillBanner && (
                     <motion.p
@@ -450,7 +446,7 @@ export default function JoinUs() {
                       ✓ Form filled from your Progres account — please review before submitting.
                     </motion.p>
                   )}
-                </div>
+                </div> */}
               </form>
             )}
           </div>

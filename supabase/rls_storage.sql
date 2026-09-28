@@ -22,6 +22,15 @@ ALTER TABLE activity_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE inventory_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE borrow_records ENABLE ROW LEVEL SECURITY;
 
+-- faq, page_content, ai_knowledge are read/written only server-side via the
+-- service_role client (server/db/client.js), which bypasses RLS. No anon/
+-- authenticated policy is defined on purpose: enabling RLS with zero
+-- policies default-denies the public anon key while backend access is
+-- unaffected.
+ALTER TABLE faq ENABLE ROW LEVEL SECURITY;
+ALTER TABLE page_content ENABLE ROW LEVEL SECURITY;
+ALTER TABLE ai_knowledge ENABLE ROW LEVEL SECURITY;
+
 -- 2. Helper functions for RLS
 CREATE OR REPLACE FUNCTION public.has_role(required_role TEXT)
 RETURNS BOOLEAN AS $$
@@ -240,3 +249,48 @@ ON storage.objects FOR ALL USING (
       AND admin_users.is_active = true
   )
 );
+
+-- 6. Finance / email / member-role tables
+-- These match the policies already live on the Supabase project (verified via
+-- pg_policies) — committed here so they're reviewable and reproducible.
+
+ALTER TABLE finance_transactions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE finance_budgets ENABLE ROW LEVEL SECURITY;
+ALTER TABLE email_templates ENABLE ROW LEVEL SECURITY;
+ALTER TABLE email_campaigns ENABLE ROW LEVEL SECURITY;
+ALTER TABLE email_deliveries ENABLE ROW LEVEL SECURITY;
+ALTER TABLE member_roles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE member_groups ENABLE ROW LEVEL SECURITY;
+ALTER TABLE member_group_members ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "admin_all_finance_transactions" ON finance_transactions;
+CREATE POLICY "admin_all_finance_transactions" ON finance_transactions
+  FOR ALL USING (has_role('treasurer'));
+
+DROP POLICY IF EXISTS "admin_all_finance_budgets" ON finance_budgets;
+CREATE POLICY "admin_all_finance_budgets" ON finance_budgets
+  FOR ALL USING (has_role('treasurer'));
+
+DROP POLICY IF EXISTS "admin_all_email_templates" ON email_templates;
+CREATE POLICY "admin_all_email_templates" ON email_templates
+  FOR ALL USING (has_role('event_manager') OR has_role('media_manager') OR has_role('project_manager'));
+
+DROP POLICY IF EXISTS "admin_read_email_campaigns" ON email_campaigns;
+CREATE POLICY "admin_read_email_campaigns" ON email_campaigns
+  FOR SELECT USING (has_role('event_manager') OR has_role('media_manager') OR has_role('project_manager'));
+
+DROP POLICY IF EXISTS "admin_read_email_deliveries" ON email_deliveries;
+CREATE POLICY "admin_read_email_deliveries" ON email_deliveries
+  FOR SELECT USING (has_role('event_manager') OR has_role('media_manager') OR has_role('project_manager'));
+
+DROP POLICY IF EXISTS "admin_all_member_roles" ON member_roles;
+CREATE POLICY "admin_all_member_roles" ON member_roles
+  FOR ALL USING (has_role('event_manager'));
+
+DROP POLICY IF EXISTS "admin_all_member_groups" ON member_groups;
+CREATE POLICY "admin_all_member_groups" ON member_groups
+  FOR ALL USING (has_role('event_manager'));
+
+DROP POLICY IF EXISTS "admin_all_member_group_members" ON member_group_members;
+CREATE POLICY "admin_all_member_group_members" ON member_group_members
+  FOR ALL USING (has_role('event_manager'));

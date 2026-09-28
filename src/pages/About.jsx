@@ -2,6 +2,7 @@ import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import { Lightbulb, Users, Target, Shield } from 'lucide-react'
 import SideImage from '../components/shared/SideImage'
+import SEO from '../components/SEO'
 
 const spring = { type: 'spring', damping: 28, stiffness: 120 }
 
@@ -25,6 +26,7 @@ export default function About() {
 
   return (
     <>
+      <SEO title={t('hero.title')} description={t('hero.subtitle')} path="/about" />
       <section
         className="pt-24 pb-16 md:pt-32 md:pb-20"
         style={{ background: 'var(--color-bg-alt)' }}

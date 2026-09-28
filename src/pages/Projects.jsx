@@ -5,6 +5,7 @@ import { FolderGit2, Search } from 'lucide-react'
 import Card from '../components/shared/Card'
 import SideImage from '../components/shared/SideImage'
 import { supabase } from '../lib/supabase'
+import SEO from '../components/SEO'
 
 const spring = { type: 'spring', damping: 28, stiffness: 120 }
 
@@ -36,6 +37,7 @@ export default function Projects() {
 
   return (
     <>
+      <SEO title={t('hero.title')} description={t('hero.subtitle')} path="/projects" />
       <section className="pt-24 pb-16 md:pt-32 md:pb-20 relative overflow-hidden" style={{ background: 'var(--color-bg-alt)' }}>
         <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{
           backgroundImage: 'radial-gradient(circle at 25% 25%, var(--color-accent) 0%, transparent 50%), radial-gradient(circle at 75% 75%, var(--color-accent) 0%, transparent 50%)',

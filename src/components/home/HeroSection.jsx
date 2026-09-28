@@ -372,7 +372,7 @@ function StatsBar() {
   const stats = [
     {
       icon: <Users size={24} className="text-blue-500" />,
-      number: memberCount !== null ? `${memberCount}+` : "94+",
+      number: memberCount ? `${memberCount}+` : "94+",
       labelKey: "heroStats.members",
     },
     {
@@ -382,7 +382,7 @@ function StatsBar() {
     },
     {
       icon: <Rocket size={24} className="text-blue-500" />,
-      number: projectCount !== null ? `${projectCount}+` : "15+",
+      number: projectCount ? `${projectCount}+` : "15+",
       labelKey: "heroStats.projects",
     },
     {

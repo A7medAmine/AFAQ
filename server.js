@@ -10,9 +10,11 @@ import QRCodeLib from 'qrcode'
 import rateLimit from 'express-rate-limit'
 import ws from 'ws'
 import aiRoutes from './server/routes/ai.js'
+import aiContentRoutes from './server/routes/aiContent.js'
 import aiKnowledgeRoutes from './server/routes/aiKnowledge.js'
 import digikeyRoutes from './server/routes/digikey.js'
 import emailRoutes from './server/routes/email.js'
+import eventsRoutes from './server/routes/events.js'
 import { sendEmail } from './server/services/mailer.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -338,82 +340,11 @@ app.post('/api/admin/check-email', authLimiter, async (req, res) => {
 })
 
 // --- Email auto-reply ---
-
-app.post("/api/email/registration-confirmation", async (req, res) => {
-  const { email, name, event_title, date } = req.body;
-  try {
-    const safeName = escapeHtml(name);
-    const safeEvent = escapeHtml(event_title);
-    const safeDate = date ? escapeHtml(date) : "";
-    await sendEmail({
-      to: email,
-      subject: `Registration Confirmed — ${safeEvent}`,
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 560px; margin: 0 auto;">
-          <div style="background: #0F172A; padding: 24px; text-align: center;">
-            <h1 style="color: #fff; margin: 0; font-size: 22px;">AFAQ Scientific Club</h1>
-          </div>
-          <div style="padding: 32px 24px; background: #f8fafc;">
-            <h2 style="margin: 0 0 8px;">Hello ${safeName},</h2>
-            <p style="color: #475569; font-size: 15px; line-height: 1.6;">
-              Thank you for registering for <strong>${safeEvent}</strong>.
-              ${
-                safeDate
-                  ? `The event will take place on <strong>${safeDate}</strong>.`
-                  : ""
-              }
-            </p>
-            <p style="color: #475569; font-size: 15px; line-height: 1.6;">
-              We look forward to seeing you there! Stay tuned for further details.
-            </p>
-            <p style="color: #94a3b8; font-size: 13px; margin-top: 24px;">
-              Best regards,<br/>AFAQ Scientific Club Team
-            </p>
-          </div>
-        </div>
-      `,
-    });
-    res.json({ ok: true });
-  } catch (err) {
-    console.error("Email error:", err);
-    res.status(500).json({ error: "Failed to send email" });
-  }
-});
-
-app.post("/api/email/membership-confirmation", async (req, res) => {
-  const { email, name } = req.body;
-  try {
-    const safeName = escapeHtml(name);
-    await sendEmail({
-      to: email,
-      subject: "Membership Application Received — AFAQ Scientific Club",
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 560px; margin: 0 auto;">
-          <div style="background: #0F172A; padding: 24px; text-align: center;">
-            <h1 style="color: #fff; margin: 0; font-size: 22px;">AFAQ Scientific Club</h1>
-          </div>
-          <div style="padding: 32px 24px; background: #f8fafc;">
-            <h2 style="margin: 0 0 8px;">Thank You, ${safeName}!</h2>
-            <p style="color: #475569; font-size: 15px; line-height: 1.6;">
-              We have received your membership application. Our team will review it and
-              get back to you soon.
-            </p>
-            <p style="color: #475569; font-size: 15px; line-height: 1.6;">
-              If you have any questions, feel free to reach out to us via the contact page.
-            </p>
-            <p style="color: #94a3b8; font-size: 13px; margin-top: 24px;">
-              Best regards,<br/>AFAQ Scientific Club Team
-            </p>
-          </div>
-        </div>
-      `,
-    });
-    res.json({ ok: true });
-  } catch (err) {
-    console.error("Email error:", err);
-    res.status(500).json({ error: "Failed to send email" });
-  }
-});
+// registration/membership confirmation emails are sent server-side from
+// /api/register/event and /api/register/membership right after a real DB
+// row is inserted — see below. This closes an open spam-relay endpoint that
+// let anyone trigger branded emails to arbitrary addresses without ever
+// registering.
 
 // --- Public sign-up (seat counts, capacity and duplicate checks) ---
 //
@@ -425,6 +356,10 @@ app.post("/api/email/membership-confirmation", async (req, res) => {
 // sidestepped by posting straight at the table.
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// --- Calendar export/import (.ics) ---
+
+app.use("/api/events", eventsRoutes);
 
 app.get("/api/events/availability", async (req, res) => {
   try {
@@ -480,7 +415,7 @@ app.post("/api/register/event", async (req, res) => {
   try {
     const { data: event } = await supabaseAdmin
       .from("events")
-      .select("id, date, max_participants, is_published, registration_open")
+      .select("id, title_en, date, max_participants, is_published, registration_open")
       .eq("id", b.event_id)
       .maybeSingle();
 
@@ -528,6 +463,31 @@ app.post("/api/register/event", async (req, res) => {
     if (insertErr) throw insertErr;
 
     res.json({ ok: true });
+
+    sendEmail({
+      to: email,
+      subject: `Registration Confirmed — ${escapeHtml(event.title_en || event.title || "")}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 560px; margin: 0 auto;">
+          <div style="background: #0F172A; padding: 24px; text-align: center;">
+            <h1 style="color: #fff; margin: 0; font-size: 22px;">AFAQ Scientific Club</h1>
+          </div>
+          <div style="padding: 32px 24px; background: #f8fafc;">
+            <h2 style="margin: 0 0 8px;">Hello ${escapeHtml(fullName)},</h2>
+            <p style="color: #475569; font-size: 15px; line-height: 1.6;">
+              Thank you for registering for <strong>${escapeHtml(event.title_en || event.title || "")}</strong>.
+              ${event.date ? `The event will take place on <strong>${escapeHtml(event.date)}</strong>.` : ""}
+            </p>
+            <p style="color: #475569; font-size: 15px; line-height: 1.6;">
+              We look forward to seeing you there! Stay tuned for further details.
+            </p>
+            <p style="color: #94a3b8; font-size: 13px; margin-top: 24px;">
+              Best regards,<br/>AFAQ Scientific Club Team
+            </p>
+          </div>
+        </div>
+      `,
+    }).catch((err) => console.error("Registration confirmation email error:", err.message));
   } catch (err) {
     console.error("Event registration error:", err.message);
     res.status(500).json({ error: "We could not save your registration. Please try again." });
@@ -572,6 +532,28 @@ app.post("/api/register/membership", async (req, res) => {
     if (insertErr) throw insertErr;
 
     res.json({ ok: true });
+
+    sendEmail({
+      to: email,
+      subject: "Membership Application Received — AFAQ Scientific Club",
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 560px; margin: 0 auto;">
+          <div style="background: #0F172A; padding: 24px; text-align: center;">
+            <h1 style="color: #fff; margin: 0; font-size: 22px;">AFAQ Scientific Club</h1>
+          </div>
+          <div style="padding: 32px 24px; background: #f8fafc;">
+            <h2 style="margin: 0 0 8px;">Thank You, ${escapeHtml(fullName)}!</h2>
+            <p style="color: #475569; font-size: 15px; line-height: 1.6;">
+              We have received your membership application. Our team will review it and
+              get back to you soon.
+            </p>
+            <p style="color: #94a3b8; font-size: 13px; margin-top: 24px;">
+              Best regards,<br/>AFAQ Scientific Club Team
+            </p>
+          </div>
+        </div>
+      `,
+    }).catch((err) => console.error("Membership confirmation email error:", err.message));
   } catch (err) {
     console.error("Membership application error:", err.message);
     res.status(500).json({ error: "We could not save your application. Please try again." });
@@ -936,6 +918,7 @@ app.put("/api/admin/password", authLimiter, requireAuth, async (req, res) => {
 // --- AI Assistant ---
 
 app.use("/api/ai", aiRoutes);
+app.use("/api/ai", aiContentRoutes);
 
 // --- AI Knowledge ---
 

@@ -6,6 +6,8 @@ import { AlertCircle, ArrowLeft, CalendarDays, Check, MapPin, Send } from 'lucid
 import { supabase } from '../lib/supabase'
 import SideImage from '../components/shared/SideImage'
 import ProgresButton from '../components/registration/ProgresButton'
+import AddToCalendar from '../components/shared/AddToCalendar'
+import SEO from '../components/SEO'
 import {
   CheckboxField, FormError, SelectField, TextField,
 } from '../components/forms/Field'
@@ -250,13 +252,7 @@ export default function Registration() {
       ? new Date(`${selectedEvent.date}T00:00:00`).toLocaleDateString()
       : ''
 
-    fetch('/api/email/registration-confirmation', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, name: form.full_name.trim(), event_title: eventTitle, date: eventDate }),
-    }).catch(() => {})
-
-    setSubmitted({ event: eventTitle, email })
+    setSubmitted({ event: eventTitle, email, eventId: selectedEvent?.id })
     setStatus('success')
   }
 
@@ -272,6 +268,7 @@ export default function Registration() {
   // ── Render ───────────────────────────────────────────────────────────────
   return (
     <div className="relative">
+      <SEO title={t('hero.title')} description={t('hero.subtitle')} path="/register" noindex />
       <section className="pt-24 pb-16 md:pt-32 md:pb-20" style={{ background: 'var(--color-bg-alt)' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={spring} className="eyebrow eyebrow-center mb-4">
@@ -310,6 +307,11 @@ export default function Registration() {
                 <p className="text-base leading-relaxed max-w-md mx-auto" style={{ color: 'var(--color-text-muted)' }}>
                   {t('form.successBody', { event: submitted?.event, email: submitted?.email })}
                 </p>
+                {submitted?.eventId && (
+                  <div className="mt-4 flex justify-center">
+                    <AddToCalendar eventId={submitted.eventId} />
+                  </div>
+                )}
                 <button
                   type="button"
                   onClick={registerAnother}

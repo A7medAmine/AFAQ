@@ -8,6 +8,8 @@
   "noUpcoming": "Aucun evenement à venir. Revenez bientôt !",
   "register": "S'inscrire à cet Evenement",
   "details": "Details de l'Evenement",
+  "addToCalendar": "Ajouter au calendrier",
+  "subscribe": "S'abonner à notre calendrier",
   "event1": {
     "title": "Atelier Arduino",
     "desc": "Un atelier pratique sur la programmation Arduino et l'electronique pour debutants.",

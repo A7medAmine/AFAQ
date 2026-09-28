@@ -1,5 +1,7 @@
-import { useId } from 'react'
-import { AlertCircle } from 'lucide-react'
+import { useId, useState } from 'react'
+import { AlertCircle, Sparkles, Languages, Loader2 } from 'lucide-react'
+import { api } from '../../lib/db'
+import useAdminStore from '../../store/adminStore'
 
 /**
  * Label, control, hint and error wired together with real ids — the old forms
@@ -84,16 +86,46 @@ export function CheckField({ label, description, checked, onChange, disabled }) 
  */
 export function LocalizedField({
   label, prefix, values, onChange, lang, onLangChange,
-  multiline = false, rows = 4, error, required, dir,
+  multiline = false, rows = 4, error, required, dir, ai = true,
 }) {
   const langs = ['en', 'ar', 'fr']
   const key = `${prefix}_${lang}`
+  const text = values[key] || ''
+  const [busy, setBusy] = useState(null) // null | 'improve' | 'translate'
   const shared = {
     className: 'adm-input',
-    value: values[key] || '',
+    value: text,
     onChange: e => onChange(key, e.target.value),
     dir: dir ?? (lang === 'ar' ? 'rtl' : 'ltr'),
     'aria-invalid': error ? 'true' : undefined,
+  }
+
+  const assist = async (action) => {
+    if (!text.trim() || busy) return
+    setBusy(action)
+    try {
+      if (action === 'improve') {
+        const { ok, data, message } = await api('/api/ai/content-assist', {
+          method: 'POST', body: { text, action: 'improve' },
+        })
+        if (ok) onChange(key, data.text)
+        else useAdminStore.getState().addToast(message || 'The AI assistant did not respond.', 'error')
+      } else {
+        const targets = langs.filter(l => l !== lang)
+        const results = await Promise.all(
+          targets.map(targetLang => api('/api/ai/content-assist', {
+            method: 'POST', body: { text, action: 'translate', targetLang },
+          }))
+        )
+        results.forEach((res, i) => {
+          if (res.ok) onChange(`${prefix}_${targets[i]}`, res.data.text)
+        })
+        const failed = results.find(r => !r.ok)
+        if (failed) useAdminStore.getState().addToast(failed.message || 'Translation did not complete for all languages.', 'error')
+      }
+    } finally {
+      setBusy(null)
+    }
   }
 
   return (
@@ -103,30 +135,58 @@ export function LocalizedField({
           {label}
           {required && <span style={{ color: 'var(--adm-fault)' }} aria-hidden="true"> *</span>}
         </span>
-        <div role="tablist" aria-label={`${label} language`} className="flex gap-0.5">
-          {langs.map(code => {
-            const filled = !!values[`${prefix}_${code}`]
-            const active = lang === code
-            return (
+        <div className="flex items-center gap-2">
+          {ai && (
+            <div className="flex items-center gap-0.5">
               <button
-                key={code}
                 type="button"
-                role="tab"
-                aria-selected={active}
-                onClick={() => onLangChange(code)}
-                className="adm-pixel px-2 py-1 rounded-md text-[10px] uppercase tracking-widest transition-colors"
-                style={{
-                  background: active ? 'var(--adm-signal-wash)' : 'transparent',
-                  color: active ? 'var(--adm-signal)' : filled ? 'var(--adm-silk-dim)' : 'var(--adm-silk-faint)',
-                }}
+                onClick={() => assist('improve')}
+                disabled={!text.trim() || !!busy}
+                title="Improve this text with AI"
+                aria-label="Improve this text with AI"
+                className="adm-icon-btn"
+                style={{ width: 22, height: 22, opacity: !text.trim() ? 0.4 : 1 }}
               >
-                {code}
-                {/* A filled translation is marked, so you can see at a glance
-                    which languages are still missing. */}
-                {filled && <span aria-hidden="true"> ·</span>}
+                {busy === 'improve' ? <Loader2 size={13} className="adm-spin" /> : <Sparkles size={13} />}
               </button>
-            )
-          })}
+              <button
+                type="button"
+                onClick={() => assist('translate')}
+                disabled={!text.trim() || !!busy}
+                title={`Translate this text into the other languages`}
+                aria-label="Translate this text into the other languages"
+                className="adm-icon-btn"
+                style={{ width: 22, height: 22, opacity: !text.trim() ? 0.4 : 1 }}
+              >
+                {busy === 'translate' ? <Loader2 size={13} className="adm-spin" /> : <Languages size={13} />}
+              </button>
+            </div>
+          )}
+          <div role="tablist" aria-label={`${label} language`} className="flex gap-0.5">
+            {langs.map(code => {
+              const filled = !!values[`${prefix}_${code}`]
+              const active = lang === code
+              return (
+                <button
+                  key={code}
+                  type="button"
+                  role="tab"
+                  aria-selected={active}
+                  onClick={() => onLangChange(code)}
+                  className="adm-pixel px-2 py-1 rounded-md text-[10px] uppercase tracking-widest transition-colors"
+                  style={{
+                    background: active ? 'var(--adm-signal-wash)' : 'transparent',
+                    color: active ? 'var(--adm-signal)' : filled ? 'var(--adm-silk-dim)' : 'var(--adm-silk-faint)',
+                  }}
+                >
+                  {code}
+                  {/* A filled translation is marked, so you can see at a glance
+                      which languages are still missing. */}
+                  {filled && <span aria-hidden="true"> ·</span>}
+                </button>
+              )
+            })}
+          </div>
         </div>
       </div>
       {multiline ? <textarea rows={rows} {...shared} /> : <input {...shared} />}

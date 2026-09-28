@@ -71,8 +71,8 @@ function getModelConfig() {
   }
 }
 
-function buildChat(model, context) {
-  const prompt = SYSTEM_PROMPT.replace('{context}', context || 'No specific context available.')
+function buildChat(model, context, systemOverride) {
+  const prompt = systemOverride || SYSTEM_PROMPT.replace('{context}', context || 'No specific context available.')
   return model.startChat({
     history: [
       { role: 'user', parts: [{ text: prompt }] },
@@ -81,13 +81,13 @@ function buildChat(model, context) {
   })
 }
 
-export async function* generateResponseStream(userMessage, context) {
+export async function* generateResponseStream(userMessage, context, systemOverride) {
   let lastError = null
 
   // 0) Custom OpenAI-compatible provider (primary)
   let customYielded = false
   try {
-    for await (const chunk of custom.generateCustomStream(userMessage, context)) {
+    for await (const chunk of custom.generateCustomStream(userMessage, context, systemOverride)) {
       customYielded = true
       yield chunk
     }
@@ -102,7 +102,7 @@ export async function* generateResponseStream(userMessage, context) {
   // 1) OpenCode Zen (fallback, free models)
   try {
     let yielded = false
-    for await (const chunk of zen.generateZenStream(userMessage, context)) {
+    for await (const chunk of zen.generateZenStream(userMessage, context, systemOverride)) {
       yielded = true
       yield chunk
     }
@@ -117,7 +117,7 @@ export async function* generateResponseStream(userMessage, context) {
     for (const modelName of MODELS) {
       try {
         const model = genAI.getGenerativeModel({ model: modelName, ...getModelConfig() })
-        const chat = buildChat(model, context)
+        const chat = buildChat(model, context, systemOverride)
         const result = await chat.sendMessageStream(userMessage)
 
         let yielded = false
@@ -138,7 +138,7 @@ export async function* generateResponseStream(userMessage, context) {
   // 3) OpenRouter fallback
   try {
     let orYielded = false
-    for await (const chunk of or.generateORStream(userMessage, context)) {
+    for await (const chunk of or.generateORStream(userMessage, context, systemOverride)) {
       orYielded = true
       yield chunk
     }
@@ -150,14 +150,14 @@ export async function* generateResponseStream(userMessage, context) {
   throw lastError || new Error('All AI models failed')
 }
 
-export async function generateResponse(userMessage, context) {
+export async function generateResponse(userMessage, context, systemOverride) {
   let lastError = null
   let allQuota = true
   let lastRetryAfter = 60
 
   // 0) Custom OpenAI-compatible provider (primary)
   try {
-    const customResult = await custom.generateCustomResponse(userMessage, context)
+    const customResult = await custom.generateCustomResponse(userMessage, context, systemOverride)
     if (customResult) return customResult
   } catch (error) {
     console.error('Custom provider error:', error.message)
@@ -166,7 +166,7 @@ export async function generateResponse(userMessage, context) {
 
   // 1) OpenCode Zen (fallback, free models)
   try {
-    const zenResult = await zen.generateZenResponse(userMessage, context)
+    const zenResult = await zen.generateZenResponse(userMessage, context, systemOverride)
     if (zenResult) return zenResult
   } catch (error) {
     lastError = error
@@ -178,7 +178,7 @@ export async function generateResponse(userMessage, context) {
     for (const modelName of MODELS) {
       try {
         const model = genAI.getGenerativeModel({ model: modelName, ...getModelConfig() })
-        const chat = buildChat(model, context)
+        const chat = buildChat(model, context, systemOverride)
         const result = await chat.sendMessage(userMessage)
         return result.response.text()
       } catch (error) {
@@ -193,7 +193,7 @@ export async function generateResponse(userMessage, context) {
 
   // 3) OpenRouter fallback
   try {
-    const orResult = await or.generateORResponse(userMessage, context)
+    const orResult = await or.generateORResponse(userMessage, context, systemOverride)
     if (orResult) return orResult
   } catch (error) {
     lastError = error

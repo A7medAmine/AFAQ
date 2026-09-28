@@ -26,7 +26,7 @@ Context:
 ${context || 'No specific context available.'}`
 }
 
-async function request(cfg, userMessage, context, stream) {
+async function request(cfg, userMessage, context, stream, system) {
   const res = await fetch(`${cfg.base}/chat/completions`, {
     method: 'POST',
     headers: {
@@ -36,7 +36,7 @@ async function request(cfg, userMessage, context, stream) {
     body: JSON.stringify({
       model: cfg.model,
       messages: [
-        { role: 'system', content: buildSystem(context) },
+        { role: 'system', content: system || buildSystem(context) },
         { role: 'user', content: userMessage },
       ],
       temperature: 0.7,
@@ -54,11 +54,11 @@ async function request(cfg, userMessage, context, stream) {
 
 const isConfigured = (cfg) => cfg.base && cfg.key && cfg.model
 
-export async function* generateCustomStream(userMessage, context) {
+export async function* generateCustomStream(userMessage, context, system) {
   const cfg = getConfig()
   if (!isConfigured(cfg)) return
 
-  const res = await request(cfg, userMessage, context, true)
+  const res = await request(cfg, userMessage, context, true, system)
   const reader = res.body.getReader()
   const decoder = new TextDecoder()
   let buffer = ''
@@ -85,11 +85,11 @@ export async function* generateCustomStream(userMessage, context) {
   }
 }
 
-export async function generateCustomResponse(userMessage, context) {
+export async function generateCustomResponse(userMessage, context, system) {
   const cfg = getConfig()
   if (!isConfigured(cfg)) return null
 
-  const res = await request(cfg, userMessage, context, false)
+  const res = await request(cfg, userMessage, context, false, system)
   const data = await res.json()
   return data.choices?.[0]?.message?.content || null
 }

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
-  CalendarPlus, Copy, Eye, EyeOff, ImageOff, Loader2, Pencil, Send, ToggleLeft, ToggleRight, Trash2, Upload, Users,
+  CalendarClock, CalendarPlus, Copy, Eye, EyeOff, ImageOff, Loader2, Pencil, Send, ToggleLeft, ToggleRight, Trash2, Upload, Users,
 } from 'lucide-react'
 import { deleteUploadedFile, logActivity, read, run, supabase, uploadFile } from '../lib/db'
 import useAdminStore from '../store/adminStore'
@@ -18,6 +18,7 @@ import ExportMenu from '../components/ui/ExportMenu'
 import Badge, { StatusBadge } from '../components/ui/Badge'
 import Panel from '../components/ui/Panel'
 import { CheckField, LocalizedField, TextField } from '../components/ui/Field'
+import ImportEventsModal from '../components/events/ImportEventsModal'
 
 const BLANK = {
   title_en: '', title_ar: '', title_fr: '',
@@ -46,6 +47,7 @@ export default function EventsPage() {
   const [newFlag, setNewFlag] = useQueryParam('new')
 
   const [editor, setEditor] = useState(null)   // { event | null }
+  const [importing, setImporting] = useState(false)
   const [emailing, setEmailing] = useState(null)
   const canEmail = hasPermission(useAdminStore(s => s.role()), 'email.send')
   const [pendingDelete, setPendingDelete] = useState(null)
@@ -268,6 +270,7 @@ export default function EventsPage() {
               enumColumns={[5, 6]}
               disabled={!filtered.length}
             />
+            <Button icon={CalendarClock} onClick={() => setImporting(true)}>Import</Button>
             <Button variant="primary" icon={CalendarPlus} onClick={() => setEditor({ event: null })}>New event</Button>
           </>
         }
@@ -314,6 +317,12 @@ export default function EventsPage() {
         onSaved={() => { setEditor(null); load() }}
         addToast={addToast}
         createdBy={adminProfile?.user_id}
+      />
+
+      <ImportEventsModal
+        open={importing}
+        onClose={() => setImporting(false)}
+        onImported={load}
       />
 
       <ComposeEmailModal

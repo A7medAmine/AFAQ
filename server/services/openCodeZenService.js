@@ -124,9 +124,9 @@ async function* readSSE(res, extract) {
   }
 }
 
-export async function* generateZenStream(userMessage, context) {
+export async function* generateZenStream(userMessage, context, systemOverride) {
   if (!ZEN_API_KEY) return
-  const system = buildSystem(context)
+  const system = systemOverride || buildSystem(context)
 
   for (const entry of ZEN_MODELS) {
     let yielded = false
@@ -153,9 +153,9 @@ export async function* generateZenStream(userMessage, context) {
   }
 }
 
-export async function generateZenResponse(userMessage, context) {
+export async function generateZenResponse(userMessage, context, systemOverride) {
   if (!ZEN_API_KEY) return null
-  const system = buildSystem(context)
+  const system = systemOverride || buildSystem(context)
 
   for (const entry of ZEN_MODELS) {
     try {

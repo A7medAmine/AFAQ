@@ -265,12 +265,6 @@ function Core({ innerRef }: { innerRef: React.Ref<HTMLDivElement> }) {
       <div className="label-text mt-3" style={{ color: "var(--color-text)" }}>
         AFAQ
       </div>
-      <div
-        className="afaq-desig mt-1"
-        style={{ color: "var(--color-accent)", opacity: 0.75 }}
-      >
-        U1 · CORE
-      </div>
     </div>
   );
 }
@@ -326,7 +320,6 @@ function PartBlock({
         <span className="afaq-part-icon" aria-hidden="true">
           {React.cloneElement(part.icon as React.ReactElement, { size: 18 })}
         </span>
-        <span className="afaq-desig">{part.designator}</span>
       </span>
       <span className="afaq-part-label">{label}</span>
       <span className="afaq-part-caption">{caption}</span>
@@ -502,9 +495,6 @@ function Bus({
         <Logo size={30} />
         <div>
           <div className="afaq-part-label">AFAQ</div>
-          <div className="afaq-desig" style={{ color: "var(--color-accent)" }}>
-            U1 · CORE
-          </div>
         </div>
       </div>
 
@@ -531,7 +521,6 @@ function Bus({
             <span className="afaq-part-icon" aria-hidden="true">
               {React.cloneElement(part.icon as React.ReactElement, { size: 17 })}
             </span>
-            <span className="afaq-desig">{part.designator}</span>
           </span>
           <span className="afaq-part-label">{labels[part.id]}</span>
           <span className="afaq-part-caption">{captions[part.id]}</span>

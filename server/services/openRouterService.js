@@ -9,11 +9,11 @@ const OR_MODELS = [
   'deepseek/deepseek-v4-flash:free',
 ]
 
-function buildMessages(userMessage, context) {
+function buildMessages(userMessage, context, systemOverride) {
   return [
     {
       role: 'system',
-      content: `You are the official AFAQ AI assistant.
+      content: systemOverride || `You are the official AFAQ AI assistant.
 
 RULES:
 - Answer ONLY using the provided context below.
@@ -34,7 +34,7 @@ ${context || 'No specific context available.'}`,
   ]
 }
 
-export async function* generateORStream(userMessage, context) {
+export async function* generateORStream(userMessage, context, systemOverride) {
   if (!OPENROUTER_API_KEY) return
 
   for (const model of OR_MODELS) {
@@ -48,7 +48,7 @@ export async function* generateORStream(userMessage, context) {
         },
         body: JSON.stringify({
           model,
-          messages: buildMessages(userMessage, context),
+          messages: buildMessages(userMessage, context, systemOverride),
           temperature: 0.7,
           max_tokens: 4096,
           stream: true,
@@ -90,7 +90,7 @@ export async function* generateORStream(userMessage, context) {
   }
 }
 
-export async function generateORResponse(userMessage, context) {
+export async function generateORResponse(userMessage, context, systemOverride) {
   if (!OPENROUTER_API_KEY) return null
 
   for (const model of OR_MODELS) {
@@ -104,7 +104,7 @@ export async function generateORResponse(userMessage, context) {
         },
         body: JSON.stringify({
           model,
-          messages: buildMessages(userMessage, context),
+          messages: buildMessages(userMessage, context, systemOverride),
           temperature: 0.7,
           max_tokens: 4096,
           stream: false,

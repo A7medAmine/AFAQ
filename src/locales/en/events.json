@@ -8,6 +8,8 @@
   "noUpcoming": "No upcoming events scheduled. Check back soon!",
   "register": "Register for this Event",
   "details": "Event Details",
+  "addToCalendar": "Add to calendar",
+  "subscribe": "Subscribe to our calendar",
   "event1": {
     "title": "Arduino Workshop",
     "desc": "A hands-on workshop on Arduino programming and electronics for beginners.",

@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { Pin } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import SideImage from '../components/shared/SideImage'
+import SEO from '../components/SEO'
 
 const spring = { type: 'spring', damping: 28, stiffness: 120 }
 const stagger = { animate: { transition: { staggerChildren: 0.06 } } }
@@ -34,6 +35,7 @@ export default function Announcements() {
 
   return (
     <motion.div initial="initial" animate="animate">
+      <SEO title={t('title')} description={t('subtitle')} path="/announcements" />
       <section className="pt-24 pb-16 md:pt-32 md:pb-20" style={{ background: 'var(--color-bg-alt)' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={spring} className="eyebrow eyebrow-center mb-4">
