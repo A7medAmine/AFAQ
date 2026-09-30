@@ -14,7 +14,8 @@
     "logo": "Logo",
     "colors": "Colours",
     "typography": "Typography",
-    "usage": "Usage"
+    "usage": "Usage",
+    "backgrounds": "Backgrounds"
   },
   "logo": {
     "title": "The mark",
@@ -117,13 +118,93 @@
     "sampleArabic": "العلم يفتح آفاقاً جديدة",
     "license": "Thmanyah by thmanyah (free to use) · Unixel under SIL OFL 1.1 · Minecraft font by Craftron Gaming (check licence before commercial use)."
   },
+  "bg": {
+    "title": "Background generator",
+    "subtitle": "Make on-brand wallpapers, social covers and slide backgrounds. Pick a theme and a pattern, tweak it, then download a full-resolution PNG.",
+    "theme": "Theme",
+    "pattern": "Pattern",
+    "density": "Density",
+    "opacity": "Pattern strength",
+    "glow": "Glow",
+    "grain": "Pixel grain",
+    "logo": "Logo",
+    "logoSize": "Logo size",
+    "text": "Text (optional)",
+    "titlePh": "Title — e.g. AFAQ or آفاق",
+    "subtitlePh": "Subtitle — e.g. Scientific Club · Bouira",
+    "textSize": "Text size",
+    "size": "Format",
+    "surprise": "Surprise me",
+    "shuffle": "Shuffle",
+    "copyImage": "Copy image",
+    "download": "Download PNG",
+    "copyFailed": "Image copy not supported in this browser",
+    "themes": {
+      "midnight": "Midnight",
+      "aurora": "Aurora",
+      "electric": "Electric",
+      "deep": "Deep",
+      "slate": "Slate",
+      "sky": "Sky",
+      "ice": "Ice",
+      "cloud": "Cloud"
+    },
+    "patterns": {
+      "horizon": "Horizon",
+      "grid": "Pixel grid",
+      "dots": "Dots",
+      "circuit": "Circuit",
+      "dither": "Dither fade",
+      "rings": "Rings",
+      "monogram": "Monogram",
+      "stripes": "Bolt stripes",
+      "stars": "Pixel stars",
+      "mosaic": "Mosaic",
+      "none": "Plain"
+    },
+    "logoPos": {
+      "none": "None",
+      "watermark": "Watermark",
+      "corner": "Corner",
+      "center": "Center"
+    },
+    "textPos": {
+      "bottom": "Bottom",
+      "center": "Center"
+    },
+    "sizes": {
+      "desktop": "Desktop / Zoom",
+      "4k": "Desktop 4K",
+      "phone": "Phone wallpaper",
+      "post": "Instagram post",
+      "portrait": "Instagram portrait",
+      "story": "Story / Reel",
+      "facebook": "Facebook cover",
+      "linkedin": "LinkedIn banner",
+      "twitter": "X header",
+      "youtube": "YouTube banner",
+      "a4": "A4 poster (300 dpi)"
+    }
+  },
   "usage": {
     "title": "Using the system",
     "items": [
-      { "t": "Titles", "d": "Latin titles in Minecraft, Arabic titles in Unixel. Keep them short and large." },
-      { "t": "Body text", "d": "Thmanyah Sans Regular for both Arabic and Latin paragraphs. Medium for emphasis." },
-      { "t": "Editorial", "d": "Thmanyah Serif Display for Arabic quotes, posters and long-form headings." },
-      { "t": "Colour ratio", "d": "Roughly 60% Midnight or Cloud, 30% Deep Blue / Slate, 10% Afaq Blue or Sky as accent." }
+      {
+        "t": "Titles",
+        "d": "Latin titles in Minecraft, Arabic titles in Unixel. Keep them short and large."
+      },
+      {
+        "t": "Body text",
+        "d": "Thmanyah Sans Regular for both Arabic and Latin paragraphs. Medium for emphasis."
+      },
+      {
+        "t": "Editorial",
+        "d": "Thmanyah Serif Display for Arabic quotes, posters and long-form headings."
+      },
+      {
+        "t": "Colour ratio",
+        "d": "Roughly 60% Midnight or Cloud, 30% Deep Blue / Slate, 10% Afaq Blue or Sky as accent."
+      }
     ]
   }
 }

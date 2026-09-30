@@ -1,17 +1,19 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
+import { useLenis } from 'lenis/react'
 import { Download as DownloadIcon } from 'lucide-react'
 import SEO from '../components/SEO'
 import { CopyProvider, Download } from '../components/brand/copy'
 import LogoSection from '../components/brand/LogoSection'
 import ColorSection from '../components/brand/ColorSection'
 import TypeSection from '../components/brand/TypeSection'
+import BackgroundGenerator from '../components/brand/BackgroundGenerator'
 import { BRAND_ZIP, LOGO_SVG } from '../data/brand'
 import './brand.css'
 
 const spring = { type: 'spring', damping: 28, stiffness: 120 }
-const SECTIONS = ['logo', 'colors', 'typography', 'usage']
+const SECTIONS = ['logo', 'colors', 'typography', 'backgrounds', 'usage']
 
 function useActiveSection() {
   const [active, setActive] = useState(SECTIONS[0])
@@ -37,8 +39,8 @@ function Section({ id, index, title, subtitle, children }) {
           transition={spring}
           className="mb-10 md:mb-12 max-w-3xl"
         >
-          <div className="bk-title text-sm mb-3" style={{ color: 'var(--bk-blue)' }} dir="ltr">
-            {String(index).padStart(2, '0')} /
+          <div className="bk-title text-sm mb-3" style={{ color: 'var(--bk-blue)' }}>
+            <span dir="ltr">{String(index).padStart(2, '0')} /</span>
           </div>
           <h2 className="bk-title text-4xl md:text-5xl mb-4">{title}</h2>
           {subtitle && <p className="text-base md:text-lg bk-muted leading-relaxed">{subtitle}</p>}
@@ -97,6 +99,31 @@ function Usage() {
 export default function Brand() {
   const { t } = useTranslation('brand')
   const active = useActiveSection()
+  const lenis = useLenis()
+
+  // Lenis owns scrolling and its animated scrollTo overshoots on this long
+  // page, so jump natively (html has scroll-behavior: smooth, turn it off for
+  // the jump) and let Lenis pick up the new position.
+  const jump = (id) => {
+    const el = document.getElementById(id)
+    if (!el) return
+    const navH = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--nav-h')) || 64
+    const y = el.getBoundingClientRect().top + window.scrollY - navH - 50
+    const html = document.documentElement
+    const prev = html.style.scrollBehavior
+    html.style.scrollBehavior = 'auto'
+    lenis?.stop()
+    window.scrollTo(0, y)
+    lenis?.start()
+    html.style.scrollBehavior = prev
+    history.replaceState(null, '', `#${id}`)
+  }
+
+  useEffect(() => {
+    const id = window.location.hash.slice(1)
+    if (lenis && SECTIONS.includes(id)) setTimeout(() => jump(id), 300)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lenis])
 
   return (
     <CopyProvider>
@@ -126,7 +153,7 @@ export default function Brand() {
         <nav className="bk-subnav">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex gap-6 overflow-x-auto">
             {SECTIONS.map(id => (
-              <a key={id} href={`#${id}`} className={active === id ? 'active' : ''}>{t(`nav.${id}`)}</a>
+              <a key={id} href={`#${id}`} className={active === id ? 'active' : ''} onClick={e => { e.preventDefault(); jump(id) }}>{t(`nav.${id}`)}</a>
             ))}
           </div>
         </nav>
@@ -140,7 +167,10 @@ export default function Brand() {
         <Section id="typography" index={3} title={t('type.title')} subtitle={t('type.subtitle')}>
           <TypeSection />
         </Section>
-        <Section id="usage" index={4} title={t('usage.title')}>
+        <Section id="backgrounds" index={4} title={t('bg.title')} subtitle={t('bg.subtitle')}>
+          <BackgroundGenerator />
+        </Section>
+        <Section id="usage" index={5} title={t('usage.title')}>
           <Usage />
         </Section>
       </div>
