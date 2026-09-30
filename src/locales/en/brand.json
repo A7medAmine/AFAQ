@@ -1,0 +1,129 @@
+{
+  "seo": {
+    "title": "Brand Kit",
+    "description": "AFAQ Scientific Club visual identity: logo, colour palette, typography and downloadable brand assets."
+  },
+  "hero": {
+    "eyebrow": "Visual identity",
+    "title": "AFAQ Brand Kit",
+    "subtitle": "Everything you need to design for AFAQ — the mark, the colours, the type. Click anything to copy it, or grab the whole kit in one file.",
+    "downloadAll": "Download full kit (.zip)",
+    "zipNote": "Logos (SVG + PNG), fonts (WOFF2 + TTF) and palette files"
+  },
+  "nav": {
+    "logo": "Logo",
+    "colors": "Colours",
+    "typography": "Typography",
+    "usage": "Usage"
+  },
+  "logo": {
+    "title": "The mark",
+    "subtitle": "A lightning bolt breaking through a circle: energy, electronics and the horizon (آفاق) the club opens. Use the SVG whenever you can.",
+    "copySvg": "Copy SVG",
+    "svg": "SVG",
+    "png": "PNG",
+    "custom": "Custom export",
+    "customHint": "Pick any colour and size, then download a PNG on a transparent or solid background.",
+    "markColor": "Mark colour",
+    "background": "Background",
+    "transparent": "Transparent",
+    "size": "Size",
+    "downloadPng": "Download PNG",
+    "extras": "App icons & originals",
+    "variants": {
+      "navyOnLight": "Midnight on light",
+      "whiteOnMidnight": "White on Midnight",
+      "whiteOnBlue": "White on Afaq Blue",
+      "blueOnLight": "Afaq Blue on white",
+      "blackOnLight": "Black (single colour print)",
+      "midnightOnIce": "Midnight on Ice"
+    },
+    "extrasNames": {
+      "tileMidnight": "App icon — Midnight",
+      "tileBlue": "App icon — Afaq Blue",
+      "tileCloud": "App icon — Cloud",
+      "squareOriginal": "Original square artwork"
+    },
+    "rules": {
+      "title": "Logo rules",
+      "clearspace": "Keep clear space equal to the bolt's width on every side.",
+      "minSize": "Minimum size: 24 px on screen, 10 mm in print.",
+      "contrast": "Only place the mark on backgrounds from the palette with strong contrast.",
+      "dont1": "Don't stretch, rotate or skew the mark.",
+      "dont2": "Don't add shadows, outlines or gradients.",
+      "dont3": "Don't recolour it outside the brand palette."
+    }
+  },
+  "colors": {
+    "title": "Colour palette",
+    "subtitle": "Seven colours, from deep night to open sky. Click a swatch to copy its HEX, or copy any format below it.",
+    "copied": "Copied",
+    "clickToCopy": "Click to copy",
+    "tints": "Tints & shades",
+    "tintsHint": "Click any step to copy it.",
+    "files": "Palette files",
+    "pairings": "Accessible pairings",
+    "pairingsHint": "WCAG contrast ratio of text on background. AA needs 4.5 for body text, 3 for large titles.",
+    "roles": {
+      "primary": "Primary",
+      "accent": "Accent",
+      "neutral": "Neutral"
+    },
+    "names": {
+      "midnight": "Midnight",
+      "deepBlue": "Deep Blue",
+      "afaqBlue": "Afaq Blue",
+      "slate": "Slate",
+      "sky": "Sky",
+      "ice": "Ice",
+      "cloud": "Cloud"
+    },
+    "uses": {
+      "midnight": "Backgrounds, dark surfaces, main text",
+      "deepBlue": "Headers, secondary surfaces",
+      "afaqBlue": "Buttons, links, highlights",
+      "slate": "Secondary text, borders",
+      "sky": "Illustrations, charts, accents on dark",
+      "ice": "Soft fills, badges",
+      "cloud": "Light backgrounds"
+    }
+  },
+  "type": {
+    "title": "Typography",
+    "subtitle": "Pixel fonts for titles and graphic elements, Thmanyah for Arabic and running text. Every file is downloadable.",
+    "preview": "Preview text",
+    "previewPlaceholder": "Type to preview…",
+    "sizeLabel": "Size",
+    "downloadFamily": "Download all weights",
+    "copyCss": "Copy CSS",
+    "roles": {
+      "thmanyahSans": "Arabic & body text",
+      "thmanyahSerif": "Arabic editorial headings",
+      "minecraft": "Latin titles & pixel graphics",
+      "unixel": "Arabic pixel titles"
+    },
+    "scale": "Type scale",
+    "scaleHint": "Latin and Arabic side by side. Click a row to copy its CSS.",
+    "scaleNames": {
+      "display": "Display",
+      "h1": "Heading 1",
+      "h2": "Heading 2",
+      "h3": "Heading 3",
+      "body": "Body",
+      "small": "Small",
+      "label": "Label"
+    },
+    "sampleLatin": "Science opens new horizons",
+    "sampleArabic": "العلم يفتح آفاقاً جديدة",
+    "license": "Thmanyah by thmanyah (free to use) · Unixel under SIL OFL 1.1 · Minecraft font by Craftron Gaming (check licence before commercial use)."
+  },
+  "usage": {
+    "title": "Using the system",
+    "items": [
+      { "t": "Titles", "d": "Latin titles in Minecraft, Arabic titles in Unixel. Keep them short and large." },
+      { "t": "Body text", "d": "Thmanyah Sans Regular for both Arabic and Latin paragraphs. Medium for emphasis." },
+      { "t": "Editorial", "d": "Thmanyah Serif Display for Arabic quotes, posters and long-form headings." },
+      { "t": "Colour ratio", "d": "Roughly 60% Midnight or Cloud, 30% Deep Blue / Slate, 10% Afaq Blue or Sky as accent." }
+    ]
+  }
+}

@@ -15,6 +15,7 @@ const Registration = lazy(() => import('./pages/Registration'))
 const Announcements = lazy(() => import('./pages/Announcements'))
 const Contact = lazy(() => import('./pages/Contact'))
 const VerifyMember = lazy(() => import('./pages/VerifyMember'))
+const Brand = lazy(() => import('./pages/Brand'))
 
 // Admin — none of this should ship to public visitors.
 const Login = lazy(() => import('./admin/pages/Login'))
@@ -86,6 +87,7 @@ export default function App() {
             <Route path="/register" element={<Registration />} />
             <Route path="/announcements" element={<Announcements />} />
             <Route path="/contact" element={<Contact />} />
+            <Route path="/brand" element={<Brand />} />
           </Route>
 
           <Route path="/verify/:memberCode" element={<VerifyMember />} />

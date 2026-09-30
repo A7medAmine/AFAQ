@@ -9,7 +9,8 @@
     "register": "S'inscrire",
     "announcements": "Annonces",
     "join": "Rejoindre",
-    "contact": "Contact"
+    "contact": "Contact",
+    "brand": "Identité visuelle"
   },
   "theme": { "light": "Mode Clair", "dark": "Mode Sombre" },
   "language": { "en": "English", "ar": "العربية", "fr": "Français" },

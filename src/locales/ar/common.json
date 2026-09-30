@@ -9,7 +9,8 @@
     "register": "سجل",
     "announcements": "الإعلانات",
     "join": "انضم إلينا",
-    "contact": "التواصل"
+    "contact": "التواصل",
+    "brand": "الهوية البصرية"
   },
   "theme": { "light": "الوضع النهاري", "dark": "الوضع الليلي" },
   "language": { "en": "English", "ar": "العربية", "fr": "Français" },

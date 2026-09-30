@@ -42,6 +42,10 @@ import enAnnouncements from '../locales/en/announcements.json'
 import arAnnouncements from '../locales/ar/announcements.json'
 import frAnnouncements from '../locales/fr/announcements.json'
 
+// Brand kit is AR/EN only; French falls back to English.
+import enBrand from '../locales/en/brand.json'
+import arBrand from '../locales/ar/brand.json'
+
 const savedLang = localStorage.getItem('i18nextLng') || 'en'
 document.documentElement.dir = savedLang === 'ar' ? 'rtl' : 'ltr'
 document.documentElement.lang = savedLang
@@ -62,6 +66,7 @@ i18n
         join: enJoin,
         contact: enContact,
         announcements: enAnnouncements,
+        brand: enBrand,
       },
       ar: {
         common: arCommon,
@@ -74,6 +79,7 @@ i18n
         join: arJoin,
         contact: arContact,
         announcements: arAnnouncements,
+        brand: arBrand,
       },
       fr: {
         common: frCommon,
@@ -90,7 +96,7 @@ i18n
     },
     fallbackLng: 'en',
     supportedLngs: ['en', 'ar', 'fr'],
-    ns: ['common', 'home', 'about', 'projects', 'events', 'gallery', 'register', 'join', 'contact', 'announcements'],
+    ns: ['common', 'home', 'about', 'projects', 'events', 'gallery', 'register', 'join', 'contact', 'announcements', 'brand'],
     defaultNS: 'common',
     detection: {
       order: ['localStorage', 'navigator'],

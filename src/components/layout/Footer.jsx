@@ -26,6 +26,7 @@ export default function Footer() {
         { label: t("nav.projects"), to: "/projects" },
         { label: t("nav.events"), to: "/events" },
         { label: t("nav.gallery"), to: "/gallery" },
+        { label: t("nav.brand"), to: "/brand" },
       ],
     },
     {
