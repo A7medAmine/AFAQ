@@ -49,8 +49,9 @@ export default function App() {
   const navigate = useNavigate()
   const { pathname } = useLocation()
   // The visitor chatbot is for the public site; it used to float over the
-  // admin console too, covering the toast area.
-  const isAdmin = pathname.startsWith('/admin')
+  // admin console too, covering the toast area. The brand kit is a design
+  // reference page, so keep the mascot off it as well.
+  const hideChatbot = /^\/(admin|brand)(\/|$)/.test(pathname)
 
   // The chatbot (mascot avatar + framer) is ~60 KB gzip; fetch it once the
   // browser is idle so it never competes with the landing page's first paint.
@@ -167,7 +168,7 @@ export default function App() {
           </Route>
         </Routes>
       </Suspense>
-      {!isAdmin && chatbotReady && (
+      {!hideChatbot && chatbotReady && (
         <Suspense fallback={null}><Chatbot /></Suspense>
       )}
     </>
