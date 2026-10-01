@@ -208,6 +208,7 @@ export default function ChatbotButton({ open, onClick }) {
               onClick={handleClick}
               className="relative flex items-center justify-center cursor-pointer bg-transparent border-none p-0 drop-shadow-xl touch-none select-none"
               title="Open AI Assistant (Double tap for cheer, Drag to move)"
+              aria-label="Open AI assistant"
             >
               {/* Floating particles on double-tap */}
               <AnimatePresence>
@@ -259,6 +260,8 @@ export default function ChatbotButton({ open, onClick }) {
       {open && (
         <div className="fixed bottom-6 right-6 z-[99]">
           <motion.button
+            type="button"
+            aria-label="Close chat"
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             className="w-8 h-8 md:w-10 md:h-10 rounded-xl shadow-md flex items-center justify-center cursor-pointer"

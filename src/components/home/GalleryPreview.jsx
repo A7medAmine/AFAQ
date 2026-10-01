@@ -60,10 +60,11 @@ export default function GalleryPreview() {
                 viewport={{ once: true, margin: '-30px' }}
                 transition={{ ...spring, delay: i * 0.08 }}
                 onClick={() => setLightboxIndex(i)}
+                aria-label={`${t('gallery.title')} ${i + 1}`}
                 className="relative overflow-hidden rounded-2xl group cursor-pointer border-0 outline-none"
                 style={{ gridRow: s.row, gridColumn: s.col }}
               >
-                <img src={url} alt="" className="w-full h-full object-cover transition-all duration-500 group-hover:scale-105 group-hover:brightness-[1.05]" loading="lazy" />
+                <img src={url} alt="" className="w-full h-full object-cover transition-all duration-500 group-hover:scale-105 group-hover:brightness-[1.05]" loading="lazy" decoding="async" />
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
                 <div className="absolute bottom-2 right-2 w-7 h-7 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-1 group-hover:translate-y-0">
                   <Expand size={12} className="text-slate-800" />
@@ -90,6 +91,7 @@ export default function GalleryPreview() {
                 viewport={{ once: true }}
                 transition={{ ...spring, delay: i * 0.06 }}
                 onClick={() => setLightboxIndex(i)}
+                aria-label={`${t('gallery.title')} ${i + 1}`}
                 className="relative overflow-hidden rounded-xl group cursor-pointer border-0 outline-none"
                 style={{
                   gridColumn: `span ${l.colSpan}`,

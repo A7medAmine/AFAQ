@@ -935,8 +935,24 @@ app.use("/api/email", emailRoutes);
 // --- SPA fallback (production) ---
 
 if (fs.existsSync(distDir)) {
-  app.use(express.static(distDir));
+  // Vite hashes everything in /assets, so it can be cached forever; other
+  // static files (images, fonts) get a week, and index.html is always revalidated.
+  app.use(
+    express.static(distDir, {
+      index: false,
+      setHeaders(res, filePath) {
+        if (filePath.includes(`${path.sep}assets${path.sep}`)) {
+          res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+        } else if (filePath.endsWith(".html")) {
+          res.setHeader("Cache-Control", "no-cache");
+        } else {
+          res.setHeader("Cache-Control", "public, max-age=604800");
+        }
+      },
+    })
+  );
   app.get("/{*path}", (req, res) => {
+    res.setHeader("Cache-Control", "no-cache");
     res.sendFile(path.join(distDir, "index.html"));
   });
 }
