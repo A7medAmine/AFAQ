@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
-  CalendarClock, CalendarPlus, Copy, Eye, EyeOff, ImageOff, Loader2, Pencil, Send, ToggleLeft, ToggleRight, Trash2, Upload, Users,
+  BadgeCheck, CalendarClock, CalendarPlus, Copy, Eye, EyeOff, ImageOff, Loader2, Pencil, Send, ToggleLeft, ToggleRight, Trash2, Upload, Users,
 } from 'lucide-react'
 import { deleteUploadedFile, logActivity, read, run, supabase, uploadFile } from '../lib/db'
 import useAdminStore from '../store/adminStore'
@@ -49,7 +50,10 @@ export default function EventsPage() {
   const [editor, setEditor] = useState(null)   // { event | null }
   const [importing, setImporting] = useState(false)
   const [emailing, setEmailing] = useState(null)
-  const canEmail = hasPermission(useAdminStore(s => s.role()), 'email.send')
+  const role = useAdminStore(s => s.role())
+  const canEmail = hasPermission(role, 'email.send')
+  const canBadges = hasPermission(role, 'events.registrations.manage')
+  const navigate = useNavigate()
   const [pendingDelete, setPendingDelete] = useState(null)
   const [working, setWorking] = useState({})
 
@@ -239,6 +243,9 @@ export default function EventsPage() {
             {canEmail && (
               <IconButton icon={Send} label="Email members" onClick={() => setEmailing(event)} />
             )}
+            {canBadges && (
+              <IconButton icon={BadgeCheck} label="Print badges" onClick={() => navigate(`/admin/registrations/badges?event=${event.id}`)} />
+            )}
             <IconButton icon={Copy} label="Duplicate" onClick={() => duplicate(event)} />
             <IconButton icon={Pencil} label="Edit" onClick={() => setEditor({ event })} />
             <IconButton icon={Trash2} label="Delete" danger onClick={() => setPendingDelete(event)} />
@@ -246,7 +253,7 @@ export default function EventsPage() {
         )
       },
     },
-  ], [seats, working, canEmail]) // eslint-disable-line react-hooks/exhaustive-deps
+  ], [seats, working, canEmail, canBadges]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div>

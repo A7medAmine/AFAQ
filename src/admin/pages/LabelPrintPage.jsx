@@ -259,7 +259,7 @@ function Label({ item, w, h, s }) {
   const text = lines.map((l, i) => (
     <div key={i} style={{
       fontSize: `${l.size}pt`, fontWeight: l.weight || 400, color: l.color, lineHeight: 1.15,
-      fontFamily: l.mono ? 'ui-monospace, monospace' : family,
+      '--print-font': l.mono ? 'ui-monospace, monospace' : family,
       overflow: 'hidden', wordBreak: 'break-word',
       display: '-webkit-box', WebkitBoxOrient: 'vertical', WebkitLineClamp: l.clamp || 1,
     }}>{l.text}</div>
@@ -269,7 +269,7 @@ function Label({ item, w, h, s }) {
     <div style={{ width: '100%' }}>
       <Barcode value={item.asset_code} width="100%" height={height} format={s.barcodeFormat} />
       {s.showCode && (
-        <div style={{ fontSize: `${size.code}pt`, fontFamily: 'ui-monospace, monospace', textAlign: 'center', letterSpacing: '0.08em', color: '#0F172A', marginTop: '0.5mm' }}>
+        <div style={{ fontSize: `${size.code}pt`, '--print-font': 'ui-monospace, monospace', textAlign: 'center', letterSpacing: '0.08em', color: '#0F172A', marginTop: '0.5mm' }}>
           {item.asset_code}
         </div>
       )}

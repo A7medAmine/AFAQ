@@ -1,0 +1,9 @@
+/* Brand typeface for printed cards and badges. Same files the brand kit page
+   serves, so the print matches the rest of the club's material. */
+@font-face { font-family: "Thmanyah Sans"; src: url("/brand/fonts/thmanyahsans-Regular.woff2") format("woff2"); font-weight: 400; font-display: block; }
+@font-face { font-family: "Thmanyah Sans"; src: url("/brand/fonts/thmanyahsans-Medium.woff2") format("woff2"); font-weight: 500; font-display: block; }
+@font-face { font-family: "Thmanyah Sans"; src: url("/brand/fonts/thmanyahsans-Bold.woff2") format("woff2"); font-weight: 700; font-display: block; }
+@font-face { font-family: "Thmanyah Sans"; src: url("/brand/fonts/thmanyahsans-Black.woff2") format("woff2"); font-weight: 900; font-display: block; }
+/* Brand display faces: Minecraft for Latin headings and labels, Unixel for Arabic. */
+@font-face { font-family: "Minecraft"; src: url("/brand/fonts/Minecraft.woff2") format("woff2"); font-display: block; }
+@font-face { font-family: "Unixel"; src: url("/brand/fonts/unixel-Regular.ttf") format("truetype"); font-display: block; }

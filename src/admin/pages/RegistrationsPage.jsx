@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Check, ClipboardCheck, Download, Loader2, QrCode, X } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { BadgeCheck, Check, ClipboardCheck, Download, Loader2, QrCode, X } from 'lucide-react'
 import { api, logActivity, read, run, supabase } from '../lib/db'
 import useAdminStore from '../store/adminStore'
 import useCounts from '../hooks/useCounts'
@@ -38,6 +39,12 @@ export default function RegistrationsPage() {
   const [qrFor, setQrFor] = useState(null)
   const [bulk, setBulk] = useState(null)      // { action, rows }
   const [working, setWorking] = useState({})
+  const navigate = useNavigate()
+
+  const printBadges = regs => {
+    if (!regs.length) return
+    navigate(`/admin/registrations/badges?ids=${regs.map(r => r.id).join(',')}`)
+  }
 
   const load = useCallback(async () => {
     setState(s => ({ ...s, error: null }))
@@ -203,15 +210,28 @@ export default function RegistrationsPage() {
         title="Event registrations"
         description="Approving a registration emails the person their entry pass. Open a row to read what they submitted."
         actions={
-          <ExportMenu
-            filename={`registrations-${status}-${new Date().toISOString().slice(0, 10)}`}
-            title="Event registrations"
-            subtitle={`${FILTERS.find(f => f.value === status)?.label || 'All'} · ${formatDateTime(new Date())}`}
-            headers={exportHeaders}
-            rows={exportRows}
-            statusColumnIndex={10}
-            disabled={!filtered.length}
-          />
+          <>
+            <ExportMenu
+              filename={`registrations-${status}-${new Date().toISOString().slice(0, 10)}`}
+              title="Event registrations"
+              subtitle={`${FILTERS.find(f => f.value === status)?.label || 'All'} · ${formatDateTime(new Date())}`}
+              headers={exportHeaders}
+              rows={exportRows}
+              statusColumnIndex={10}
+              disabled={!filtered.length}
+            />
+            {eventId !== 'all' ? (
+              // One event chosen: open the event view, which picks approved
+              // registrations itself and keeps the event's name and date.
+              <Button icon={BadgeCheck} onClick={() => navigate(`/admin/registrations/badges?event=${eventId}`)}>
+                Event badges
+              </Button>
+            ) : (
+              <Button icon={BadgeCheck} disabled={!filtered.length} onClick={() => printBadges(filtered)}>
+                Print {filtered.length} badge{filtered.length === 1 ? '' : 's'}
+              </Button>
+            )}
+          </>
         }
       />
 
@@ -259,6 +279,9 @@ export default function RegistrationsPage() {
                   onClick={() => setBulk({ action: 'reject', rows: selected })}
                 >
                   Reject
+                </Button>
+                <Button size="sm" icon={BadgeCheck} onClick={() => printBadges(selected)}>
+                  {selected.length === 1 ? 'Badge' : 'Badges'}
                 </Button>
               </>
             )

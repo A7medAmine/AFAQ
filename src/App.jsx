@@ -28,6 +28,7 @@ const ReviewPage = lazy(() => import('./admin/pages/ReviewPage'))
 const ReviewTeamsPage = lazy(() => import('./admin/pages/ReviewTeamsPage'))
 const MembersPage = lazy(() => import('./admin/pages/MembersPage'))
 const CardPrintPage = lazy(() => import('./admin/pages/CardPrintPage'))
+const BadgePrintPage = lazy(() => import('./admin/pages/BadgePrintPage'))
 const TasksPage = lazy(() => import('./admin/pages/TasksPage'))
 const FinancePage = lazy(() => import('./admin/pages/FinancePage'))
 const InventoryPage = lazy(() => import('./admin/pages/InventoryPage'))
@@ -108,6 +109,9 @@ export default function App() {
             <Route path="registrations" element={
               <RoleGuard permission="events.registrations.manage"><RegistrationsPage /></RoleGuard>
             } />
+            <Route path="registrations/badges" element={
+              <RoleGuard permission="events.registrations.manage"><BadgePrintPage source="registrations" /></RoleGuard>
+            } />
             <Route path="review" element={
               <RoleGuard permission="applications.review"><ReviewPage /></RoleGuard>
             } />
@@ -125,6 +129,9 @@ export default function App() {
             } />
             <Route path="members/cards" element={
               <RoleGuard permission="membership.manage"><CardPrintPage /></RoleGuard>
+            } />
+            <Route path="members/badges" element={
+              <RoleGuard permission="membership.manage"><BadgePrintPage source="members" /></RoleGuard>
             } />
             <Route path="board" element={<Navigate to="/admin/members" replace />} />
             <Route path="tasks" element={

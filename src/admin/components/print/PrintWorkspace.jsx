@@ -49,7 +49,8 @@ export default function PrintWorkspace({ backTo, backLabel, summary, paper, shee
             <span className="adm-data text-xs w-10 text-center">{Math.round(zoom * 100)}%</span>
             <IconButton icon={ZoomIn} label="Zoom in" onClick={() => setZoom(z => Math.min(1.5, +(z + 0.1).toFixed(1)))} />
           </div>
-          <div className="flex flex-wrap gap-6 justify-center">
+          {/* Scrolls instead of spilling over the settings when zoomed past the column width. */}
+          <div className="flex flex-wrap gap-6 overflow-x-auto pb-2" style={{ justifyContent: 'safe center' }}>
             {sheets.map(sheet => (
               <div key={sheet.key}>
                 <p className="text-xs mb-1.5" style={{ color: 'var(--adm-silk-faint)' }}>{sheet.title}</p>

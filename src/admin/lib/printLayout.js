@@ -110,3 +110,66 @@ export function usePrintSettings(key, defaults) {
   const reset = () => setSettings(defaults)
   return [settings, set, reset]
 }
+
+/** True when a #rrggbb colour is light enough that dark ink belongs on it. */
+export function isLight(hex) {
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex || '')
+  if (!m) return false
+  const n = parseInt(m[1], 16)
+  const [r, g, b] = [n >> 16, (n >> 8) & 255, n & 255]
+  return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.6
+}
+
+/** Up to two initials for a photo placeholder. */
+export function initials(name) {
+  return (name || '').trim().split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join('')
+}
+
+/** Brand mark that reads on the given ink colour. */
+export function brandMark(ink) {
+  return isLight(ink) ? '/brand/logo/afaq-mark-white.svg' : '/brand/logo/afaq-mark-black.svg'
+}
+
+/** Brand typeface for printed cards and badges (see components/print/printFonts.css). */
+export const PRINT_FONT = '"Thmanyah Sans", ui-sans-serif, system-ui, sans-serif'
+
+/** Common lanyard badge / insert sizes. "custom" takes its numbers from the settings. */
+export const BADGE_SIZES = {
+  p3x4: { label: '3 × 4 in, portrait (76 × 102 mm)', w: 76.2, h: 101.6 },
+  l4x3: { label: '4 × 3 in, landscape (102 × 76 mm)', w: 101.6, h: 76.2 },
+  cr80v: { label: 'ID card size, portrait (54 × 86 mm)', w: 54, h: 85.6 },
+  a6: { label: 'A6, portrait (105 × 148 mm)', w: 105, h: 148 },
+  custom: { label: 'Custom size…' },
+}
+
+/** Brand pixel face for headings and labels; Arabic glyphs fall through to Unixel. */
+export const PIXEL_FONT = '"Minecraft", "Unixel", ui-monospace, monospace'
+
+/** Paper turned to landscape when asked. */
+export function orientPaper(paper, orientation) {
+  return orientation === 'landscape' ? { ...paper, w: paper.h, h: paper.w } : paper
+}
+
+/**
+ * Grid inside explicit page margins. Fits as many cells as the printable area
+ * holds (capped by maxCols/maxRows when set), then either centres the block in
+ * that area or pins it to the top-left margin corner.
+ */
+export function marginGrid(paper, w, h, { top, right, bottom, left }, gapX, gapY, { maxCols = 0, maxRows = 0, placement = 'center' } = {}) {
+  const areaW = paper.w - left - right
+  const areaH = paper.h - top - bottom
+  let cols = Math.max(1, Math.floor((areaW + gapX) / (w + gapX)))
+  let rows = Math.max(1, Math.floor((areaH + gapY) / (h + gapY)))
+  if (maxCols > 0) cols = Math.min(cols, maxCols)
+  if (maxRows > 0) rows = Math.min(rows, maxRows)
+  const blockW = cols * w + (cols - 1) * gapX
+  const blockH = rows * h + (rows - 1) * gapY
+  const centred = placement === 'center'
+  return {
+    cols, rows, w, h, gapX, gapY,
+    left: left + (centred ? (areaW - blockW) / 2 : 0),
+    top: top + (centred ? (areaH - blockH) / 2 : 0),
+    // True when even one cell overruns the printable area.
+    overflows: blockW > areaW + 0.01 || blockH > areaH + 0.01,
+  }
+}
