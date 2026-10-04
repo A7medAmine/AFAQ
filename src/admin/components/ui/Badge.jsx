@@ -34,6 +34,9 @@ const STATUS = {
   todo: { tone: 'wait', label: 'To do' },
   in_progress: { tone: 'signal', label: 'In progress' },
   done: { tone: 'ok', label: 'Done' },
+  pool: { tone: 'wait', label: 'In pool' },
+  assigned: { tone: 'signal', label: 'Assigned' },
+  interview: { tone: 'signal', label: 'Interview set' },
 }
 
 export function StatusBadge({ status }) {

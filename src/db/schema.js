@@ -19,6 +19,10 @@ export const adminUsers = pgTable('admin_users', {
   fullName: text('full_name'),
   avatarUrl: text('avatar_url'),
   isActive: boolean('is_active').default(true),
+  // Application review load balancing: an away reviewer gets no new
+  // applications, and a capacity (when set) caps how many they hold open.
+  reviewAvailable: boolean('review_available').notNull().default(true),
+  reviewCapacity: integer('review_capacity'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
 })
@@ -75,8 +79,25 @@ export const membershipApplications = pgTable('membership_applications', {
   interests: text().array(),
   motivation: text(),
   status: text().default('pending'),
+  // Review routing (see server/services/reviewRouting.js). `team_id` null
+  // after routing means the general pool; `stage` tracks a pending
+  // application's progress: pool → assigned → interview.
+  teamId: bigint('team_id', { mode: 'number' }).references(() => reviewTeams.id, { onDelete: 'set null' }),
+  reviewerId: bigint('reviewer_id', { mode: 'number' }).references(() => adminUsers.id, { onDelete: 'set null' }),
+  stage: text().notNull().default('pool'),
+  routedAt: timestamp('routed_at', { withTimezone: true }),
+  assignedAt: timestamp('assigned_at', { withTimezone: true }),
+  interviewAt: timestamp('interview_at', { withTimezone: true }),
+  reviewRating: integer('review_rating'),
+  reviewNotes: text('review_notes'),
+  decidedAt: timestamp('decided_at', { withTimezone: true }),
+  decidedBy: uuid('decided_by'),
+  lastActivityAt: timestamp('last_activity_at', { withTimezone: true }).defaultNow(),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
-})
+}, t => [
+  index('membership_applications_reviewer_idx').on(t.reviewerId, t.status),
+  index('membership_applications_team_idx').on(t.teamId, t.status),
+])
 
 export const members = pgTable('members', {
   id: bigint({ mode: 'number' }).primaryKey().generatedAlwaysAsIdentity(),
@@ -413,3 +434,63 @@ export const emailDeliveries = pgTable('email_deliveries', {
   unique('email_deliveries_campaign_email_key').on(t.campaignId, t.email),
   index('email_deliveries_campaign_status_idx').on(t.campaignId, t.status),
 ])
+
+// Review teams spread membership interviews across admins: an application is
+// routed to the team its interests point to, then to that team's least-loaded
+// reviewer, so a tech applicant is interviewed by someone from tech.
+export const reviewTeams = pgTable('review_teams', {
+  id: bigint({ mode: 'number' }).primaryKey().generatedAlwaysAsIdentity(),
+  nameEn: text('name_en').notNull(),
+  nameAr: text('name_ar'),
+  nameFr: text('name_fr'),
+  description: text(),
+  color: text().notNull().default('#2563EB'),
+  sortOrder: integer('sort_order').notNull().default(0),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+})
+
+// Interests offered on the join form. `key` is what applications and members
+// store in their interests arrays, so renaming a label never orphans data.
+export const interests = pgTable('interests', {
+  id: bigint({ mode: 'number' }).primaryKey().generatedAlwaysAsIdentity(),
+  key: text().notNull().unique(),
+  labelEn: text('label_en').notNull(),
+  labelAr: text('label_ar'),
+  labelFr: text('label_fr'),
+  isActive: boolean('is_active').notNull().default(true),
+  sortOrder: integer('sort_order').notNull().default(0),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+})
+
+export const interestTeams = pgTable('interest_teams', {
+  interestId: bigint('interest_id', { mode: 'number' }).notNull().references(() => interests.id, { onDelete: 'cascade' }),
+  teamId: bigint('team_id', { mode: 'number' }).notNull().references(() => reviewTeams.id, { onDelete: 'cascade' }),
+}, t => [primaryKey({ columns: [t.interestId, t.teamId] })])
+
+export const teamReviewers = pgTable('team_reviewers', {
+  teamId: bigint('team_id', { mode: 'number' }).notNull().references(() => reviewTeams.id, { onDelete: 'cascade' }),
+  adminUserId: bigint('admin_user_id', { mode: 'number' }).notNull().references(() => adminUsers.id, { onDelete: 'cascade' }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+}, t => [primaryKey({ columns: [t.teamId, t.adminUserId] })])
+
+// History of an application's trip through review: routed, claimed,
+// transferred, reassigned for going stale, interview set, decided.
+export const applicationEvents = pgTable('application_events', {
+  id: bigint({ mode: 'number' }).primaryKey().generatedAlwaysAsIdentity(),
+  applicationId: bigint('application_id', { mode: 'number' }).notNull().references(() => membershipApplications.id, { onDelete: 'cascade' }),
+  kind: text().notNull(),
+  fromTeamId: bigint('from_team_id', { mode: 'number' }),
+  toTeamId: bigint('to_team_id', { mode: 'number' }),
+  fromReviewerId: bigint('from_reviewer_id', { mode: 'number' }),
+  toReviewerId: bigint('to_reviewer_id', { mode: 'number' }),
+  note: text(),
+  actorId: uuid('actor_id'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+}, t => [index('application_events_application_idx').on(t.applicationId)])
+
+// Single-row settings for review routing.
+export const reviewSettings = pgTable('review_settings', {
+  id: integer().primaryKey().default(1),
+  staleDays: integer('stale_days').notNull().default(5),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+})

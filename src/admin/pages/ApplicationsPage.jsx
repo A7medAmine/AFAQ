@@ -22,6 +22,12 @@ const FILTERS = [
   { value: 'rejected', label: 'Rejected' },
 ]
 
+/** Stamp who decided and when, so the review queue's history and load stats include it. */
+function decisionPatch(status) {
+  const now = new Date().toISOString()
+  return { status, decided_at: now, decided_by: useAdminStore.getState().adminProfile?.user_id ?? null, last_activity_at: now }
+}
+
 export default function ApplicationsPage() {
   const addToast = useAdminStore(s => s.addToast)
   const { refresh: refreshCounts } = useCounts()
@@ -38,7 +44,7 @@ export default function ApplicationsPage() {
   const load = useCallback(async () => {
     setState(s => ({ ...s, error: null }))
     const { ok, data, message } = await read(
-      supabase.from('membership_applications').select('*').order('created_at', { ascending: false })
+      supabase.from('membership_applications').select('*, team:review_teams(name_en, color)').order('created_at', { ascending: false })
     )
     if (!ok) { setState({ loading: false, error: message }); return }
     setRows(data || [])
@@ -67,7 +73,7 @@ export default function ApplicationsPage() {
       addToast(`${row.full_name} is now a member. A welcome email is on the way.`)
     } else {
       const { ok } = await run(
-        supabase.from('membership_applications').update({ status: next }).eq('id', row.id),
+        supabase.from('membership_applications').update(decisionPatch(next)).eq('id', row.id),
         { success: `${row.full_name} marked ${next}.`, failure: 'The status did not change.' }
       )
       setWorking(w => ({ ...w, [row.id]: false }))
@@ -90,7 +96,7 @@ export default function ApplicationsPage() {
         const { ok } = await api('/api/approve/membership', { method: 'POST', body: { id: row.id } })
         if (ok) done += 1
       } else {
-        const { error } = await supabase.from('membership_applications').update({ status: 'rejected' }).eq('id', row.id)
+        const { error } = await supabase.from('membership_applications').update(decisionPatch('rejected')).eq('id', row.id)
         if (!error) done += 1
       }
     }
@@ -132,6 +138,17 @@ export default function ApplicationsPage() {
     { header: 'Year', accessorKey: 'study_year', cell: ({ row }) => (
       <span className="text-[13px]" style={{ color: 'var(--adm-silk-dim)' }}>{row.original.study_year || '—'}</span>
     )},
+    { header: 'Review team', id: 'team', accessorFn: r => r.team?.name_en || '', cell: ({ row }) => {
+      const r = row.original
+      if (r.status !== 'pending') return <span className="text-[13px]" style={{ color: 'var(--adm-silk-faint)' }}>{r.team?.name_en || '—'}</span>
+      return (
+        <span className="inline-flex items-center gap-1.5 text-[13px]">
+          {r.team && <span className="rounded-full" style={{ width: 8, height: 8, background: r.team.color }} aria-hidden="true" />}
+          {r.team?.name_en || 'General pool'}
+          <StatusBadge status={r.stage} />
+        </span>
+      )
+    }},
     { header: 'Status', accessorKey: 'status', cell: ({ row }) => <StatusBadge status={row.original.status} /> },
     {
       header: 'Applied',
@@ -162,7 +179,7 @@ export default function ApplicationsPage() {
       <PageHeader
         eyebrow="Operate"
         title="Applications"
-        description="People asking to join the club. Approving one creates a member, issues a card, and sends a welcome email."
+        description="Every application, whoever reviews it. Day-to-day interviews happen in the review queue; approving here creates a member, issues a card, and sends a welcome email."
         actions={
           <ExportMenu
             filename={`applications-${status}-${new Date().toISOString().slice(0, 10)}`}

@@ -43,6 +43,8 @@ export default defineConfig({
       '/api/progres': 'http://localhost:3001',
       '/api/stats': 'http://localhost:3001',
       '/api/digikey': 'http://localhost:3001',
+      '/api/interests': 'http://localhost:3001',
+      '/api/review': 'http://localhost:3001',
       '/api/admin/check-email': 'http://localhost:3001',
     },
   },

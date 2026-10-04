@@ -58,7 +58,7 @@ export default function ComposeEmailModal({ open, onClose, source, onSent }) {
   const [language, setLanguage] = useState('en')
   const [subject, setSubject] = useState('')
   const [message, setMessage] = useState({ title: '', content: '' })
-  const [audience, setAudience] = useState({ statuses: ['active'], teams: [], groupIds: [] })
+  const [audience, setAudience] = useState({ statuses: ['active'], teams: [], groupIds: [], interests: [] })
   const [count, setCount] = useState(null)
   const [errors, setErrors] = useState({})
 
@@ -71,7 +71,7 @@ export default function ComposeEmailModal({ open, onClose, source, onSent }) {
   useEffect(() => {
     if (!open) return
     setLanguage('en'); setSubject(''); setMessage({ title: '', content: '' })
-    setAudience({ statuses: ['active'], teams: [], groupIds: [] })
+    setAudience({ statuses: ['active'], teams: [], groupIds: [], interests: [] })
     setErrors({}); setConfirming(false); setProgress(null); setLoadError(null)
 
     let cancelled = false
@@ -308,6 +308,16 @@ export default function ComposeEmailModal({ open, onClose, source, onSent }) {
                     <Chip key={t.value} active={audience.teams.includes(t.value)}
                       onClick={() => setAudience(a => ({ ...a, teams: toggleIn(a.teams, t.value) }))}>
                       {t.value} · {t.count}
+                    </Chip>
+                  ))}
+                </AudienceRow>
+              )}
+              {!!options?.interests?.length && (
+                <AudienceRow label="Interest" hint="None selected = no interest filter">
+                  {options.interests.map(i => (
+                    <Chip key={i.value} active={audience.interests.includes(i.value)}
+                      onClick={() => setAudience(a => ({ ...a, interests: toggleIn(a.interests, i.value) }))}>
+                      {i.label} · {i.count}
                     </Chip>
                   ))}
                 </AudienceRow>

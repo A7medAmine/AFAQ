@@ -28,7 +28,19 @@ const initialForm = {
 }
 
 export default function JoinUs() {
-  const { t } = useTranslation('join')
+  const { t, i18n } = useTranslation('join')
+  // Interests are managed in the console (they route applications to review
+  // teams). Until they load, or if the request fails, fall back to the
+  // built-in list so the form always works.
+  const [interestRows, setInterestRows] = useState(null)
+  useEffect(() => {
+    let alive = true
+    fetch('/api/interests')
+      .then(r => (r.ok ? r.json() : null))
+      .then(rows => { if (alive && Array.isArray(rows) && rows.length) setInterestRows(rows) })
+      .catch(() => {})
+    return () => { alive = false }
+  }, [])
   const [step, setStep] = useState(0)
   const [form, setForm] = useState(initialForm)
   const [status, setStatus] = useState('idle')
@@ -174,7 +186,14 @@ export default function JoinUs() {
     }))
   }
 
-  const interests = Object.keys(t('interestOptions', { returnObjects: true }))
+  const lang = (i18n.language || 'en').slice(0, 2)
+  const interests = interestRows
+    ? interestRows.map(i => i.key)
+    : Object.keys(t('interestOptions', { returnObjects: true }))
+  const interestLabel = key => {
+    const row = interestRows?.find(i => i.key === key)
+    return row ? row[`label_${lang}`] || row.label_en : t(`interestOptions.${key}`)
+  }
   const skillOpts = Object.keys(t('skillOptions', { returnObjects: true }))
   const deptOptions = Object.keys(t('departments', { returnObjects: true }))
   const departments = form.department && !deptOptions.includes(form.department)
@@ -349,7 +368,7 @@ export default function JoinUs() {
                           legend={t('form.interests')}
                           options={interests}
                           selected={form.interests}
-                          labelFor={i => t(`interestOptions.${i}`)}
+                          labelFor={interestLabel}
                           onToggle={i => toggleArray('interests', i)}
                         />
                         <PillGroup

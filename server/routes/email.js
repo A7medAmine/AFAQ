@@ -41,7 +41,22 @@ function normalizeAudience(raw = {}) {
     statuses: statuses.length ? statuses : ['active'],
     teams: strings(raw.teams),
     groupIds: (Array.isArray(raw.groupIds) ? raw.groupIds : []).map(Number).filter(Number.isInteger),
+    interests: strings(raw.interests),
   }
+}
+
+/**
+ * Interest keys → every spelling a member record may hold. Members approved
+ * from the join form store keys ("robotics"); ones typed in by hand store
+ * labels ("Robotics"), so match both, ignoring case.
+ */
+async function interestMatcher(keys) {
+  if (!keys.length) return null
+  const { data, error } = await supabaseAdmin.from('interests').select('key, label_en, label_ar, label_fr').in('key', keys)
+  if (error) throw error
+  const spellings = new Set(keys.map(k => k.toLowerCase()))
+  for (const i of data) for (const v of [i.label_en, i.label_ar, i.label_fr]) if (v) spellings.add(v.trim().toLowerCase())
+  return interests => (interests || []).some(v => spellings.has(String(v).trim().toLowerCase()))
 }
 
 /** Page through members (PostgREST caps a response at 1000 rows). */
@@ -58,7 +73,8 @@ async function fetchAllMembers(columns) {
 
 /** Members matching the audience, deduplicated by address, opted-out ones set aside. */
 async function resolveRecipients(audience) {
-  const members = await fetchAllMembers('id, full_name, email, member_code, status, team, email_opt_out')
+  const members = await fetchAllMembers('id, full_name, email, member_code, status, team, interests, email_opt_out')
+  const matchesInterest = await interestMatcher(audience.interests)
 
   let inGroups = null
   if (audience.groupIds.length) {
@@ -75,6 +91,7 @@ async function resolveRecipients(audience) {
     if (!audience.statuses.includes(m.status || 'active')) continue
     if (audience.teams.length && !audience.teams.includes(m.team)) continue
     if (inGroups && !inGroups.has(m.id)) continue
+    if (matchesInterest && !matchesInterest(m.interests)) continue
     const email = String(m.email || '').trim().toLowerCase()
     if (!EMAIL.test(email) || seen.has(email)) continue
     seen.add(email)
@@ -128,13 +145,15 @@ function requireSmtp() {
 
 router.get('/audience-options', async (req, res) => {
   try {
-    const [members, groups, links] = await Promise.all([
-      fetchAllMembers('id, status, team, email_opt_out'),
+    const [members, groups, links, interests] = await Promise.all([
+      fetchAllMembers('id, status, team, interests, email_opt_out'),
       supabaseAdmin.from('member_groups').select('id, name').order('name'),
       supabaseAdmin.from('member_group_members').select('group_id'),
+      supabaseAdmin.from('interests').select('key, label_en, label_ar, label_fr').order('sort_order').order('id'),
     ])
     if (groups.error) throw groups.error
     if (links.error) throw links.error
+    if (interests.error) throw interests.error
 
     const tally = key => {
       const counts = {}
@@ -152,6 +171,11 @@ router.get('/audience-options', async (req, res) => {
       statuses: tally('status'),
       teams: tally('team'),
       groups: groups.data.map(g => ({ ...g, count: groupCounts[g.id] || 0 })),
+      interests: interests.data.map(i => {
+        const spellings = new Set([i.key, i.label_en, i.label_ar, i.label_fr].filter(Boolean).map(v => v.trim().toLowerCase()))
+        const count = members.filter(m => (m.interests || []).some(v => spellings.has(String(v).trim().toLowerCase()))).length
+        return { value: i.key, label: i.label_en, count }
+      }).filter(i => i.count),
       emailConfigured: isEmailConfigured(),
     })
   } catch (err) {

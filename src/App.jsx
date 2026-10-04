@@ -24,6 +24,8 @@ const Dashboard = lazy(() => import('./admin/pages/Dashboard'))
 const EventsPage = lazy(() => import('./admin/pages/EventsPage'))
 const RegistrationsPage = lazy(() => import('./admin/pages/RegistrationsPage'))
 const ApplicationsPage = lazy(() => import('./admin/pages/ApplicationsPage'))
+const ReviewPage = lazy(() => import('./admin/pages/ReviewPage'))
+const ReviewTeamsPage = lazy(() => import('./admin/pages/ReviewTeamsPage'))
 const MembersPage = lazy(() => import('./admin/pages/MembersPage'))
 const CardPrintPage = lazy(() => import('./admin/pages/CardPrintPage'))
 const TasksPage = lazy(() => import('./admin/pages/TasksPage'))
@@ -105,6 +107,12 @@ export default function App() {
             } />
             <Route path="registrations" element={
               <RoleGuard permission="events.registrations.manage"><RegistrationsPage /></RoleGuard>
+            } />
+            <Route path="review" element={
+              <RoleGuard permission="applications.review"><ReviewPage /></RoleGuard>
+            } />
+            <Route path="teams" element={
+              <RoleGuard permission="membership.manage"><ReviewTeamsPage /></RoleGuard>
             } />
             <Route path="applications" element={
               <RoleGuard permission="membership.manage"><ApplicationsPage /></RoleGuard>

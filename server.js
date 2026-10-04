@@ -16,6 +16,9 @@ import digikeyRoutes from './server/routes/digikey.js'
 import emailRoutes from './server/routes/email.js'
 import eventsRoutes from './server/routes/events.js'
 import { sendEmail } from './server/services/mailer.js'
+import { approveApplication, HttpError } from './server/services/membership.js'
+import reviewRoutes, { publicReviewRoutes } from './server/routes/review.js'
+import { routeNewApplication } from './server/services/reviewRouting.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const uploadDir = path.resolve(__dirname, "upload");
@@ -518,7 +521,7 @@ app.post("/api/register/membership", async (req, res) => {
       });
     }
 
-    const { error: insertErr } = await supabaseAdmin.from("membership_applications").insert([{
+    const { data: created, error: insertErr } = await supabaseAdmin.from("membership_applications").insert([{
       full_name: fullName,
       student_id: studentId || null,
       email,
@@ -528,8 +531,14 @@ app.post("/api/register/membership", async (req, res) => {
       interests: Array.isArray(b.interests) ? b.interests : [],
       skills: Array.isArray(b.skills) ? b.skills : [],
       motivation: b.motivation ? String(b.motivation).trim() : null,
-    }]);
+    }]).select("*").single();
     if (insertErr) throw insertErr;
+
+    // Hand it to the team its interests point to. A routing failure must not
+    // lose the application: the next queue load routes anything left over.
+    await routeNewApplication(created).catch((err) =>
+      console.error("Application routing error:", err.message)
+    );
 
     res.json({ ok: true });
 
@@ -651,75 +660,14 @@ app.post(
   async (req, res) => {
     const { id } = req.body;
     if (!id) return res.status(400).json({ error: "Missing id" });
-
-    const { data: application, error: fetchErr } = await supabaseAdmin
-      .from("membership_applications")
-      .select("*")
-      .eq("id", id)
-      .single();
-    if (fetchErr || !application) {
-      console.error("Fetch application error:", fetchErr);
-      return res.status(404).json({ error: "Application not found" });
+    try {
+      const { member } = await approveApplication(id, { decidedBy: req.user.id });
+      res.json({ ok: true, member });
+    } catch (err) {
+      if (err instanceof HttpError) return res.status(err.status).json({ error: err.message });
+      console.error("Approve membership error:", err);
+      res.status(500).json({ error: "Failed to approve application" });
     }
-
-    const { data: inserted, error: insertErr } = await supabaseAdmin
-      .from("members")
-      .insert({
-        application_id: application.id,
-        full_name: application.full_name,
-        email: application.email,
-        phone: application.phone,
-        student_id: application.student_id,
-        department: application.department,
-        study_year: application.study_year,
-        skills: application.skills,
-        interests: application.interests,
-      })
-      .select("*")
-      .single();
-    if (insertErr) {
-      console.error("Create member error:", insertErr);
-      return res.status(500).json({ error: "Failed to create member" });
-    }
-
-    const { error: statusErr } = await supabaseAdmin
-      .from("membership_applications")
-      .update({ status: "approved" })
-      .eq("id", id);
-    if (statusErr) {
-      console.error("Update application error:", statusErr);
-      return res.status(500).json({ error: "Failed to approve application" });
-    }
-
-    const safeName = escapeHtml(application.full_name);
-
-    await sendEmail({
-      to: application.email,
-      subject: "Membership Approved — Welcome to AFAQ!",
-      html: `
-      <div style="font-family: Arial, sans-serif; max-width: 560px; margin: 0 auto;">
-        <div style="background: #0F172A; padding: 24px; text-align: center;">
-          <h1 style="color: #fff; margin: 0; font-size: 22px;">AFAQ Scientific Club</h1>
-        </div>
-        <div style="padding: 32px 24px; background: #f8fafc;">
-          <h2 style="margin: 0 0 8px;">Welcome to AFAQ, ${safeName}!</h2>
-          <p style="color: #475569; font-size: 15px; line-height: 1.6;">
-            Your membership application has been <strong>approved</strong>! We are thrilled
-            to have you on board.
-          </p>
-          <p style="color: #475569; font-size: 15px; line-height: 1.6;">
-            Stay tuned for upcoming events, workshops, and projects. You are now part of a
-            community where technology meets innovation.
-          </p>
-          <p style="color: #94a3b8; font-size: 13px; margin-top: 24px;">
-            Best regards,<br/>AFAQ Scientific Club Team
-          </p>
-        </div>
-      </div>
-    `,
-    });
-
-    res.json({ ok: true, member: inserted });
   }
 );
 
@@ -927,6 +875,11 @@ app.use("/api/ai-knowledge", aiKnowledgeRoutes);
 // --- DigiKey product lookup (inventory) ---
 
 app.use("/api/digikey", digikeyRoutes);
+
+// --- Membership review routing (teams, interests, reviewer queues) ---
+
+app.use("/api/interests", publicReviewRoutes);
+app.use("/api/review", reviewRoutes);
 
 // --- Bulk notification emails (templates, campaigns) ---
 

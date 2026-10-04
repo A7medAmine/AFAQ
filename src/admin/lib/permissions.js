@@ -23,6 +23,7 @@ export const PERMISSIONS = {
     'inventory.manage',
     'tasks.manage',
     'finance.manage',
+    'applications.review',
   ],
   [ROLES.EVENT_MANAGER]: [
     'events.manage',
@@ -33,12 +34,14 @@ export const PERMISSIONS = {
     'messages.view',
     'inventory.manage',
     'tasks.manage',
+    'applications.review',
   ],
   [ROLES.MEDIA_MANAGER]: [
     'gallery.manage',
     'announcements.manage',
     'email.send',
     'messages.view',
+    'applications.review',
   ],
   [ROLES.PROJECT_MANAGER]: [
     'projects.manage',
@@ -46,10 +49,12 @@ export const PERMISSIONS = {
     'email.send',
     'messages.view',
     'tasks.manage',
+    'applications.review',
   ],
   [ROLES.TREASURER]: [
     'finance.manage',
     'messages.view',
+    'applications.review',
   ],
 }
 
@@ -71,6 +76,7 @@ export const NAV_ITEMS = [
   { label: 'Overview', path: '/admin', icon: 'Gauge', group: 'operate', end: true, permission: null },
   { label: 'Events', path: '/admin/events', icon: 'Calendar', group: 'operate', permission: 'events.manage' },
   { label: 'Registrations', path: '/admin/registrations', icon: 'ClipboardCheck', group: 'operate', permission: 'events.registrations.manage' },
+  { label: 'Review queue', path: '/admin/review', icon: 'Inbox', group: 'operate', permission: 'applications.review' },
   { label: 'Applications', path: '/admin/applications', icon: 'UserCheck', group: 'operate', permission: 'membership.manage' },
   { label: 'Members', path: '/admin/members', icon: 'IdCard', group: 'operate', permission: 'membership.manage' },
   { label: 'Tasks', path: '/admin/tasks', icon: 'ListChecks', group: 'operate', permission: 'tasks.manage' },
@@ -84,6 +90,7 @@ export const NAV_ITEMS = [
   { label: 'Announcements', path: '/admin/announcements', icon: 'Megaphone', group: 'publish', permission: 'announcements.manage' },
   { label: 'Email', path: '/admin/email', icon: 'Send', group: 'publish', permission: 'email.send' },
 
+  { label: 'Review teams', path: '/admin/teams', icon: 'Network', group: 'console', permission: 'membership.manage' },
   { label: 'Admins', path: '/admin/admins', icon: 'Shield', group: 'console', permission: 'admin_users.manage' },
   { label: 'AI knowledge', path: '/admin/ai-knowledge', icon: 'Brain', group: 'console', permission: 'ai_knowledge.manage' },
   { label: 'Activity', path: '/admin/activity', icon: 'ScrollText', group: 'console', permission: 'activity.view' },
