@@ -69,36 +69,45 @@ export function hasPermission(userRole, permission) {
  * palette, the breadcrumb and the route guards all read this — they used to
  * each keep their own copy and drift apart.
  *
- * `group` orders the rail into three bands: what the club runs, what it
- * publishes, and what keeps the console itself working.
+ * `group` sorts the rail into bands by what the work is about, so a long
+ * list reads as a handful of short ones. Overview sits above them all.
  */
 export const NAV_ITEMS = [
-  { label: 'Overview', path: '/admin', icon: 'Gauge', group: 'operate', end: true, permission: null },
-  { label: 'Events', path: '/admin/events', icon: 'Calendar', group: 'operate', permission: 'events.manage' },
-  { label: 'Registrations', path: '/admin/registrations', icon: 'ClipboardCheck', group: 'operate', permission: 'events.registrations.manage' },
-  { label: 'Review queue', path: '/admin/review', icon: 'Inbox', group: 'operate', permission: 'applications.review' },
-  { label: 'Applications', path: '/admin/applications', icon: 'UserCheck', group: 'operate', permission: 'membership.manage' },
-  { label: 'Members', path: '/admin/members', icon: 'IdCard', group: 'operate', permission: 'membership.manage' },
-  { label: 'Tasks', path: '/admin/tasks', icon: 'ListChecks', group: 'operate', permission: 'tasks.manage' },
-  { label: 'Messages', path: '/admin/messages', icon: 'Mail', group: 'operate', permission: 'messages.view' },
-  { label: 'Inventory', path: '/admin/inventory', icon: 'Boxes', group: 'operate', permission: 'inventory.manage' },
-  { label: 'Borrowing', path: '/admin/borrowing', icon: 'ArrowLeftRight', group: 'operate', permission: 'inventory.manage' },
-  { label: 'Finance', path: '/admin/finance', icon: 'Wallet', group: 'operate', permission: 'finance.manage' },
+  { label: 'Overview', path: '/admin', icon: 'Gauge', group: 'home', end: true, permission: null },
+
+  { label: 'Events', path: '/admin/events', icon: 'Calendar', group: 'events', permission: 'events.manage' },
+  { label: 'Registrations', path: '/admin/registrations', icon: 'ClipboardCheck', group: 'events', permission: 'events.registrations.manage' },
+
+  { label: 'Review queue', path: '/admin/review', icon: 'Inbox', group: 'people', permission: 'applications.review' },
+  { label: 'Applications', path: '/admin/applications', icon: 'UserCheck', group: 'people', permission: 'membership.manage' },
+  { label: 'Members', path: '/admin/members', icon: 'IdCard', group: 'people', permission: 'membership.manage' },
+  { label: 'Review teams', path: '/admin/teams', icon: 'Network', group: 'people', permission: 'membership.manage' },
+
+  { label: 'Messages', path: '/admin/messages', icon: 'Mail', group: 'work', permission: 'messages.view' },
+  { label: 'Tasks', path: '/admin/tasks', icon: 'ListChecks', group: 'work', permission: 'tasks.manage' },
+
+  { label: 'Inventory', path: '/admin/inventory', icon: 'Boxes', group: 'resources', permission: 'inventory.manage' },
+  { label: 'Borrowing', path: '/admin/borrowing', icon: 'ArrowLeftRight', group: 'resources', permission: 'inventory.manage' },
+  { label: 'Finance', path: '/admin/finance', icon: 'Wallet', group: 'resources', permission: 'finance.manage' },
 
   { label: 'Projects', path: '/admin/projects', icon: 'CircuitBoard', group: 'publish', permission: 'projects.manage' },
   { label: 'Gallery', path: '/admin/gallery', icon: 'Images', group: 'publish', permission: 'gallery.manage' },
   { label: 'Announcements', path: '/admin/announcements', icon: 'Megaphone', group: 'publish', permission: 'announcements.manage' },
   { label: 'Email', path: '/admin/email', icon: 'Send', group: 'publish', permission: 'email.send' },
 
-  { label: 'Review teams', path: '/admin/teams', icon: 'Network', group: 'console', permission: 'membership.manage' },
   { label: 'Admins', path: '/admin/admins', icon: 'Shield', group: 'console', permission: 'admin_users.manage' },
   { label: 'AI knowledge', path: '/admin/ai-knowledge', icon: 'Brain', group: 'console', permission: 'ai_knowledge.manage' },
   { label: 'Activity', path: '/admin/activity', icon: 'ScrollText', group: 'console', permission: 'activity.view' },
   { label: 'Settings', path: '/admin/settings', icon: 'SlidersHorizontal', group: 'console', permission: 'settings.manage' },
 ]
 
+/** `label: null` renders the band without a heading and keeps it always open. */
 export const NAV_GROUPS = [
-  { id: 'operate', label: 'Operate' },
+  { id: 'home', label: null },
+  { id: 'events', label: 'Events' },
+  { id: 'people', label: 'People' },
+  { id: 'work', label: 'Inbox & tasks' },
+  { id: 'resources', label: 'Resources' },
   { id: 'publish', label: 'Publish' },
   { id: 'console', label: 'Console' },
 ]

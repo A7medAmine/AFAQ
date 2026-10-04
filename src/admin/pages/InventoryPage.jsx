@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import QRCode from 'qrcode'
-import { Boxes, IdCard, Loader2, PackagePlus, Printer, Search, Trash2, Upload } from 'lucide-react'
+import { Boxes, FileSpreadsheet, IdCard, Loader2, PackagePlus, Printer, Search, Trash2, Upload } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { api, logActivity, read, run, supabase, uploadFile } from '../lib/db'
 import useAdminStore from '../store/adminStore'
@@ -18,6 +18,8 @@ import { StatusBadge } from '../components/ui/Badge'
 import Panel from '../components/ui/Panel'
 import { SelectField, TextArea, TextField } from '../components/ui/Field'
 import PartNameField from '../components/inventory/PartNameField'
+import ImportItemsModal from '../components/inventory/ImportItemsModal'
+import { CATEGORIES } from '../lib/inventoryImport'
 
 const FILTERS = [
   { value: 'all', label: 'All' },
@@ -39,6 +41,7 @@ export default function InventoryPage() {
 
   const [detail, setDetail] = useState(null)
   const [addOpen, setAddOpen] = useState(false)
+  const [importOpen, setImportOpen] = useState(false)
   const [remove, setRemove] = useState(null)
 
   const load = useCallback(async () => {
@@ -134,6 +137,7 @@ export default function InventoryPage() {
             <Button icon={Printer} disabled={!filtered.length} onClick={() => printLabels(filtered)}>
               Print {filtered.length === rows.length ? 'all' : filtered.length} labels
             </Button>
+            <Button icon={FileSpreadsheet} onClick={() => setImportOpen(true)}>Import</Button>
             <Button variant="primary" icon={PackagePlus} onClick={() => setAddOpen(true)}>Add item</Button>
           </>
         }
@@ -163,7 +167,12 @@ export default function InventoryPage() {
                 icon={Boxes}
                 title="Nothing in inventory yet"
                 description="Add electronics, tools or equipment. Each one gets a unique asset code and a printable QR label."
-                action={<Button variant="primary" icon={PackagePlus} onClick={() => setAddOpen(true)}>Add item</Button>}
+                action={
+                  <span className="flex flex-wrap justify-center gap-2">
+                    <Button icon={FileSpreadsheet} onClick={() => setImportOpen(true)}>Import from Excel</Button>
+                    <Button variant="primary" icon={PackagePlus} onClick={() => setAddOpen(true)}>Add item</Button>
+                  </span>
+                }
               />
             ) : (
               <EmptyState compact icon={Boxes} title="Nothing in this view" description="Try another status." />
@@ -215,6 +224,7 @@ export default function InventoryPage() {
       </Drawer>
 
       <AddItem open={addOpen} onClose={() => setAddOpen(false)} onAdded={load} existing={rows} />
+      <ImportItemsModal open={importOpen} existing={rows} onClose={() => setImportOpen(false)} onImported={load} />
 
       <ConfirmDialog
         open={!!remove}
@@ -271,8 +281,6 @@ const DIGIKEY_SCOPES = [
   { value: 'boards', label: 'Boards & kits' },
   { value: 'all', label: 'All parts' },
 ]
-
-const CATEGORIES = ['Electronics', 'Tools', 'Lab equipment', 'Furniture', 'Consumables', 'Other']
 
 function AddItem({ open, onClose, onAdded, existing }) {
   const blank = { name: '', category: 'Electronics', serial: '', condition: 'good', location: '', value: '', notes: '', photo_url: '' }

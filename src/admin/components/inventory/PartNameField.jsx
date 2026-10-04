@@ -1,6 +1,7 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { Boxes, Globe } from 'lucide-react'
 import { Field } from '../ui/Field'
+import { fold, index, loadCatalog, score, squash } from '../../lib/partsCatalog'
 
 /*
   The inventory "Name" box, with suggestions as you type.
@@ -11,48 +12,7 @@ import { Field } from '../ui/Field'
        library plus a curated list (scripts/buildPartsCatalog.js) — instant,
        free and no rate limit, unlike DigiKey;
     3. a last row that hands the text to the DigiKey search for anything else.
-
-  The catalog is ~380 KB, so it is only fetched the first time the box gets
-  focus, not with the admin bundle.
 */
-
-let catalogPromise = null
-const loadCatalog = () => {
-  catalogPromise ??= import('../../data/partsCatalog.json').then(m => m.default.parts.map(index))
-  return catalogPromise
-}
-
-const fold = text => String(text || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
-// "HC-SR04", "hcsr04" and "hc sr04" should all find the same part.
-const squash = text => fold(text).replace(/[^a-z0-9]/g, '')
-
-function index(part) {
-  const name = fold(part.name)
-  return {
-    ...part,
-    _name: name,
-    _words: name.split(/[^a-z0-9.]+/).filter(Boolean),
-    _squash: squash(part.name),
-    _rest: fold(`${part.keywords} ${part.family}`),
-    _restSquash: squash(part.keywords),
-  }
-}
-
-/** Lower is better; null means no match. Every query word must hit somewhere. */
-function score(part, words, whole) {
-  let total = 0
-  for (const w of words) {
-    if (part._words.some(x => x === w)) total += 0
-    else if (part._words.some(x => x.startsWith(w))) total += 1
-    else if (part._name.includes(w)) total += 3
-    else if (part._rest.includes(w)) total += 5
-    else return null
-  }
-  if (part._name.startsWith(words[0])) total -= 2
-  if (whole.length > 2 && (part._squash.includes(whole) || part._restSquash.includes(whole))) total -= 2
-  if (part.source === 'curated') total -= 3
-  return total + part._name.length / 200
-}
 
 export default function PartNameField({ value, onChange, onPick, onSearchOnline, existing = [], error, placeholder }) {
   const id = useId()

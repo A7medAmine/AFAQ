@@ -23,6 +23,7 @@ const store = (set, get) => ({
 
   // ── Console UI ──────────────────────────────────────────────────────────
   navExpanded: readStored('afaq.admin.nav', 'expanded') === 'expanded',
+  closedNavGroups: readStored('afaq.admin.navGroups', '').split(',').filter(Boolean),
   mobileNavOpen: false,
   paletteOpen: false,
   theme: readStored('afaq.admin.theme', 'system'),
@@ -144,6 +145,13 @@ const store = (set, get) => ({
     const navExpanded = !s.navExpanded
     try { localStorage.setItem('afaq.admin.nav', navExpanded ? 'expanded' : 'collapsed') } catch { /* private mode */ }
     return { navExpanded }
+  }),
+  toggleNavGroup: id => set(s => {
+    const closedNavGroups = s.closedNavGroups.includes(id)
+      ? s.closedNavGroups.filter(g => g !== id)
+      : [...s.closedNavGroups, id]
+    try { localStorage.setItem('afaq.admin.navGroups', closedNavGroups.join(',')) } catch { /* private mode */ }
+    return { closedNavGroups }
   }),
   setMobileNav: open => set({ mobileNavOpen: open }),
   setPalette: open => set({ paletteOpen: open }),

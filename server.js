@@ -91,6 +91,19 @@ const requireRole =
     next();
   };
 
+// A valid Supabase session is not enough: suspended admins keep their auth
+// account, so every admin-only endpoint must also check the admin row.
+const requireActiveAdmin = async (req, res, next) => {
+  const { data: admin } = await supabaseAdmin
+    .from("admin_users")
+    .select("*, role:admin_roles(name)")
+    .eq("user_id", req.user.id)
+    .maybeSingle();
+  if (!admin?.is_active) return res.status(403).json({ error: "Forbidden" });
+  req.adminProfile = admin;
+  next();
+};
+
 // --- Rate limiting ---
 
 const apiLimiter = rateLimit({
@@ -150,6 +163,9 @@ app.use((req, res, next) => {
 const uploadRouter = express.Router();
 uploadRouter.post(
   "/upload",
+  // Authenticate before multer buffers up to 15MB into memory.
+  requireAuth,
+  requireActiveAdmin,
   (req, res, next) => {
     upload.single("file")(req, res, (err) => {
       if (err) return res.status(400).json({ error: err.message });
@@ -157,7 +173,6 @@ uploadRouter.post(
       next();
     });
   },
-  requireAuth,
   async (req, res) => {
     try {
       const ext = path.extname(req.file.originalname).toLowerCase();
@@ -193,7 +208,7 @@ app.use("/api", uploadRouter);
 app.use(express.json());
 app.use("/api/", apiLimiter);
 
-app.delete("/api/upload", requireAuth, async (req, res) => {
+app.delete("/api/upload", requireAuth, requireActiveAdmin, async (req, res) => {
   const { url } = req.body || {};
   if (!url || typeof url !== "string") return res.status(400).json({ error: "No url" });
 
@@ -202,6 +217,9 @@ app.delete("/api/upload", requireAuth, async (req, res) => {
       const parts = url.split("/storage/v1/object/public/")[1]?.split("/");
       if (parts && parts.length >= 2) {
         const bucket = parts[0];
+        // The service role ignores storage RLS, so only the bucket this API
+        // uploads to may be cleaned up through it.
+        if (bucket !== BUCKET_NAME) return res.status(400).json({ error: "Invalid bucket" });
         const filePath = decodeURIComponent(parts.slice(1).join("/"));
         await supabaseAdmin.storage.from(bucket).remove([filePath]);
       }
@@ -252,7 +270,7 @@ app.get("/api/page-content/:section", async (req, res) => {
   res.json({ image_url: data?.image_url || null });
 });
 
-app.put("/api/page-content", requireAuth, async (req, res) => {
+app.put("/api/page-content", requireAuth, requireRole("media_manager"), async (req, res) => {
   const { section, image_url } = req.body;
   if (!section) return res.status(400).json({ error: "section is required" });
   const { data: existing } = await supabaseAdmin
@@ -849,7 +867,14 @@ app.put("/api/admin/password", authLimiter, requireAuth, async (req, res) => {
   if (!current_password) return res.status(400).json({ error: "Current password is required." })
   if (!new_password || new_password.length < 8) return res.status(400).json({ error: "New password must be at least 8 characters." })
 
-  const { error: signInError } = await supabaseAdmin.auth.signInWithPassword({
+  // Never sign in on supabaseAdmin: the session would replace the service-role
+  // key for every later query this process makes.
+  const verifier = createClient(
+    process.env.VITE_SUPABASE_URL,
+    process.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+    { auth: { persistSession: false, autoRefreshToken: false } }
+  )
+  const { error: signInError } = await verifier.auth.signInWithPassword({
     email: req.user.email,
     password: current_password,
   })

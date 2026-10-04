@@ -1,6 +1,5 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
-import { Camera, Search, X } from 'lucide-react'
-import Button from './Button'
+import { Search, X } from 'lucide-react'
 
 /** Scanned or typed codes may be a bare code or a `/verify/<code>` URL. */
 export function normalizeCode(raw) {
@@ -31,7 +30,7 @@ function fold(text) {
 export default function SearchPicker({
   label, placeholder, options, value, onChange,
   getKey, getCode, getSearchText, renderOption, renderSelected,
-  isDisabled = () => null, onScan, onFreeText, freeTextLabel,
+  isDisabled = () => null, onFreeText, freeTextLabel,
   emptyText = 'No matches.', limit = 8, autoFocus,
 }) {
   const id = useId()
@@ -160,7 +159,6 @@ export default function SearchPicker({
             </ul>
           )}
         </div>
-        {onScan && <Button type="button" onClick={onScan} icon={Camera}>Scan</Button>}
       </div>
     </div>
   )

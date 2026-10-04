@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
-  CalendarX, Crown, Eye, FileSpreadsheet, Shield, IdCard, ListChecks, Loader2, Pencil, Plus, Printer, Trash2, UserCheck, UserRoundPlus, Upload, Users, X,
+  BadgeCheck, CalendarX, Crown, Eye, FileSpreadsheet, Shield, IdCard, ListChecks, Loader2, Pencil, Plus, Printer, Trash2, UserCheck, UserRoundPlus, Upload, Users, X,
 } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { logActivity, run, read, supabase, uploadFile } from '../lib/db'
@@ -8,7 +8,7 @@ import useAdminStore from '../store/adminStore'
 import useQueryParam from '../hooks/useQueryParam'
 import { formatDate, formatDateTime, toDateInput } from '../lib/format'
 import {
-  GENDERS, MEMBER_STATUSES, isCurrentTerm, isOpenTask, isOverdue, positionLabel, roleOptions, sortPositions,
+  GENDERS, MEMBER_STATUSES, isCurrentTerm, isOpenTask, isOverdue, positionLabel, rememberRoleNames, roleOptions, sortPositions,
 } from '../lib/hr'
 import { hasPermission } from '../lib/permissions'
 import PageHeader, { FilterTabs } from '../components/ui/PageHeader'
@@ -61,11 +61,12 @@ export default function MembersPage() {
     setState(s => ({ ...s, error: null }))
     const [{ ok, data, message }, roles, groupRows] = await Promise.all([
       read(supabase.from('members').select(MEMBER_SELECT).order('created_at', { ascending: false })),
-      read(supabase.from('member_roles').select('id, name').order('name')),
+      read(supabase.from('member_roles').select('id, name, builtin_key').order('name')),
       read(supabase.from('member_groups').select('id, name').order('name')),
     ])
     if (!ok) { setState({ loading: false, error: message }); return }
     setRows(data || [])
+    rememberRoleNames(roles.data || [])
     setCustomRoles(roles.data || [])
     setGroups(groupRows.data || [])
     setState({ loading: false, error: null })
@@ -106,6 +107,11 @@ export default function MembersPage() {
   const printCards = members => {
     if (!members.length) return
     navigate(`/admin/members/cards?ids=${members.map(m => m.id).join(',')}`)
+  }
+
+  const printBadges = members => {
+    if (!members.length) return
+    navigate(`/admin/members/badges?ids=${members.map(m => m.id).join(',')}`)
   }
 
   const setStatusFor = async (members, next, clear) => {
@@ -239,6 +245,7 @@ export default function MembersPage() {
             <Button icon={Printer} disabled={!filtered.length} onClick={() => printCards(filtered)}>
               Print {filtered.length === rows.length ? 'all' : filtered.length} cards
             </Button>
+            <Button icon={BadgeCheck} disabled={!filtered.length} onClick={() => printBadges(filtered)}>Badges</Button>
             <Button variant="primary" icon={UserRoundPlus} onClick={() => setForm({ member: null })}>Add a member</Button>
           </>
         }
@@ -284,6 +291,9 @@ export default function MembersPage() {
             <>
               <Button size="sm" variant="primary" icon={Printer} onClick={() => printCards(selected)}>
                 Print {selected.length} card{selected.length === 1 ? '' : 's'}
+              </Button>
+              <Button size="sm" icon={BadgeCheck} onClick={() => printBadges(selected)}>
+                {selected.length === 1 ? 'Badge' : 'Badges'}
               </Button>
               {bulkStatus ? (
                 <select className="adm-input" style={{ width: 'auto', height: 32 }} autoFocus defaultValue=""

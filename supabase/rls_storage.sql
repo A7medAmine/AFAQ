@@ -95,9 +95,9 @@ DROP POLICY IF EXISTS "admin_all_event_registrations" ON event_registrations;
 CREATE POLICY "admin_all_event_registrations" ON event_registrations
   FOR ALL USING (has_role('event_manager'));
 
+-- No public INSERT: sign-ups go through /api/register/* (service role), which
+-- enforces capacity and duplicate rules. See migration 0018.
 DROP POLICY IF EXISTS "public_insert_event_registrations" ON event_registrations;
-CREATE POLICY "public_insert_event_registrations" ON event_registrations
-  FOR INSERT WITH CHECK (auth.role() = 'anon' OR auth.role() = 'authenticated');
 
 DROP POLICY IF EXISTS "admin_all_projects" ON projects;
 CREATE POLICY "admin_all_projects" ON projects
@@ -147,9 +147,9 @@ DROP POLICY IF EXISTS "admin_all_membership_applications" ON membership_applicat
 CREATE POLICY "admin_all_membership_applications" ON membership_applications
   FOR ALL USING (has_role('event_manager'));
 
+-- No public INSERT: sign-ups go through /api/register/* (service role), which
+-- enforces capacity and duplicate rules. See migration 0018.
 DROP POLICY IF EXISTS "public_insert_membership_applications" ON membership_applications;
-CREATE POLICY "public_insert_membership_applications" ON membership_applications
-  FOR INSERT WITH CHECK (auth.role() = 'anon' OR auth.role() = 'authenticated');
 
 -- The roster holds contact details, so only admins who manage membership see it.
 -- Public card verification goes through the server with the service role.

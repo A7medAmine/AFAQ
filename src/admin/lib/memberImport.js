@@ -34,7 +34,7 @@ export const TEMPLATE_HEADERS = [
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 /** "Adresse E-mail :" → "adresse e mail" so headers compare loosely. */
-function normalizeHeader(value) {
+export function normalizeHeader(value) {
   return String(value ?? '')
     .normalize('NFD').replace(/[̀-ͯ]/g, '')
     .toLowerCase()
@@ -78,14 +78,14 @@ export function splitHeader(rows) {
   return { headers, body }
 }
 
-/** Best guess of { fieldKey: columnIndex } from the header row. */
-export function guessMapping(headers) {
+/** Best guess of { fieldKey: columnIndex } from the header row. Other importers pass their own fields. */
+export function guessMapping(headers, fields = IMPORT_FIELDS) {
   const normalized = headers.map(normalizeHeader)
   const mapping = {}
   const used = new Set()
   // Exact matches first, so "Nom" lands on last name before "Nom complet" is tried loosely.
   for (const pass of ['exact', 'contains']) {
-    for (const field of IMPORT_FIELDS) {
+    for (const field of fields) {
       if (mapping[field.key] !== undefined) continue
       const aliases = field.aliases.map(normalizeHeader)
       const index = normalized.findIndex((h, i) => !used.has(i) && (
@@ -105,14 +105,14 @@ export function guessMapping(headers) {
 // Excel dates come back as UTC midnight; read them in UTC so no timezone shifts the day.
 const isoDay = d => d.toISOString().slice(0, 10)
 
-function text(value) {
+export function text(value) {
   if (value === null || value === undefined) return ''
   if (value instanceof Date) return Number.isNaN(value.getTime()) ? '' : isoDay(value)
   return String(value).trim()
 }
 
 /** Dates arrive as Date objects, Excel serial numbers, or dd/mm/yyyy text. */
-function toDate(value) {
+export function toDate(value) {
   if (value === null || value === undefined || value === '') return null
   if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : isoDay(value)
   if (typeof value === 'number' && value > 20000 && value < 80000) {
@@ -121,10 +121,16 @@ function toDate(value) {
   }
   const s = String(value).trim()
   let m = s.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})/)
-  if (m) return `${m[1]}-${m[2].padStart(2, '0')}-${m[3].padStart(2, '0')}`
+  if (m) return realDay(m[1], m[2], m[3])
   m = s.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})$/)
-  if (m) return `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}` // day first, as written in Algeria
+  if (m) return realDay(m[3], m[2], m[1]) // day first, as written in Algeria
   return undefined // present but unreadable
+}
+
+/** "2025-02-31" and "99/99/9999" are not days; undefined flags them as unreadable. */
+function realDay(year, month, day) {
+  const d = new Date(Date.UTC(+year, +month - 1, +day))
+  return d.getUTCFullYear() === +year && d.getUTCMonth() === +month - 1 && d.getUTCDate() === +day ? isoDay(d) : undefined
 }
 
 /** Excel stores 0555123456 as the number 555123456; put the leading zero back. */
@@ -137,7 +143,7 @@ function toPhone(value) {
 }
 
 // Compared after the same normalisation as the cell (NFD splits Arabic hamza too).
-const oneOf = (s, words) => words.some(w => normalizeHeader(w) === s)
+export const oneOf = (s, words) => words.some(w => normalizeHeader(w) === s)
 
 function toGender(value) {
   const s = normalizeHeader(value)

@@ -317,9 +317,12 @@ export const memberTasks = pgTable('member_tasks', {
 // Custom roles the club defines on top of the built-in offices in
 // src/admin/lib/hr.js. member_positions.title stores the role name as-is, so
 // deleting a role here only removes it from the pickers; past terms keep it.
+// A row with builtin_key set renames that built-in office instead (terms keep
+// storing the key, e.g. 'president'); deleting it restores the default name.
 export const memberRoles = pgTable('member_roles', {
   id: bigint({ mode: 'number' }).primaryKey().generatedAlwaysAsIdentity(),
   name: text().notNull().unique(),
+  builtinKey: text('builtin_key').unique(),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
 })
 

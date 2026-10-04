@@ -25,7 +25,7 @@ export default function RoleField({
       <SelectField label={label} required={required} value={value || ''} onChange={e => onChange(e.target.value)}>
         {emptyLabel !== undefined && <option value="">{emptyLabel}</option>}
         <optgroup label="Offices">
-          {POSITION_TITLES.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
+          {options.slice(0, POSITION_TITLES.length).map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
         </optgroup>
         {(options.length > POSITION_TITLES.length || orphan) && (
           <optgroup label="Custom roles">

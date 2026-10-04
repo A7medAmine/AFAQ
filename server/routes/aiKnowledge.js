@@ -8,8 +8,8 @@ import { requireAuth, requireRole } from '../middleware/auth.js'
 const router = Router()
 
 /**
- * Reads stay public — the site's chatbot calls them anonymously. Writes are
- * super-admin only; they used to be open to anyone who knew the URL.
+ * Only /published is public. The full list includes drafts, so it and every
+ * write are super-admin only; they used to be open to anyone who knew the URL.
  */
 const requireEditor = [requireAuth, requireRole('super_admin')]
 
@@ -22,7 +22,7 @@ function slugify(text) {
     .replace(/-+$/, '')
 }
 
-router.get('/', async (req, res) => {
+router.get('/', requireEditor, async (req, res) => {
   try {
     const { category, published } = req.query
     if (category) {
@@ -49,7 +49,7 @@ router.get('/published', async (req, res) => {
 
 router.get('/categories', async (req, res) => {
   try {
-    const all = await getAllKnowledge()
+    const all = await getPublishedKnowledge()
     const cats = [...new Set(all.map(a => a.category).filter(Boolean))]
     res.json(cats)
   } catch (error) {

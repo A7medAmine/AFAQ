@@ -650,6 +650,23 @@ select.adm-input {
   color: var(--adm-signal);
 }
 
+/* Foldable band heading in the rail. */
+.adm-nav-group {
+  height: 26px;
+  border-radius: 8px;
+  color: var(--adm-silk-faint);
+  transition: background 0.14s ease, color 0.14s ease;
+}
+
+.adm-nav-group:not(:disabled):hover {
+  background: var(--adm-panel-hover);
+  color: var(--adm-silk);
+}
+
+.adm-nav-group:disabled {
+  cursor: default;
+}
+
 /* Active trace — the board routing a connection to the live module. */
 .adm-nav-link[aria-current="page"]::before {
   content: "";
@@ -874,4 +891,17 @@ select.adm-input {
   body.adm-print-mode > .adm-print-root {
     display: block !important;
   }
+}
+
+/* Printed sheets set their own type through --print-font. The console's
+   `[dir="rtl"] .adm *` rule and the site's `[dir="rtl"] body *` rule force a
+   font with !important whenever the site language is Arabic, which beat every
+   inline font on cards, badges and labels, on screen and on paper. html[dir]
+   out-ranks both, and the variable keeps each element's chosen face. */
+.adm-sheet {
+  --print-font: var(--adm-font-ui);
+}
+html .adm-sheet *,
+html[dir] .adm-sheet * {
+  font-family: var(--print-font) !important;
 }

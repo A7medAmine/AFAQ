@@ -1,11 +1,11 @@
-import { NavLink } from 'react-router-dom'
+import { NavLink, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
-  ArrowLeftRight, Boxes, Crown, ListChecks, Brain, Calendar, CircuitBoard, ClipboardCheck, Gauge, IdCard, Images, Inbox, Mail, Megaphone, Network,
+  ArrowLeftRight, Boxes, ChevronDown, Crown, ListChecks, Brain, Calendar, CircuitBoard, ClipboardCheck, Gauge, IdCard, Images, Inbox, Mail, Megaphone, Network,
   PanelLeftClose, PanelLeftOpen, ScrollText, Send, Shield, SlidersHorizontal, UserCheck, Wallet, X,
 } from 'lucide-react'
 import useAdminStore from '../../store/adminStore'
-import { NAV_GROUPS, navItemsFor } from '../../lib/permissions'
+import { NAV_GROUPS, navItemForPath, navItemsFor } from '../../lib/permissions'
 
 const ICONS = {
   Gauge, Calendar, ClipboardCheck, UserCheck, IdCard, Mail,
@@ -21,72 +21,121 @@ const BADGE_KEY = {
   '/admin/borrowing': 'overdueBorrows',
 }
 
+function NavItem({ item, expanded, badge, onNavigate }) {
+  const Icon = ICONS[item.icon] || Gauge
+  return (
+    <li>
+      <NavLink
+        to={item.path}
+        end={item.end}
+        onClick={onNavigate}
+        className="adm-nav-link"
+        style={{ justifyContent: expanded ? 'flex-start' : 'center', paddingInline: expanded ? 12 : 0 }}
+        title={expanded ? undefined : item.label}
+      >
+        <span className="relative shrink-0 flex">
+          <Icon size={18} />
+          {/* Collapsed rail keeps the signal without the number. */}
+          {!expanded && badge > 0 && (
+            <span
+              className="absolute -top-1 -right-1.5 rounded-full"
+              style={{ width: 6, height: 6, background: 'var(--adm-wait)' }}
+              aria-hidden="true"
+            />
+          )}
+        </span>
+        {expanded && (
+          <>
+            <span className="flex-1 adm-truncate">{item.label}</span>
+            {badge > 0 && <Badge count={badge} />}
+          </>
+        )}
+        {!expanded && <span className="sr-only">{item.label}</span>}
+      </NavLink>
+    </li>
+  )
+}
+
+function Badge({ count }) {
+  return (
+    <span
+      className="adm-data text-[11px] px-1.5 rounded-md shrink-0"
+      style={{ background: 'var(--adm-wait-wash)', color: 'var(--adm-wait)' }}
+    >
+      {count}
+    </span>
+  )
+}
+
 function NavList({ expanded, onNavigate }) {
   const role = useAdminStore(s => s.role())
   const counts = useAdminStore(s => s.counts)
+  const closedGroups = useAdminStore(s => s.closedNavGroups)
+  const toggleGroup = useAdminStore(s => s.toggleNavGroup)
+  const { pathname } = useLocation()
   const items = navItemsFor(role)
+  // The band holding the current screen never folds away under you.
+  const activeGroup = navItemForPath(pathname)?.group
+  const badgeFor = item => counts[BADGE_KEY[item.path]] || 0
+
+  const bands = NAV_GROUPS
+    .map(group => ({ ...group, items: items.filter(item => item.group === group.id) }))
+    .filter(group => group.items.length)
 
   return (
     <nav className="flex-1 adm-scroll overflow-y-auto px-3 py-3">
-      {NAV_GROUPS.map(group => {
-        const groupItems = items.filter(item => item.group === group.id)
-        if (!groupItems.length) return null
+      {bands.map((group, index) => {
+        const foldable = expanded && group.label
+        const open = !foldable || group.id === activeGroup || !closedGroups.includes(group.id)
+        const pending = group.items.reduce((sum, item) => sum + badgeFor(item), 0)
+        const listId = `adm-nav-${group.id}`
 
         return (
-          <div key={group.id} className="mb-4 last:mb-0">
-            {expanded ? (
-              <p className="adm-eyebrow px-3 mb-2">{group.label}</p>
+          <div key={group.id} className="mb-3 last:mb-0">
+            {foldable ? (
+              <button
+                type="button"
+                onClick={() => toggleGroup(group.id)}
+                disabled={group.id === activeGroup}
+                aria-expanded={open}
+                aria-controls={listId}
+                className="adm-nav-group w-full flex items-center gap-2 px-3 mb-1"
+              >
+                <span className="adm-eyebrow flex-1 text-left">{group.label}</span>
+                {!open && pending > 0 && <Badge count={pending} />}
+                {group.id !== activeGroup && (
+                  <ChevronDown
+                    size={14}
+                    className="shrink-0"
+                    style={{ transform: open ? 'none' : 'rotate(-90deg)', transition: 'transform 0.16s ease' }}
+                    aria-hidden="true"
+                  />
+                )}
+              </button>
             ) : (
-              <div
-                className="mx-3 mb-2"
-                style={{ height: 1, background: 'var(--adm-trace)' }}
-                aria-hidden="true"
-              />
+              !expanded && index > 0 && (
+                <div className="mx-3 mb-2" style={{ height: 1, background: 'var(--adm-trace)' }} aria-hidden="true" />
+              )
             )}
-            <ul className="space-y-0.5">
-              {groupItems.map(item => {
-                const Icon = ICONS[item.icon] || Gauge
-                const badge = counts[BADGE_KEY[item.path]] || 0
-                return (
-                  <li key={item.path}>
-                    <NavLink
-                      to={item.path}
-                      end={item.end}
-                      onClick={onNavigate}
-                      className="adm-nav-link"
-                      style={{ justifyContent: expanded ? 'flex-start' : 'center', paddingInline: expanded ? 12 : 0 }}
-                      title={expanded ? undefined : item.label}
-                    >
-                      <span className="relative shrink-0 flex">
-                        <Icon size={18} />
-                        {/* Collapsed rail keeps the signal without the number. */}
-                        {!expanded && badge > 0 && (
-                          <span
-                            className="absolute -top-1 -right-1.5 rounded-full"
-                            style={{ width: 6, height: 6, background: 'var(--adm-wait)' }}
-                            aria-hidden="true"
-                          />
-                        )}
-                      </span>
-                      {expanded && (
-                        <>
-                          <span className="flex-1 adm-truncate">{item.label}</span>
-                          {badge > 0 && (
-                            <span
-                              className="adm-data text-[11px] px-1.5 rounded-md shrink-0"
-                              style={{ background: 'var(--adm-wait-wash)', color: 'var(--adm-wait)' }}
-                            >
-                              {badge}
-                            </span>
-                          )}
-                        </>
-                      )}
-                      {!expanded && <span className="sr-only">{item.label}</span>}
-                    </NavLink>
-                  </li>
-                )
-              })}
-            </ul>
+            <AnimatePresence initial={false}>
+              {open && (
+                <motion.ul
+                  id={listId}
+                  key="items"
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.16, ease: 'easeOut' }}
+                  className="space-y-0.5 overflow-hidden"
+                  // The active trace pokes left past the list edge; keep it visible.
+                  style={{ marginLeft: -13, paddingLeft: 13 }}
+                >
+                  {group.items.map(item => (
+                    <NavItem key={item.path} item={item} expanded={expanded} badge={badgeFor(item)} onNavigate={onNavigate} />
+                  ))}
+                </motion.ul>
+              )}
+            </AnimatePresence>
           </div>
         )
       })}

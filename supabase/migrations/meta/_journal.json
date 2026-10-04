@@ -120,6 +120,20 @@
       "when": 1791140277482,
       "tag": "0016_review_teams",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1791150882589,
+      "tag": "0017_member_roles_builtin",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1791151924284,
+      "tag": "0018_drop_public_signup_inserts",
+      "breakpoints": true
     }
   ]
 }

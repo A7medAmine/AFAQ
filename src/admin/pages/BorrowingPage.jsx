@@ -10,8 +10,7 @@ import Button from '../components/ui/Button'
 import ExportMenu from '../components/ui/ExportMenu'
 import { StatusBadge } from '../components/ui/Badge'
 import { TextArea, TextField } from '../components/ui/Field'
-import QrScanner from '../components/ui/QrScanner'
-import SearchPicker, { normalizeCode } from '../components/ui/SearchPicker'
+import SearchPicker from '../components/ui/SearchPicker'
 import { formatDate, formatDateTime } from '../lib/format'
 
 const TABS = [
@@ -77,7 +76,7 @@ export default function BorrowingPage() {
       <PageHeader
         eyebrow="Operate"
         title="Borrowing"
-        description="Check tools and equipment in and out. Search by name, type a code, or scan the item's label and the member's card."
+        description="Check tools and equipment in and out. Type the item or member name, or scan the label or card with a barcode scanner."
         actions={tab === 'history' && (
           <ExportMenu
             filename={`borrowing-history-${new Date().toISOString().slice(0, 10)}`}
@@ -157,7 +156,6 @@ function CheckOutForm({ items, members, loading, onDone }) {
   const [borrower, setBorrower] = useState(null)
   const [expectedReturn, setExpectedReturn] = useState('')
   const [note, setNote] = useState('')
-  const [scanning, setScanning] = useState(null)
   const [busy, setBusy] = useState(false)
 
   // Available items first so the suggestions lead with what can be lent.
@@ -165,21 +163,6 @@ function CheckOutForm({ items, members, loading, onDone }) {
     () => [...items].sort((a, b) => (a.status === 'available' ? 0 : 1) - (b.status === 'available' ? 0 : 1)),
     [items]
   )
-
-  const onScanned = raw => {
-    const code = normalizeCode(raw)
-    if (scanning === 'item') {
-      const match = items.find(i => i.asset_code?.toUpperCase() === code)
-      if (!match) addToast(`No item with code ${code}.`, 'error')
-      else if (match.status !== 'available') addToast(`${match.name} is not available (${match.status}).`, 'error')
-      else setItem(match)
-    } else {
-      const match = members.find(m => m.member_code?.toUpperCase() === code)
-      if (match) setBorrower(match)
-      else addToast(`No member with code ${code}.`, 'error')
-    }
-    setScanning(null)
-  }
 
   const submit = async e => {
     e.preventDefault()
@@ -235,7 +218,6 @@ function CheckOutForm({ items, members, loading, onDone }) {
           getSearchText={itemText}
           renderOption={i => <ItemOption item={i} />}
           isDisabled={i => (i.status !== 'available' ? i.status : null)}
-          onScan={() => setScanning('item')}
           emptyText="No item matches. Add it from Inventory first."
           autoFocus
         />
@@ -249,7 +231,6 @@ function CheckOutForm({ items, members, loading, onDone }) {
           getCode={memberCode}
           getSearchText={memberText}
           renderOption={m => <MemberOption member={m} />}
-          onScan={() => setScanning('member')}
           onFreeText={name => setBorrower({ id: `guest:${name}`, full_name: name, guest: true })}
           freeTextLabel={name => `Lend to “${name}” (not a member)`}
           emptyText="No member matches."
@@ -264,13 +245,6 @@ function CheckOutForm({ items, members, loading, onDone }) {
         <TextArea label="Condition notes" value={note} onChange={e => setNote(e.target.value)} placeholder="Working, minor scuff on the case…" />
         <Button type="submit" variant="primary" icon={PackageMinus} busy={busy} busyLabel="Checking out…" disabled={!item}>Check out</Button>
       </form>
-
-      <QrScanner
-        open={!!scanning}
-        onClose={() => setScanning(null)}
-        title={scanning === 'item' ? 'Scan item label' : 'Scan member card'}
-        onResult={onScanned}
-      />
     </Panel>
   )
 }
@@ -302,7 +276,6 @@ function ReturnForm({ loans, items, loading, onDone }) {
   const addToast = useAdminStore(s => s.addToast)
   const [loan, setLoan] = useState(null)
   const [note, setNote] = useState('')
-  const [scanning, setScanning] = useState(false)
   const [busy, setBusy] = useState(false)
 
   // Items marked borrowed with no open record (a half-finished checkout) were
@@ -314,14 +287,6 @@ function ReturnForm({ loans, items, loading, onDone }) {
       .map(i => ({ id: `orphan:${i.id}`, orphan: true, item_id: i.id, item: i, status: 'active', computedStatus: 'active' }))
     return [...loans, ...orphans]
   }, [loans, items])
-
-  const onScanned = raw => {
-    const code = normalizeCode(raw)
-    const match = options.find(l => l.item?.asset_code?.toUpperCase() === code)
-    if (match) setLoan(match)
-    else addToast(`Nothing checked out with code ${code}.`, 'error')
-    setScanning(false)
-  }
 
   const submit = async e => {
     e.preventDefault()
@@ -357,7 +322,6 @@ function ReturnForm({ loans, items, loading, onDone }) {
           getCode={loanCode}
           getSearchText={loanText}
           renderOption={l => <LoanOption loan={l} />}
-          onScan={() => setScanning(true)}
           emptyText={options.length ? 'No borrowed item matches.' : 'Nothing is checked out right now.'}
           limit={20}
           autoFocus
@@ -365,13 +329,6 @@ function ReturnForm({ loans, items, loading, onDone }) {
         <TextArea label="Return condition notes" value={note} onChange={e => setNote(e.target.value)} placeholder="Returned in good condition…" />
         <Button type="submit" variant="primary" icon={PackageCheck} busy={busy} busyLabel="Returning…" disabled={!loan}>Mark returned</Button>
       </form>
-
-      <QrScanner
-        open={scanning}
-        onClose={() => setScanning(false)}
-        title="Scan item label"
-        onResult={onScanned}
-      />
     </Panel>
   )
 }

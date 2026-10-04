@@ -17,19 +17,50 @@ export const POSITION_TITLES = [
   { value: 'advisor', label: 'Advisor' },
 ]
 
+// Names the club gave built-in offices (member_roles rows with builtin_key),
+// keyed by office value. Filled by rememberRoleNames wherever member_roles is
+// loaded, so positionLabel reads the same on every page without threading it.
+let renamedOffices = {}
+
+function officeNames(rows) {
+  return Object.fromEntries(rows.filter(r => r.builtin_key).map(r => [r.builtin_key, r]))
+}
+
+/** Record the club's renamed offices from rows of member_roles. */
+export function rememberRoleNames(rows = []) {
+  renamedOffices = Object.fromEntries(Object.entries(officeNames(rows)).map(([key, r]) => [key, r.name]))
+}
+
+/**
+ * Built-in offices with the club's names applied. `defaultLabel` keeps the
+ * original name; `renameId` is the member_roles row holding the new one.
+ * Pass rows of member_roles to read names from them instead of the remembered ones.
+ */
+export function officeOptions(rows) {
+  const named = rows ? officeNames(rows) : null
+  return POSITION_TITLES.map(p => {
+    const row = named?.[p.value]
+    const label = named ? row?.name : renamedOffices[p.value]
+    return { ...p, label: label || p.label, defaultLabel: p.label, renameId: row?.id }
+  })
+}
+
 export function positionLabel(title) {
-  return POSITION_TITLES.find(p => p.value === title)?.label || title || '—'
+  return officeOptions().find(p => p.value === title)?.label || title || '—'
 }
 
 /**
  * Built-in offices followed by the club's custom roles (rows of member_roles).
  * A custom role's value is its name, which is what member_positions.title stores.
+ * Rows with builtin_key only rename an office; they are not roles of their own.
  */
 export function roleOptions(customRoles = []) {
+  const offices = officeOptions(customRoles)
   const custom = customRoles
-    .filter(r => !POSITION_TITLES.some(p => p.value === r.name || p.label.toLowerCase() === r.name.toLowerCase()))
+    .filter(r => !r.builtin_key)
+    .filter(r => !offices.some(p => p.value === r.name || p.label.toLowerCase() === r.name.toLowerCase()))
     .map(r => ({ value: r.name, label: r.name, id: r.id }))
-  return [...POSITION_TITLES, ...custom]
+  return [...offices, ...custom]
 }
 
 export function positionRank(title) {
@@ -92,6 +123,16 @@ export function sortPositions(positions = []) {
     if (ca) return positionRank(a.title) - positionRank(b.title)
     return (b.term_start || '').localeCompare(a.term_start || '')
   })
+}
+
+/** What a member does, for printed cards and badges: "President · Robotics". */
+export function memberRoleLine(member) {
+  const current = sortPositions(member.member_positions || []).filter(p => isCurrentTerm(p))
+  if (current.length) {
+    const p = current[0]
+    return `${positionLabel(p.title)}${p.team ? ` · ${p.team}` : ''}`
+  }
+  return member.team ? `${member.team} team` : member.department || 'Member'
 }
 
 /** "a, b , c" → ['a', 'b', 'c'] for the free-text tag fields. */
