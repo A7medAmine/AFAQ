@@ -9,6 +9,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "start": "npm run build && node server.js",
+    "parts:build": "node scripts/buildPartsCatalog.js",
     "migrate:uploads": "node scripts/migrateUploadsToSupabase.js",
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit generate && drizzle-kit migrate",

@@ -17,6 +17,7 @@ import ExportMenu from '../components/ui/ExportMenu'
 import { StatusBadge } from '../components/ui/Badge'
 import Panel from '../components/ui/Panel'
 import { SelectField, TextArea, TextField } from '../components/ui/Field'
+import PartNameField from '../components/inventory/PartNameField'
 
 const FILTERS = [
   { value: 'all', label: 'All' },
@@ -213,7 +214,7 @@ export default function InventoryPage() {
         )}
       </Drawer>
 
-      <AddItem open={addOpen} onClose={() => setAddOpen(false)} onAdded={load} />
+      <AddItem open={addOpen} onClose={() => setAddOpen(false)} onAdded={load} existing={rows} />
 
       <ConfirmDialog
         open={!!remove}
@@ -273,17 +274,30 @@ const DIGIKEY_SCOPES = [
 
 const CATEGORIES = ['Electronics', 'Tools', 'Lab equipment', 'Furniture', 'Consumables', 'Other']
 
-function AddItem({ open, onClose, onAdded }) {
+function AddItem({ open, onClose, onAdded, existing }) {
   const blank = { name: '', category: 'Electronics', serial: '', condition: 'good', location: '', value: '', notes: '', photo_url: '' }
   const [form, setForm] = useState(blank)
   const [errors, setErrors] = useState({})
   const [saving, setSaving] = useState(false)
+  const [digikeyRequest, setDigikeyRequest] = useState(null)
 
-  useEffect(() => { if (open) { setForm(blank); setErrors({}) } }, [open]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (open) { setForm(blank); setErrors({}); setDigikeyRequest(null) } }, [open]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const set = (key, value) => {
     setForm(f => ({ ...f, [key]: value }))
     setErrors(e => ({ ...e, [key]: undefined }))
+  }
+
+  /** A suggestion from PartNameField: our own stock or the offline parts catalog. */
+  const applyPart = part => {
+    setForm(f => ({
+      ...f,
+      name: part.name,
+      category: CATEGORIES.includes(part.category) ? part.category : f.category,
+      photo_url: part.image || f.photo_url,
+      notes: f.notes.trim() ? f.notes : [part.description, part.specs].filter(Boolean).join('\n'),
+    }))
+    setErrors({})
   }
 
   const applyProduct = p => {
@@ -352,9 +366,16 @@ function AddItem({ open, onClose, onAdded }) {
       }
     >
       <div className="space-y-4">
-        <DigiKeySearch open={open} onPick={applyProduct} />
-        <TextField label="Name" required value={form.name} error={errors.name}
-          onChange={e => set('name', e.target.value)} placeholder="Arduino Uno R3" />
+        <PartNameField
+          value={form.name}
+          error={errors.name}
+          existing={existing}
+          placeholder="Arduino Uno, ESP32, HC-SR04, multimeter…"
+          onChange={name => set('name', name)}
+          onPick={applyPart}
+          onSearchOnline={q => setDigikeyRequest({ q, at: Date.now() })}
+        />
+        <DigiKeySearch open={open} request={digikeyRequest} onPick={applyProduct} />
         <div className="grid sm:grid-cols-2 gap-4">
           <SelectField label="Category" value={form.category} onChange={e => set('category', e.target.value)}>
             {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
@@ -376,7 +397,8 @@ function AddItem({ open, onClose, onAdded }) {
 }
 
 /** Looks parts up through our /api/digikey proxy; picking one prefills the form. */
-function DigiKeySearch({ open, onPick }) {
+function DigiKeySearch({ open, request, onPick }) {
+  const [expanded, setExpanded] = useState(false)
   const [query, setQuery] = useState('')
   const [scope, setScope] = useState('boards')
   const [results, setResults] = useState([])
@@ -384,17 +406,25 @@ function DigiKeySearch({ open, onPick }) {
   const [state, setState] = useState({ loading: false, error: null, searched: false })
 
   useEffect(() => {
-    if (open) { setQuery(''); setScope('boards'); setResults([]); setPicked(null); setState({ loading: false, error: null, searched: false }) }
+    if (open) { setExpanded(false); setQuery(''); setScope('boards'); setResults([]); setPicked(null); setState({ loading: false, error: null, searched: false }) }
   }, [open])
 
-  const search = async (inScope = scope) => {
-    const q = query.trim()
+  const search = async (inScope = scope, text = query) => {
+    const q = text.trim()
     if (q.length < 2) return
     setState({ loading: true, error: null, searched: true })
     const { ok, data, message } = await api(`/api/digikey/search?q=${encodeURIComponent(q)}&limit=8&scope=${inScope}`)
     setResults(ok ? data.products : [])
     setState({ loading: false, error: ok ? null : message, searched: true })
   }
+
+  // "Search DigiKey for …" in the name suggestions lands here.
+  useEffect(() => {
+    if (!request) return
+    setExpanded(true)
+    setQuery(request.q)
+    search(scope, request.q)
+  }, [request]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Re-run the current search when the scope flips, so results match the tab.
   const changeScope = value => {
@@ -403,6 +433,15 @@ function DigiKeySearch({ open, onPick }) {
   }
 
   const pick = p => { setPicked(p.digikeyNumber || p.partNumber); onPick(p) }
+
+  if (!expanded) {
+    return (
+      <button type="button" className="text-[12.5px] underline underline-offset-2" style={{ color: 'var(--adm-silk-dim)' }}
+        onClick={() => setExpanded(true)}>
+        Not in the suggestions? Search DigiKey
+      </button>
+    )
+  }
 
   return (
     <div className="rounded-lg p-3 space-y-3" style={{ background: 'var(--adm-panel-raise)' }}>
