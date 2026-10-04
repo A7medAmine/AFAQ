@@ -1,0 +1,454 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AFAQ Opening Brochure</title>
+<style>
+  @font-face { font-family: "Thmanyah Sans"; src: url("../brand/fonts/thmanyahsans-Regular.woff2") format("woff2"); font-weight: 400; }
+  @font-face { font-family: "Thmanyah Sans"; src: url("../brand/fonts/thmanyahsans-Bold.woff2") format("woff2"); font-weight: 700; }
+  @font-face { font-family: "Thmanyah Sans"; src: url("../brand/fonts/thmanyahsans-Black.woff2") format("woff2"); font-weight: 900; }
+  @font-face { font-family: "Minecraft"; src: url("../brand/fonts/Minecraft.woff2") format("woff2"); }
+  @font-face { font-family: "Unixel"; src: url("../brand/fonts/unixel-Regular.ttf") format("truetype"); }
+
+  :root {
+    --midnight: #050A30;
+    --deep-blue: #12229D;
+    --afaq-blue: #233DFF;
+    --slate: #3C4C59;
+    --sky: #5CBCF9;
+    --ice: #CAE8FF;
+    --cloud: #F4F6FC;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    min-height: 100vh;
+    padding: 32px 16px 48px;
+    background: #d9dfee;
+    font-family: "Thmanyah Sans", system-ui, sans-serif;
+    color: var(--midnight);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .label {
+    font-family: "Minecraft", monospace;
+    direction: ltr;
+    font-size: 13px;
+    letter-spacing: 2px;
+    color: var(--slate);
+    margin-top: 18px;
+  }
+
+  /* A4 landscape sheet, folded into three panels */
+  .sheet {
+    width: min(100%, 1120px);
+    aspect-ratio: 297 / 210;
+    container-type: inline-size;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    background: var(--cloud);
+    box-shadow: 0 30px 80px rgba(5, 10, 48, .3);
+    overflow: hidden;
+  }
+  .panel {
+    position: relative;
+    overflow: hidden;
+    padding: 2.6cqw 2.4cqw;
+    display: flex;
+    flex-direction: column;
+  }
+  /* fold guides, screen only */
+  .panel + .panel { box-shadow: inset -1px 0 0 rgba(60, 76, 89, .15); }
+  .sheet .panel:not(:last-child)::after {
+    content: "";
+    position: absolute;
+    top: 0; bottom: 0; left: 0;
+    border-left: 1px dashed rgba(92, 188, 249, .5);
+  }
+
+  .dark {
+    color: var(--cloud);
+    background:
+      radial-gradient(120% 60% at 90% 0%, rgba(35, 61, 255, .55), transparent 60%),
+      radial-gradient(90% 50% at 0% 100%, rgba(92, 188, 249, .22), transparent 65%),
+      var(--midnight);
+  }
+  .dark::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(202, 232, 255, .06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(202, 232, 255, .06) 1px, transparent 1px);
+    background-size: 1.4cqw 1.4cqw;
+    mask-image: linear-gradient(to bottom, #000, transparent 70%);
+    pointer-events: none;
+  }
+  .panel > * { position: relative; }
+
+  .pix {
+    font-family: "Minecraft", monospace;
+    direction: ltr;
+    text-align: right;
+    letter-spacing: .15cqw;
+    font-size: .95cqw;
+    color: var(--afaq-blue);
+  }
+  .dark .pix { color: var(--sky); }
+
+  h2 {
+    font-weight: 900;
+    font-size: 2.2cqw;
+    line-height: 1.2;
+    margin-top: .5cqw;
+  }
+  h2::after {
+    content: "";
+    display: block;
+    width: 3cqw;
+    height: .45cqw;
+    margin-top: .9cqw;
+    background: var(--afaq-blue);
+    box-shadow: .45cqw .45cqw 0 var(--sky);
+  }
+  h3 { font-weight: 900; font-size: 1.3cqw; }
+  p { font-size: 1.2cqw; line-height: 1.75; }
+  .muted { color: var(--slate); }
+  .dark .muted { color: var(--ice); }
+
+  /* ---------- outside: cover ---------- */
+  .cover .mark-bg {
+    position: absolute;
+    width: 42cqw;
+    left: -17cqw;
+    top: 7cqw;
+    opacity: .07;
+  }
+  .cover .horizon {
+    position: absolute;
+    left: -40%;
+    right: -40%;
+    top: 62%;
+    height: 50cqw;
+    border-radius: 50%;
+    border-top: .25cqw solid var(--sky);
+    box-shadow: 0 -1cqw 4cqw rgba(92, 188, 249, .35), inset 0 1.5cqw 5cqw rgba(35, 61, 255, .45);
+    background: linear-gradient(to bottom, rgba(18, 34, 157, .55), var(--midnight) 40%);
+  }
+  .brand { display: flex; align-items: center; gap: 1cqw; }
+  .brand img { width: 4.2cqw; height: 4.2cqw; }
+  .brand b { display: block; font-weight: 900; font-size: 1.55cqw; line-height: 1; }
+  .brand small { display: block; font-size: .85cqw; color: var(--ice); margin-top: .35cqw; }
+  .cover h1 {
+    font-family: "Unixel", "Thmanyah Sans", sans-serif;
+    font-weight: 400;
+    font-size: 5.6cqw;
+    line-height: 1.05;
+    margin-top: 6cqw;
+    text-shadow: .3cqw .3cqw 0 var(--afaq-blue);
+  }
+  .cover .en {
+    font-family: "Minecraft", monospace;
+    direction: ltr;
+    text-align: right;
+    font-size: 3cqw;
+    margin-top: 1cqw;
+    color: var(--ice);
+  }
+  .cover .tagline { margin-top: 1.4cqw; font-size: 1.2cqw; color: var(--ice); }
+  .chip {
+    margin-top: auto;
+    align-self: flex-start;
+    font-weight: 900;
+    font-size: 1.2cqw;
+    color: #fff;
+    background: var(--afaq-blue);
+    padding: .7cqw 1.3cqw;
+    box-shadow: .35cqw .35cqw 0 var(--sky);
+  }
+
+  /* ---------- outside: back ---------- */
+  .back { background: var(--cloud); }
+  .contact-list { list-style: none; margin-top: 2.4cqw; display: grid; gap: 1.9cqw; }
+  .contact-list li { display: grid; gap: .2cqw; }
+  .contact-list .v { font-size: 1.35cqw; font-weight: 700; direction: ltr; text-align: right; }
+  .contact-list .v.ar { direction: rtl; }
+  .qr {
+    margin-top: auto;
+    display: flex;
+    align-items: center;
+    gap: 1.3cqw;
+    padding: 1.3cqw;
+    background: #fff;
+    border: .15cqw solid var(--ice);
+  }
+  .qr-box {
+    flex: none;
+    width: 7cqw;
+    height: 7cqw;
+    border: .2cqw dashed var(--sky);
+    display: grid;
+    place-items: center;
+    font-family: "Minecraft", monospace;
+    font-size: .9cqw;
+    color: var(--sky);
+  }
+  .qr p { font-size: 1cqw; line-height: 1.5; }
+  .qr b { display: block; font-size: 1.2cqw; }
+  .back .mini { display: flex; align-items: center; gap: .8cqw; margin-top: 1.6cqw; }
+  .back .mini img { width: 2.4cqw; }
+  .back .mini span { font-size: .9cqw; color: var(--slate); }
+
+  /* ---------- outside: inside flap ---------- */
+  .flap { background: var(--ice); }
+  .flap blockquote {
+    font-family: "Thmanyah Sans", sans-serif;
+    font-weight: 900;
+    font-size: 3cqw;
+    line-height: 1.3;
+    margin-top: 3cqw;
+    color: var(--deep-blue);
+  }
+  .flap .points { list-style: none; margin-top: auto; display: grid; gap: .9cqw; }
+  .flap .points li, .why li {
+    display: flex;
+    gap: .9cqw;
+    align-items: baseline;
+    font-size: 1.25cqw;
+    font-weight: 700;
+  }
+  .flap .points li::before, .why li::before {
+    content: "";
+    flex: none;
+    width: .7cqw;
+    height: .7cqw;
+    background: var(--afaq-blue);
+    box-shadow: .3cqw .3cqw 0 var(--sky);
+    transform: translateY(-.1cqw);
+  }
+
+  /* ---------- inside ---------- */
+  .about .cards { display: grid; gap: 1.4cqw; margin-top: 2.2cqw; }
+  .card {
+    background: #fff;
+    border: .15cqw solid var(--ice);
+    padding: 1.2cqw 1.3cqw;
+  }
+  .card h3 { color: var(--afaq-blue); margin-bottom: .3cqw; }
+  .card p { font-size: 1.12cqw; line-height: 1.65; }
+  .values { display: grid; grid-template-columns: 1fr 1fr; gap: .7cqw; margin-top: auto; }
+  .values span {
+    font-weight: 700;
+    font-size: 1.05cqw;
+    text-align: center;
+    padding: .7cqw;
+    background: var(--midnight);
+    color: var(--cloud);
+  }
+
+  .program-panel { background: #fff; }
+  .timeline { list-style: none; margin-top: 2.2cqw; display: grid; gap: 1.7cqw; }
+  .timeline li { display: grid; grid-template-columns: 5.4cqw 1fr; gap: 1.2cqw; align-items: start; }
+  .timeline time {
+    font-family: "Minecraft", monospace;
+    direction: ltr;
+    font-size: 1cqw;
+    text-align: center;
+    color: #fff;
+    background: var(--afaq-blue);
+    box-shadow: .25cqw .25cqw 0 var(--sky);
+    padding: .4cqw 0;
+  }
+  .timeline h3 { font-size: 1.3cqw; line-height: 1.2; }
+  .timeline p { font-size: 1.05cqw; line-height: 1.55; margin-top: .2cqw; }
+  .where {
+    margin-top: auto;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    background: var(--midnight);
+    color: var(--cloud);
+  }
+  .where div { padding: 1cqw .9cqw; }
+  .where div + div { border-inline-start: .15cqw solid rgba(202, 232, 255, .2); }
+  .where .pix { font-size: .75cqw; color: var(--sky); }
+  .where b { display: block; font-size: 1.2cqw; margin-top: .3cqw; }
+
+  .join .tracks { list-style: none; margin-top: 2cqw; display: grid; gap: 1.1cqw; }
+  .join .tracks li {
+    display: grid;
+    grid-template-columns: 2.4cqw 1fr;
+    gap: 1cqw;
+    align-items: center;
+    padding: 1cqw 1.1cqw;
+    background: rgba(244, 246, 252, .07);
+    border: .12cqw solid rgba(202, 232, 255, .2);
+  }
+  .join .tracks i {
+    font-style: normal;
+    font-family: "Minecraft", monospace;
+    font-size: 1.1cqw;
+    color: var(--midnight);
+    background: var(--sky);
+    text-align: center;
+    padding: .35cqw 0;
+  }
+  .join .tracks b { display: block; font-size: 1.3cqw; }
+  .join .tracks span { display: block; font-size: 1.02cqw; color: var(--ice); line-height: 1.5; }
+  .join .cta {
+    margin-top: auto;
+    padding: 1.3cqw 1.4cqw;
+    background: var(--afaq-blue);
+    box-shadow: .4cqw .4cqw 0 var(--sky);
+  }
+  .join .cta b { display: block; font-size: 1.5cqw; font-weight: 900; }
+  .join .cta span { display: block; font-size: 1cqw; color: var(--ice); margin-top: .2cqw; }
+  .join .cta .url { font-family: "Minecraft", monospace; direction: ltr; text-align: right; color: #fff; font-size: 1.05cqw; margin-top: .6cqw; }
+
+  @media print {
+    @page { size: A4 landscape; margin: 0; }
+    body { padding: 0; background: none; display: block; }
+    .label { display: none; }
+    .sheet {
+      width: 297mm;
+      box-shadow: none;
+      break-after: page;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    .sheet .panel:not(:last-child)::after, .panel + .panel { border: 0; box-shadow: none; }
+  }
+</style>
+</head>
+<body>
+
+  <!-- Side 1 (outside). RTL fold: cover sits on the left, flap on the right. -->
+  <div class="label">SIDE 1 · OUTSIDE</div>
+  <section class="sheet">
+
+    <!-- inside flap: first thing seen when the cover opens -->
+    <article class="panel flap">
+      <span class="pix">WHY AFAQ?</span>
+      <h2>آفاق تعني المستقبل المشرق</h2>
+      <blockquote>العلم يفتح<br>آفاقاً جديدة.</blockquote>
+      <p class="muted" style="margin-top:1.4cqw">
+        تأسس نادي آفاق العلمي على يد مجموعة من الطلاب المتحمسين في جامعة البويرة،
+        لخلق مساحة تلتقي فيها التكنولوجيا والإبداع.
+      </p>
+      <ul class="points">
+        <li>تعلّم عملي عبر مشاريع حقيقية</li>
+        <li>فريق متعدد التخصصات</li>
+        <li>ارتباط بالصناعة والخريجين</li>
+        <li>مجتمع داعم وشامل</li>
+      </ul>
+    </article>
+
+    <!-- back panel -->
+    <article class="panel back">
+      <span class="pix">CONTACT</span>
+      <h2>تواصل معنا</h2>
+      <ul class="contact-list">
+        <li><span class="pix">WEBSITE</span><span class="v">afaq-club.com</span></li>
+        <li><span class="pix">EMAIL</span><span class="v">afaq.club@univ-bouira.dz</span></li>
+        <li><span class="pix">SOCIAL</span><span class="v">[@afaq.club]</span></li>
+        <li><span class="pix">CAMPUS</span><span class="v ar">جامعة أكلي محند أولحاج، البويرة</span></li>
+      </ul>
+      <div class="qr">
+        <div class="qr-box">QR</div>
+        <p><b>سجّل الآن</b>امسح الرمز للانضمام إلى النادي عبر موقعنا.</p>
+      </div>
+      <div class="mini">
+        <img src="../brand/logo/afaq-mark-navy.svg" alt="">
+        <span>نادي آفاق العلمي · موسم 2026/27</span>
+      </div>
+    </article>
+
+    <!-- front cover -->
+    <article class="panel cover dark">
+      <img class="mark-bg" src="../brand/logo/afaq-mark-white.svg" alt="">
+      <div class="horizon"></div>
+      <header class="brand">
+        <img src="../brand/logo/afaq-mark-white.svg" alt="شعار نادي آفاق">
+        <div>
+          <b>نادي آفاق العلمي</b>
+          <small>جامعة أكلي محند أولحاج · البويرة</small>
+        </div>
+      </header>
+      <h1>اليوم<br>الافتتاحي</h1>
+      <p class="en">OPENING DAY</p>
+      <p class="tagline">حيث تلتقي التكنولوجيا بآفاق مشرقة</p>
+      <span class="chip">[التاريخ] · الدخول مجاني</span>
+    </article>
+  </section>
+
+  <!-- Side 2 (inside), read right to left -->
+  <div class="label">SIDE 2 · INSIDE</div>
+  <section class="sheet">
+
+    <!-- panel 1 (right) -->
+    <article class="panel about">
+      <span class="pix">ABOUT</span>
+      <h2>من نحن</h2>
+      <p class="muted" style="margin-top:1.3cqw">
+        نادٍ طلابي تلتقي فيه التكنولوجيا والإلكترونيات والإبداع والعمل الجماعي.
+        نوفر مساحة للطلاب للتعلم والبناء والنمو.
+      </p>
+      <div class="cards">
+        <div class="card">
+          <h3>رسالتنا</h3>
+          <p>تمكين الطلاب بالمهارات العملية في التكنولوجيا والإلكترونيات، وتعزيز الابتكار والعمل الجماعي.</p>
+        </div>
+        <div class="card">
+          <h3>رؤيتنا</h3>
+          <p>أن نصبح نادياً طلابياً رائداً يلهم الابتكار التكنولوجي ويعدّ الطلاب لتحديات الغد.</p>
+        </div>
+      </div>
+      <div class="values">
+        <span>الابتكار</span><span>العمل الجماعي</span>
+        <span>التميز</span><span>النزاهة</span>
+      </div>
+    </article>
+
+    <!-- panel 2 (middle) -->
+    <article class="panel program-panel">
+      <span class="pix">PROGRAM</span>
+      <h2>برنامج اليوم</h2>
+      <ol class="timeline">
+        <li><time>[00:00]</time><div><h3>الاستقبال</h3><p>ترحيب بالحضور وتوزيع المطويات.</p></div></li>
+        <li><time>[00:00]</time><div><h3>تقديم النادي</h3><p>من نحن، أقسامنا، وما ينتظركم هذا الموسم.</p></div></li>
+        <li><time>[00:00]</time><div><h3>عروض حيّة</h3><p>روبوتات ومشاريع إلكترونية من صنع الأعضاء.</p></div></li>
+        <li><time>[00:00]</time><div><h3>معرض المشاريع</h3><p>جولة حرة ونقاش مع فرق المشاريع.</p></div></li>
+        <li><time>[00:00]</time><div><h3>تسجيل الأعضاء</h3><p>انضم إلى القسم الذي يناسبك.</p></div></li>
+      </ol>
+      <div class="where">
+        <div><span class="pix">DATE</span><b>[التاريخ]</b></div>
+        <div><span class="pix">TIME</span><b>[الساعة]</b></div>
+        <div><span class="pix">PLACE</span><b>[القاعة]</b></div>
+      </div>
+    </article>
+
+    <!-- panel 3 (left) -->
+    <article class="panel join dark">
+      <span class="pix">WHAT WE DO</span>
+      <h2>أنشطتنا</h2>
+      <ul class="tracks">
+        <li><i>01</i><div><b>ورش العمل</b><span>أردوينو، برمجة وإلكترونيات.</span></div></li>
+        <li><i>02</i><div><b>الروبوتات</b><span>تصميم وبناء وبرمجة للمسابقات.</span></div></li>
+        <li><i>03</i><div><b>إنترنت الأشياء</b><span>أجهزة متصلة وأنظمة مدمجة.</span></div></li>
+        <li><i>04</i><div><b>الهاكاثونات</b><span>تحديات مكثفة لحل مشاكل حقيقية.</span></div></li>
+        <li><i>05</i><div><b>المسابقات</b><span>اعرض مهاراتك واربح جوائز.</span></div></li>
+      </ul>
+      <div class="cta">
+        <b>انضم إلى آفاق</b>
+        <span>التسجيل مفتوح لكل طلبة الجامعة</span>
+        <div class="url">afaq-club.com/join</div>
+      </div>
+    </article>
+  </section>
+
+</body>
+</html>

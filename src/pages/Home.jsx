@@ -8,6 +8,7 @@ import ProjectHighlights from '../components/home/ProjectHighlights'
 import GalleryPreview from '../components/home/GalleryPreview'
 import { useTranslation } from 'react-i18next'
 import { ArrowRight } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import SideImage from '../components/shared/SideImage'
 import { cn } from '../lib/utils'
 import SEO, { SITE_NAME, SITE_URL } from '../components/SEO'
@@ -34,13 +35,13 @@ function CTASection() {
             <p className="text-base md:text-lg mb-8 leading-relaxed" style={{ color: 'rgba(255,255,255,0.7)' }}>
               {t('cta.sub')}
             </p>
-            <a href="/register"
+            <Link to="/register"
               className="inline-flex items-center gap-2 px-8 py-3.5 rounded-[100px] font-semibold text-base transition-all duration-200"
               style={{ background: '#fff', color: '#0A1628' }}
               onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 28px rgba(0,0,0,0.2)' }}
               onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none' }}>
               {t('hero.cta1')} <ArrowRight size={18} />
-            </a>
+            </Link>
           </motion.div>
         </div>
       </div>

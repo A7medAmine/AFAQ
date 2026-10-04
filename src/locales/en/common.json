@@ -33,7 +33,7 @@
   "progres": {
     "button": "🎓 Fill with Progres Account",
     "title": "Sign in with your Progres account",
-    "subtitle": "Your credentials are sent to <strong>mesrs.dz</strong> and <red>never stored.</red>",
+    "subtitle": "Your credentials pass through our server only to sign you in at <strong>mesrs.dz</strong>, and are <red>never stored.</red>",
     "usernameLabel": "Progres Username",
     "passwordLabel": "Password",
     "submit": "Auto-fill",

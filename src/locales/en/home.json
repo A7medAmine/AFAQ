@@ -56,6 +56,8 @@
     "title": "Upcoming Events",
     "viewAll": "View All Events",
     "upcoming": "Upcoming",
+    "register": "Register",
+    "details": "See details",
     "noEvents": "No upcoming events at the moment. Stay tuned!"
   },
   "projects": {

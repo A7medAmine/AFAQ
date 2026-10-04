@@ -2,8 +2,9 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import { Link, useSearchParams } from 'react-router-dom'
-import { AlertCircle, ArrowLeft, CalendarDays, Check, MapPin, Send } from 'lucide-react'
+import { AlertCircle, ArrowLeft, ArrowRight, CalendarDays, Check, MapPin, Send } from 'lucide-react'
 import { supabase } from '../lib/supabase'
+import { clearProfile, loadProfile, saveProfile } from '../lib/savedProfile'
 import SideImage from '../components/shared/SideImage'
 import ProgresButton from '../components/registration/ProgresButton'
 import AddToCalendar from '../components/shared/AddToCalendar'
@@ -34,11 +35,14 @@ const sameId = (a, b) => String(a) === String(b)
 
 export default function Registration() {
   const { t, i18n } = useTranslation('register')
+  const { t: tc } = useTranslation('common')
   const lang = i18n.language
   const [params, setParams] = useSearchParams()
   const eventParam = params.get('event')
 
-  const [form, setForm] = useState(initialForm)
+  // A returning student starts with the details from their last sign-up.
+  const [savedProfile, setSavedProfile] = useState(loadProfile)
+  const [form, setForm] = useState(() => ({ ...initialForm, ...savedProfile }))
   const [status, setStatus] = useState('idle')
   const [errors, setErrors] = useState({})
   const [shaking, setShaking] = useState(null)
@@ -170,6 +174,12 @@ export default function Registration() {
     }, { replace: true })
   }
 
+  const forgetProfile = () => {
+    clearProfile()
+    setSavedProfile(null)
+    setForm(f => ({ ...initialForm, event_id: f.event_id }))
+  }
+
   const handleProgresSuccess = data => {
     const patch = {}
     if (data.userName || data.student_id) patch.student_id = data.userName || data.student_id
@@ -247,17 +257,16 @@ export default function Registration() {
       return
     }
 
-    const eventTitle = tField(selectedEvent, 'title')
-    const eventDate = selectedEvent?.date
-      ? new Date(`${selectedEvent.date}T00:00:00`).toLocaleDateString()
-      : ''
+    saveProfile(form)
+    setSavedProfile(loadProfile())
 
+    const eventTitle = tField(selectedEvent, 'title')
     setSubmitted({ event: eventTitle, email, eventId: selectedEvent?.id })
     setStatus('success')
   }
 
   const registerAnother = () => {
-    setForm(initialForm)
+    setForm({ ...initialForm, ...savedProfile })
     setErrors({})
     setFormError('')
     setSubmitted(null)
@@ -272,7 +281,7 @@ export default function Registration() {
       <section className="pt-24 pb-16 md:pt-32 md:pb-20" style={{ background: 'var(--color-bg-alt)' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={spring} className="eyebrow eyebrow-center mb-4">
-            {t('hero.title')}
+            {t('form.title')}
           </motion.div>
           <motion.h1 initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ ...spring, delay: 0.1 }} className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4">
             {t('hero.title')}
@@ -320,6 +329,18 @@ export default function Registration() {
                 >
                   {t('form.registerAnother')}
                 </button>
+                <div className="mt-8 pt-6" style={{ borderTop: '1px solid var(--color-border)' }}>
+                  <p className="text-sm mb-2" style={{ color: 'var(--color-text-muted)' }}>
+                    {t('form.joinNudge')}
+                  </p>
+                  <Link
+                    to="/join"
+                    className="inline-flex items-center gap-1.5 text-sm font-semibold"
+                    style={{ color: 'var(--color-accent)' }}
+                  >
+                    {t('form.joinCta')} <ArrowRight size={14} className="rtl:rotate-180" />
+                  </Link>
+                </div>
               </motion.div>
             ) : (
               /* A real <form>, so Enter submits and browsers offer autofill —
@@ -383,7 +404,7 @@ export default function Registration() {
                       const left = cap ? Math.max(0, cap - (seats[e.id] || 0)) : null
                       return (
                         <option key={e.id} value={e.id} disabled={left === 0}>
-                          {title}{date ? ` — ${date}` : ''}{left === 0 ? ' (full)' : ''}
+                          {title}{date ? ` — ${date}` : ''}{left === 0 ? ` (${t('form.full')})` : ''}
                         </option>
                       )
                     })}
@@ -392,6 +413,38 @@ export default function Registration() {
 
                 {events.length > 0 && (
                   <>
+                    {savedProfile && !showAutoFillBanner ? (
+                      <p className="text-sm flex flex-wrap items-center justify-between gap-2" style={{ color: 'var(--color-text-muted)' }}>
+                        <span>{t('form.welcomeBack', { name: savedProfile.full_name || savedProfile.email })}</span>
+                        <button
+                          type="button"
+                          onClick={forgetProfile}
+                          className="text-xs font-semibold"
+                          style={{ color: 'var(--color-accent)' }}
+                        >
+                          {t('form.notYou')}
+                        </button>
+                      </p>
+                    ) : (
+                      <div className="text-center">
+                        <ProgresButton onSuccess={handleProgresSuccess} />
+                        {showAutoFillBanner ? (
+                          <motion.p
+                            initial={{ opacity: 0, y: -4 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="text-sm mt-3"
+                            style={{ color: '#16A34A' }}
+                          >
+                            {tc('progres.banner')}
+                          </motion.p>
+                        ) : (
+                          <p className="text-xs mt-3" style={{ color: 'var(--color-text-muted)' }}>
+                            {t('form.orManual')}
+                          </p>
+                        )}
+                      </div>
+                    )}
+
                     <TextField
                       label={t('form.fullName')} required autoComplete="name"
                       value={form.full_name} error={errors.full_name} shake={shaking === 'full_name'}
@@ -466,19 +519,6 @@ export default function Registration() {
                       {status === 'loading' ? t('form.submitting') : t('form.submit')}
                     </motion.button>
 
-                    <div className="text-center">
-                      <ProgresButton onSuccess={handleProgresSuccess} />
-                      {showAutoFillBanner && (
-                        <motion.p
-                          initial={{ opacity: 0, y: -4 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          className="text-sm mt-3"
-                          style={{ color: '#16A34A' }}
-                        >
-                          ✓ Form filled from your Progres account — please review before submitting.
-                        </motion.p>
-                      )}
-                    </div>
                   </>
                 )}
               </form>

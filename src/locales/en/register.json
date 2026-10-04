@@ -35,7 +35,13 @@
     "successTitle": "You are on the list",
     "successBody": "We have your registration for {{event}}. Once a club admin approves it, your entry pass arrives at {{email}}.",
     "registerAnother": "Register for another event",
-    "networkError": "We could not reach the server. Check your connection and try again."
+    "networkError": "We could not reach the server. Check your connection and try again.",
+    "full": "full",
+    "welcomeBack": "Welcome back, {{name}}. Your details are filled in from last time.",
+    "notYou": "Not you? Clear",
+    "orManual": "or fill in the form yourself",
+    "joinNudge": "Not a member yet? Join AFAQ to work on projects with the team.",
+    "joinCta": "Become a member"
   },
   "departments": {
     "fsas": "Faculty of Sciences and Applied Sciences",

@@ -8,6 +8,7 @@ import {
   FormError, SelectField, TextAreaField, TextField,
 } from '../components/forms/Field'
 import SEO from '../components/SEO'
+import { loadProfile, saveProfile } from '../lib/savedProfile'
 
 const spring = { type: 'spring', damping: 22, stiffness: 200 }
 const fastSpring = { type: 'spring', damping: 16, stiffness: 300 }
@@ -42,7 +43,8 @@ export default function JoinUs() {
     return () => { alive = false }
   }, [])
   const [step, setStep] = useState(0)
-  const [form, setForm] = useState(initialForm)
+  // Someone who already registered for an event doesn't retype their details.
+  const [form, setForm] = useState(() => ({ ...initialForm, ...loadProfile() }))
   const [status, setStatus] = useState('idle')
   const [errors, setErrors] = useState({})
   const [formError, setFormError] = useState('')
@@ -164,6 +166,7 @@ export default function JoinUs() {
       return
     }
 
+    saveProfile(form)
     setStatus('success')
     setForm(initialForm)
   }
@@ -462,7 +465,7 @@ export default function JoinUs() {
                       className="text-sm mt-3"
                       style={{ color: '#16A34A' }}
                     >
-                      ✓ Form filled from your Progres account — please review before submitting.
+                      {t('progres.banner', { ns: 'common' })}
                     </motion.p>
                   )}
                 </div> */}

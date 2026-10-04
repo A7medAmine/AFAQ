@@ -26,7 +26,7 @@
   "progres": {
     "button": "🎓 Remplir avec le compte Progres",
     "title": "Connectez-vous avec votre compte Progres",
-    "subtitle": "Vos identifiants sont envoyés à <strong>mesrs.dz</strong> et <red>jamais stockés.</red>",
+    "subtitle": "Vos identifiants passent par notre serveur uniquement pour vous connecter à <strong>mesrs.dz</strong>, et ne sont <red>jamais stockés.</red>",
     "usernameLabel": "Identifiant Progres",
     "passwordLabel": "Mot de passe",
     "submit": "Auto-remplir",

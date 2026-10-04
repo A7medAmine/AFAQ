@@ -35,7 +35,13 @@
     "successTitle": "Votre inscription est enregistree",
     "successBody": "Nous avons votre inscription à {{event}}. Dès qu'un administrateur la valide, votre pass arrive à {{email}}.",
     "registerAnother": "S’inscrire à un autre evenement",
-    "networkError": "Impossible de joindre le serveur. Verifiez votre connexion et reessayez."
+    "networkError": "Impossible de joindre le serveur. Verifiez votre connexion et reessayez.",
+    "full": "complet",
+    "welcomeBack": "Bon retour, {{name}}. Vos informations ont été reprises de votre dernière inscription.",
+    "notYou": "Ce n’est pas vous ? Effacer",
+    "orManual": "ou remplissez le formulaire vous-même",
+    "joinNudge": "Pas encore membre ? Rejoignez AFAQ pour travailler sur des projets avec l’équipe.",
+    "joinCta": "Devenir membre"
   },
   "departments": {
     "fsas": "Faculte des Sciences et Sciences Appliquees",

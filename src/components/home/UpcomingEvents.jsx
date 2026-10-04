@@ -78,9 +78,9 @@ export default function UpcomingEvents() {
                     <div className="flex items-center gap-3 text-xs mb-5" style={{ color: 'var(--color-text-muted)' }}>
                       <span className="flex items-center gap-1.5"><MapPin size={12} /> {tField(e, 'location')}</span>
                     </div>
-                    <Link to="/register" className="inline-flex items-center justify-center px-5 py-2.5 rounded-2xl font-semibold text-sm transition-all duration-200"
+                    <Link to={e.registration_open ? `/register?event=${e.id}` : '/events'} className="inline-flex items-center justify-center px-5 py-2.5 rounded-2xl font-semibold text-sm transition-all duration-200"
                       style={{ background: '#0F172A', color: '#fff', alignSelf: 'flex-start' }}>
-                      {t('upcomingEvents.upcoming')} <ChevronRight size={14} />
+                      {t(e.registration_open ? 'upcomingEvents.register' : 'upcomingEvents.details')} <ChevronRight size={14} />
                     </Link>
                   </div>
                 </div>
