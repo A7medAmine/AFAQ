@@ -41,6 +41,7 @@ const GalleryPage = lazy(() => import('./admin/pages/GalleryPage'))
 const MessagesPage = lazy(() => import('./admin/pages/MessagesPage'))
 const AnnouncementsPage = lazy(() => import('./admin/pages/AnnouncementsPage'))
 const LinksPage = lazy(() => import('./admin/pages/LinksPage'))
+const QrGeneratorPage = lazy(() => import('./admin/pages/QrGeneratorPage'))
 const EmailPage = lazy(() => import('./admin/pages/EmailPage'))
 const AdminUsersPage = lazy(() => import('./admin/pages/AdminUsersPage'))
 const SettingsPage = lazy(() => import('./admin/pages/SettingsPage'))
@@ -178,6 +179,7 @@ export default function App() {
             <Route path="links" element={
               <RoleGuard permission="links.manage"><LinksPage /></RoleGuard>
             } />
+            <Route path="qr" element={<QrGeneratorPage />} />
             <Route path="email" element={
               <RoleGuard permission="email.send"><EmailPage /></RoleGuard>
             } />

@@ -1,7 +1,7 @@
 import { NavLink, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
-  ArrowLeftRight, Boxes, ChevronDown, Crown, ListChecks, Brain, Calendar, CircuitBoard, ClipboardCheck, Gauge, IdCard, Images, Inbox, Link2, Mail, Megaphone, Network,
+  ArrowLeftRight, Boxes, ChevronDown, Crown, ListChecks, Brain, Calendar, CircuitBoard, ClipboardCheck, Gauge, IdCard, Images, Inbox, Link2, Mail, Megaphone, Network, QrCode,
   PanelLeftClose, PanelLeftOpen, ScrollText, Send, Shield, SlidersHorizontal, UserCheck, Wallet, X,
 } from 'lucide-react'
 import useAdminStore from '../../store/adminStore'
@@ -10,7 +10,7 @@ import { NAV_GROUPS, navItemForPath, navItemsFor } from '../../lib/permissions'
 const ICONS = {
   Gauge, Calendar, ClipboardCheck, UserCheck, IdCard, Mail,
   CircuitBoard, Images, Megaphone, Boxes, ArrowLeftRight, Crown, ListChecks,
-  Shield, Brain, ScrollText, SlidersHorizontal, Wallet, Send, Inbox, Network, Link2,
+  Shield, Brain, ScrollText, SlidersHorizontal, Wallet, Send, Inbox, Network, Link2, QrCode,
 }
 
 /** Queues surface as a count on the nav item that clears them. */

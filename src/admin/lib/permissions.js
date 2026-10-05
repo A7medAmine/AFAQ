@@ -97,6 +97,7 @@ export const NAV_ITEMS = [
   { label: 'Gallery', path: '/admin/gallery', icon: 'Images', group: 'publish', permission: 'gallery.manage' },
   { label: 'Announcements', path: '/admin/announcements', icon: 'Megaphone', group: 'publish', permission: 'announcements.manage' },
   { label: 'Links page', path: '/admin/links', icon: 'Link2', group: 'publish', permission: 'links.manage' },
+  { label: 'QR codes', path: '/admin/qr', icon: 'QrCode', group: 'publish', permission: null },
   { label: 'Email', path: '/admin/email', icon: 'Send', group: 'publish', permission: 'email.send' },
 
   { label: 'Admins', path: '/admin/admins', icon: 'Shield', group: 'console', permission: 'admin_users.manage' },
