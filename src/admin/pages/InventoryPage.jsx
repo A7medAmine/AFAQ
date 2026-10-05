@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import QRCode from 'qrcode'
-import { Boxes, FileSpreadsheet, IdCard, Loader2, PackagePlus, Printer, Search, Trash2, Upload } from 'lucide-react'
+import { Boxes, CheckCircle2, FileSpreadsheet, IdCard, Loader2, Minus, PackagePlus, Plus, Printer, Search, Trash2, Upload } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { api, logActivity, read, run, supabase, uploadFile } from '../lib/db'
 import useAdminStore from '../store/adminStore'
@@ -12,14 +12,14 @@ import Drawer, { DetailRow } from '../components/ui/Drawer'
 import Modal from '../components/ui/Modal'
 import ConfirmDialog from '../components/ui/ConfirmDialog'
 import EmptyState, { ErrorState } from '../components/ui/EmptyState'
-import Button from '../components/ui/Button'
+import Button, { IconButton } from '../components/ui/Button'
 import ExportMenu from '../components/ui/ExportMenu'
 import { StatusBadge } from '../components/ui/Badge'
 import Panel from '../components/ui/Panel'
-import { SelectField, TextArea, TextField } from '../components/ui/Field'
+import { Field, SelectField, TextArea, TextField } from '../components/ui/Field'
 import PartNameField from '../components/inventory/PartNameField'
 import ImportItemsModal from '../components/inventory/ImportItemsModal'
-import { CATEGORIES } from '../lib/inventoryImport'
+import { CATEGORIES, MAX_QUANTITY } from '../lib/inventoryImport'
 
 const FILTERS = [
   { value: 'all', label: 'All' },
@@ -282,14 +282,42 @@ const DIGIKEY_SCOPES = [
   { value: 'all', label: 'All parts' },
 ]
 
+const LABEL_CONCURRENCY = 8
+
+/** The asset code comes from the row's own id, so it's assigned after insert. */
+async function labelItem(id) {
+  const assetCode = `INV-${String(id).padStart(5, '0')}`
+  const qrCode = await QRCode.toDataURL(assetCode, { width: 300, margin: 2 })
+  await run(supabase.from('inventory_items').update({ asset_code: assetCode, qr_code: qrCode }).eq('id', id))
+}
+
+/**
+ * Adds one part, as one or more identical units — like the Excel import, each
+ * unit is its own row with its own asset code and QR label. "Add & next"
+ * keeps the dialog open with category, condition and location carried over,
+ * so a box of parts can be entered one after another from the keyboard.
+ */
 function AddItem({ open, onClose, onAdded, existing }) {
-  const blank = { name: '', category: 'Electronics', serial: '', condition: 'good', location: '', value: '', notes: '', photo_url: '' }
+  const navigate = useNavigate()
+  const addToast = useAdminStore(s => s.addToast)
+  const blank = { name: '', quantity: '1', category: 'Electronics', serial: '', condition: 'good', location: '', value: '', notes: '', photo_url: '' }
   const [form, setForm] = useState(blank)
   const [errors, setErrors] = useState({})
-  const [saving, setSaving] = useState(false)
+  const [saving, setSaving] = useState(null) // null | 'next' | 'close'
   const [digikeyRequest, setDigikeyRequest] = useState(null)
+  const [digikeyKey, setDigikeyKey] = useState(0)
+  const [session, setSession] = useState([]) // what was added since the dialog opened
+  const nameRef = useRef(null)
 
-  useEffect(() => { if (open) { setForm(blank); setErrors({}); setDigikeyRequest(null) } }, [open]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (open) { setForm(blank); setErrors({}); setDigikeyRequest(null); setSession([]) }
+  }, [open]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const quantity = Number(form.quantity)
+  const stepQuantity = delta => {
+    const n = Number.isInteger(quantity) ? quantity : 1
+    set('quantity', String(Math.min(MAX_QUANTITY, Math.max(1, n + delta))))
+  }
 
   const set = (key, value) => {
     setForm(f => ({ ...f, [key]: value }))
@@ -327,63 +355,109 @@ function AddItem({ open, onClose, onAdded, existing }) {
     setErrors({})
   }
 
-  const submit = async () => {
-    if (!form.name.trim()) { setErrors({ name: 'Enter the item name.' }); return }
-    setSaving(true)
+  const submit = async (then = 'next') => {
+    if (saving) return
+    const name = form.name.trim()
+    const next = {}
+    if (!name) next.name = 'Enter the item name.'
+    if (!Number.isInteger(quantity) || quantity < 1 || quantity > MAX_QUANTITY) next.quantity = `A whole number from 1 to ${MAX_QUANTITY}.`
+    if (Object.keys(next).length) { setErrors(next); if (next.name) nameRef.current?.focus(); return }
+    setSaving(then)
+
+    // The serial belongs to one physical unit, so only the first gets it.
+    const unit = {
+      name,
+      category: form.category,
+      condition: form.condition,
+      location: form.location.trim() || null,
+      value: form.value ? Number(form.value) : null,
+      notes: form.notes.trim() || null,
+      photo_url: form.photo_url || null,
+      status: 'available',
+    }
+    const units = Array.from({ length: quantity }, (_, i) => ({ ...unit, serial: i === 0 ? form.serial.trim() || null : null }))
 
     const { ok, data } = await run(
-      supabase.from('inventory_items').insert({
-        name: form.name.trim(),
-        category: form.category,
-        serial: form.serial.trim() || null,
-        condition: form.condition,
-        location: form.location.trim() || null,
-        value: form.value ? Number(form.value) : null,
-        notes: form.notes.trim() || null,
-        photo_url: form.photo_url || null,
-        status: 'available',
-      }).select().single(),
+      supabase.from('inventory_items').insert(units).select('id'),
       { failure: 'The item was not added.' }
     )
-    if (!ok) { setSaving(false); return }
+    if (!ok) { setSaving(null); return }
 
-    // Asset code depends on the row's own id, so it's assigned right after
-    // insert, then the QR (which just links to that code) is generated
-    // in-browser — no server round trip needed, same lib the backend uses.
-    const assetCode = `INV-${String(data.id).padStart(5, '0')}`
-    const qrCode = await QRCode.toDataURL(assetCode, { width: 300, margin: 2 })
-    await run(supabase.from('inventory_items').update({ asset_code: assetCode, qr_code: qrCode }).eq('id', data.id))
+    // QR labels are generated in-browser — same lib the backend uses.
+    const ids = data.map(r => r.id)
+    let at = 0
+    await Promise.all(Array.from({ length: Math.min(LABEL_CONCURRENCY, ids.length) }, async () => {
+      while (at < ids.length) await labelItem(ids[at++])
+    }))
 
-    logActivity('created', 'inventory_items', data.id, { name: form.name.trim() })
-    setSaving(false)
-    onClose()
+    logActivity('created', 'inventory_items', ids[0], quantity > 1 ? { name, quantity } : { name })
+    setSaving(null)
     onAdded()
+
+    if (then === 'close') { onClose(); return }
+
+    addToast(quantity > 1 ? `Added ${quantity} × ${name}.` : `Added ${name}.`, 'success')
+    setSession(s => [{ name, quantity, ids, location: unit.location }, ...s])
+    // Keep where it's stored and what kind of thing it is; clear what's per-part.
+    setForm(f => ({ ...blank, category: f.category, condition: f.condition, location: f.location }))
+    setErrors({})
+    setDigikeyRequest(null)
+    setDigikeyKey(k => k + 1)
+    requestAnimationFrame(() => nameRef.current?.focus())
   }
+
+  // Enter in any single-line field adds and moves on to the next part; inputs
+  // that use Enter themselves (name suggestions, DigiKey search) prevent it.
+  const onKeyDown = e => {
+    if (e.key !== 'Enter' || e.defaultPrevented || e.nativeEvent.isComposing) return
+    if (e.target.tagName === 'TEXTAREA' && !(e.ctrlKey || e.metaKey)) return
+    if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'SELECT' && e.target.tagName !== 'TEXTAREA') return
+    e.preventDefault()
+    submit(e.ctrlKey || e.metaKey ? 'close' : 'next')
+  }
+
+  const sessionIds = session.flatMap(s => s.ids)
+  const sessionUnits = sessionIds.length
 
   return (
     <Modal
       open={open}
       onClose={onClose}
-      title="Add an item"
-      description="Gets a unique asset code and QR label automatically."
+      title="Add items"
+      description="Each unit gets its own asset code and QR label. Press Enter to add and start the next one."
       footer={
         <>
-          <Button onClick={onClose} data-dialog-dismiss="true">Cancel</Button>
-          <Button variant="primary" onClick={submit} busy={saving} busyLabel="Adding…">Add item</Button>
+          {sessionUnits > 0 && (
+            <Button className="mr-auto" icon={Printer} onClick={() => navigate(`/admin/inventory/labels?ids=${sessionIds.join(',')}`)}>
+              Print {sessionUnits} label{sessionUnits === 1 ? '' : 's'}
+            </Button>
+          )}
+          <Button onClick={onClose} data-dialog-dismiss="true">{sessionUnits ? 'Done' : 'Cancel'}</Button>
+          <Button onClick={() => submit('close')} busy={saving === 'close'} busyLabel="Adding…" disabled={!!saving}>
+            Add & close
+          </Button>
+          <Button variant="primary" icon={PackagePlus} onClick={() => submit('next')} busy={saving === 'next'} busyLabel="Adding…" disabled={!!saving}>
+            {quantity > 1 && Number.isInteger(quantity) ? `Add ${quantity} & next` : 'Add & next'}
+          </Button>
         </>
       }
     >
-      <div className="space-y-4">
-        <PartNameField
-          value={form.name}
-          error={errors.name}
-          existing={existing}
-          placeholder="Arduino Uno, ESP32, HC-SR04, multimeter…"
-          onChange={name => set('name', name)}
-          onPick={applyPart}
-          onSearchOnline={q => setDigikeyRequest({ q, at: Date.now() })}
-        />
-        <DigiKeySearch open={open} request={digikeyRequest} onPick={applyProduct} />
+      <div className="space-y-4" onKeyDown={onKeyDown}>
+        {session.length > 0 && <AddedSoFar session={session} units={sessionUnits} />}
+        <div className="grid grid-cols-[1fr_auto] gap-3 items-start">
+          <PartNameField
+            inputRef={nameRef}
+            value={form.name}
+            error={errors.name}
+            existing={existing}
+            placeholder="Arduino Uno, ESP32, HC-SR04, multimeter…"
+            onChange={name => set('name', name)}
+            onPick={applyPart}
+            onSearchOnline={q => setDigikeyRequest({ q, at: Date.now() })}
+          />
+          <QuantityField value={form.quantity} error={errors.quantity} onChange={v => set('quantity', v)} onStep={stepQuantity} />
+        </div>
+        <DigiKeySearch key={digikeyKey} open={open} request={digikeyRequest} onPick={applyProduct} />
         <div className="grid sm:grid-cols-2 gap-4">
           <SelectField label="Category" value={form.category} onChange={e => set('category', e.target.value)}>
             {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
@@ -394,13 +468,62 @@ function AddItem({ open, onClose, onAdded, existing }) {
             <option value="worn">Worn</option>
             <option value="damaged">Damaged</option>
           </SelectField>
-          <TextField label="Serial number" value={form.serial} onChange={e => set('serial', e.target.value)} />
+          <TextField label="Serial number" value={form.serial} onChange={e => set('serial', e.target.value)}
+            hint={quantity > 1 ? 'Goes on the first unit only.' : undefined} />
           <TextField label="Location" value={form.location} onChange={e => set('location', e.target.value)} placeholder="Lab shelf 2" />
           <TextField label="Value (DA)" type="number" value={form.value} onChange={e => set('value', e.target.value)} />
         </div>
         <TextArea label="Notes" rows={4} value={form.notes} onChange={e => set('notes', e.target.value)} />
       </div>
     </Modal>
+  )
+}
+
+function QuantityField({ value, error, onChange, onStep }) {
+  return (
+    <Field label="Quantity" error={error} className="w-[132px]">
+      {a11y => (
+        <div className="flex items-center gap-1">
+          <IconButton icon={Minus} label="One less" size={14} tabIndex={-1} onClick={() => onStep(-1)} disabled={Number(value) <= 1} />
+          <input
+            {...a11y}
+            className="adm-input adm-data text-center"
+            type="number"
+            inputMode="numeric"
+            min={1}
+            max={MAX_QUANTITY}
+            step={1}
+            value={value}
+            onChange={e => onChange(e.target.value)}
+            onFocus={e => e.target.select()}
+          />
+          <IconButton icon={Plus} label="One more" size={14} tabIndex={-1} onClick={() => onStep(1)} disabled={Number(value) >= MAX_QUANTITY} />
+        </div>
+      )}
+    </Field>
+  )
+}
+
+/** Running tally while "Add & next" keeps the dialog open. */
+function AddedSoFar({ session, units }) {
+  return (
+    <div className="rounded-lg p-3" style={{ background: 'var(--adm-panel-raise)' }}>
+      <p className="flex items-center gap-1.5 text-[12.5px] font-semibold" style={{ color: 'var(--adm-ok)' }}>
+        <CheckCircle2 size={14} aria-hidden="true" />
+        Added {units} unit{units === 1 ? '' : 's'} of {session.length} part{session.length === 1 ? '' : 's'}
+      </p>
+      <ul className="mt-2 space-y-1 overflow-y-auto" style={{ maxHeight: 112 }}>
+        {session.map(s => (
+          <li key={s.ids[0]} className="flex items-baseline gap-2 text-[13px]">
+            <span className="adm-data shrink-0" style={{ color: 'var(--adm-silk-dim)', minWidth: 32 }}>{s.quantity}×</span>
+            <span className="adm-truncate flex-1 min-w-0">{s.name}</span>
+            <span className="adm-data text-[11px] shrink-0" style={{ color: 'var(--adm-silk-faint)' }}>
+              INV-{String(s.ids[0]).padStart(5, '0')}{s.ids.length > 1 ? ` → ${String(s.ids[s.ids.length - 1]).padStart(5, '0')}` : ''}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
   )
 }
 

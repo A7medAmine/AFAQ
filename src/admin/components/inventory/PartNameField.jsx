@@ -14,7 +14,7 @@ import { fold, index, loadCatalog, score, squash } from '../../lib/partsCatalog'
     3. a last row that hands the text to the DigiKey search for anything else.
 */
 
-export default function PartNameField({ value, onChange, onPick, onSearchOnline, existing = [], error, placeholder }) {
+export default function PartNameField({ value, onChange, onPick, onSearchOnline, existing = [], error, placeholder, inputRef }) {
   const id = useId()
   const listId = `${id}-list`
   const [catalog, setCatalog] = useState(null)
@@ -88,6 +88,7 @@ export default function PartNameField({ value, onChange, onPick, onSearchOnline,
         <div className="adm-picker">
           <input
             {...a11y}
+            ref={inputRef}
             className="adm-input"
             role="combobox"
             aria-expanded={showList}
