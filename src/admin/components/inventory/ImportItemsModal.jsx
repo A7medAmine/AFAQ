@@ -6,7 +6,7 @@ import { logActivity, run, supabase } from '../../lib/db'
 import { downloadCSV } from '../../lib/format'
 import { guessMapping, readSpreadsheet, splitHeader } from '../../lib/memberImport'
 import {
-  ITEM_FIELDS, MAX_UNITS, TEMPLATE_EXAMPLES, TEMPLATE_HEADERS, buildItemRows, expandUnits,
+  ITEM_FIELDS, MAX_ROWS, TEMPLATE_EXAMPLES, TEMPLATE_HEADERS, buildItemRows, planImport,
 } from '../../lib/inventoryImport'
 import { loadCatalog } from '../../lib/partsCatalog'
 import Modal from '../ui/Modal'
@@ -19,9 +19,9 @@ const PREVIEW_LIMIT = 100
 
 /**
  * Bring a parts list into the inventory from Excel or CSV, in the same three
- * steps as the member import: pick a file, confirm the columns, review. Every
- * unit is inserted as its own row and then gets its asset code and QR label,
- * exactly as an item added by hand does.
+ * steps as the member import: pick a file, confirm the columns, review. Each
+ * new item is one row with its quantity and gets its asset code and QR label,
+ * exactly as an item added by hand does; items already in stock get topped up.
  *
  * @param existing  current inventory, so the review can say what is already in stock
  */
@@ -88,10 +88,11 @@ export default function ImportItemsModal({ open, existing = [], onClose, onImpor
       units: valid.reduce((n, r) => n + r.quantity, 0),
       warnings: valid.filter(r => r.warnings.length).length,
       matched: valid.filter(r => r.part).length,
+      ...planImport(valid),
     }
   }, [rows])
 
-  const tooMany = plan.units > MAX_UNITS
+  const tooMany = plan.valid.length > MAX_ROWS
   const canContinue = mapping.name !== undefined
 
   /** Same as a hand-added item: the asset code comes from the row's own id. */
@@ -105,20 +106,33 @@ export default function ImportItemsModal({ open, existing = [], onClose, onImpor
   const doImport = async () => {
     setImporting(true)
     setFrozenRows(rows)
-    const units = expandUnits(plan.valid)
+    const { inserts, restock } = plan
     const created = []
     let failed = 0
+    let toppedUp = 0
 
-    for (let i = 0; i < units.length; i += CHUNK) {
-      const batch = units.slice(i, i + CHUNK)
-      setProgress({ phase: 'Adding items', done: i, total: units.length })
+    for (let i = 0; i < inserts.length; i += CHUNK) {
+      const batch = inserts.slice(i, i + CHUNK)
+      setProgress({ phase: 'Adding items', done: i, total: inserts.length })
       const { ok, data } = await run(
         supabase.from('inventory_items').insert(batch).select('id'),
-        { failure: `Units ${i + 1}–${i + batch.length} were not imported.` }
+        { failure: `Items ${i + 1}–${i + batch.length} were not imported.` }
       )
       if (ok) created.push(...(data || []))
       else failed += batch.length
     }
+
+    let at = 0
+    setProgress({ phase: 'Updating counts', done: 0, total: restock.length })
+    await Promise.all(Array.from({ length: LABEL_CONCURRENCY }, async () => {
+      while (at < restock.length) {
+        const r = restock[at++]
+        const { ok } = await run(supabase.rpc('inventory_restock', { p_item: r.id, p_qty: r.quantity }))
+        if (ok) toppedUp++
+        else failed++
+        setProgress(p => ({ ...p, done: p.done + 1 }))
+      }
+    }))
 
     let labelled = 0
     let next = 0
@@ -131,12 +145,12 @@ export default function ImportItemsModal({ open, existing = [], onClose, onImpor
       }
     }))
 
-    if (created.length) {
+    if (created.length || toppedUp) {
       logActivity('created', 'inventory_items', null, {
-        name: `Import from ${file?.name}`, created: created.length, rows: plan.valid.length, skipped: plan.invalid.length,
+        name: `Import from ${file?.name}`, created: created.length, topped_up: toppedUp, rows: plan.valid.length, skipped: plan.invalid.length,
       })
     }
-    setResult({ created, labelled, failed })
+    setResult({ created, labelled, failed, toppedUp })
     setImporting(false)
     setProgress(null)
     setStep('done')
@@ -175,7 +189,7 @@ export default function ImportItemsModal({ open, existing = [], onClose, onImpor
         <Button variant="primary" icon={Upload} busy={importing}
           busyLabel={progress ? `${progress.phase} ${progress.done}/${progress.total}…` : 'Importing…'}
           disabled={!plan.units || tooMany} onClick={doImport}>
-          Import {plan.units} unit{plan.units === 1 ? '' : 's'}
+          Import {plan.valid.length} row{plan.valid.length === 1 ? '' : 's'}
         </Button>
       </>
     ),
@@ -274,7 +288,7 @@ export default function ImportItemsModal({ open, existing = [], onClose, onImpor
             ))}
           </div>
           <p className="text-xs" style={{ color: 'var(--adm-silk-faint)' }}>
-            No quantity column means one unit per row. Asset codes and QR labels are assigned automatically.
+            No quantity column means 1 of each. New items get an asset code and QR label; ones already in stock on the same shelf get their count raised.
           </p>
         </div>
       )}
@@ -285,21 +299,21 @@ export default function ImportItemsModal({ open, existing = [], onClose, onImpor
             <div className="rounded-xl p-4 flex items-start gap-3" style={{ background: 'var(--adm-board-sunk)' }}>
               <CheckCircle2 size={20} style={{ color: 'var(--adm-ok)', flexShrink: 0 }} />
               <div className="text-sm space-y-0.5">
-                <p><strong>{result.created.length}</strong> units added.</p>
+                <p><strong>{result.created.length}</strong> new item{result.created.length === 1 ? '' : 's'} added{result.toppedUp ? <>, <strong>{result.toppedUp}</strong> existing topped up</> : ''}.</p>
                 {result.labelled < result.created.length && (
                   <p style={{ color: 'var(--adm-fault)' }}>
                     {result.created.length - result.labelled} did not get a QR label. Open them and save again to retry.
                   </p>
                 )}
                 {plan.invalid.length > 0 && <p>{plan.invalid.length} rows skipped because of problems.</p>}
-                {result.failed > 0 && <p style={{ color: 'var(--adm-fault)' }}>{result.failed} units failed to save.</p>}
+                {result.failed > 0 && <p style={{ color: 'var(--adm-fault)' }}>{result.failed} items failed to save.</p>}
               </div>
             </div>
           ) : (
             <>
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex flex-wrap gap-2">
-                  <Badge tone="ok">{plan.units} units from {plan.valid.length} rows</Badge>
+                  <Badge tone="ok">{plan.inserts.length} new, {plan.restock.length} topped up · {plan.units} units</Badge>
                   {plan.matched > 0 && <Badge tone="signal">{plan.matched} matched to the parts catalog</Badge>}
                   {plan.invalid.length > 0 && <Badge tone="fault">{plan.invalid.length} with problems</Badge>}
                   {plan.warnings > 0 && <Badge tone="wait">{plan.warnings} with warnings</Badge>}
@@ -310,7 +324,7 @@ export default function ImportItemsModal({ open, existing = [], onClose, onImpor
               </div>
               {tooMany && (
                 <p className="flex items-center gap-1.5 text-sm" style={{ color: 'var(--adm-fault)' }}>
-                  <AlertTriangle size={14} /> That is {plan.units} units; one import can add at most {MAX_UNITS}. Split the file.
+                  <AlertTriangle size={14} /> That is {plan.valid.length} rows; one import can take at most {MAX_ROWS}. Split the file.
                 </p>
               )}
             </>
@@ -357,7 +371,7 @@ function RowOutcome({ row }) {
   if (row.errors.length) return <span style={{ color: 'var(--adm-fault)' }}>Skipped: {row.errors.join(', ')}</span>
   return (
     <span className="block">
-      <span style={{ color: 'var(--adm-ok)' }}>Add {row.quantity}</span>
+      <span style={{ color: 'var(--adm-ok)' }}>{row.target ? `+${row.quantity} to ${row.target.asset_code || 'existing'}` : `Add ${row.quantity}`}</span>
       {row.inStock > 0 && (
         <span style={{ color: 'var(--adm-silk-faint)' }}> · {row.inStock} already in stock</span>
       )}

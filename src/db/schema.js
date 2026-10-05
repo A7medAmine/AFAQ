@@ -250,6 +250,9 @@ export const inventoryItems = pgTable('inventory_items', {
   value: integer(),
   location: text(),
   photoUrl: text('photo_url'),
+  // How many of this item the club has, and how many are out on loan.
+  quantity: integer().notNull().default(1),
+  onLoan: integer('on_loan').notNull().default(0),
   status: text().default('available'),
   qrCode: text('qr_code'),
   notes: text(),
@@ -272,6 +275,7 @@ export const borrowRecords = pgTable('borrow_records', {
   itemId: bigint('item_id', { mode: 'number' }).notNull().references(() => inventoryItems.id, { onDelete: 'cascade' }),
   memberId: bigint('member_id', { mode: 'number' }).references(() => members.id, { onDelete: 'set null' }),
   borrowerName: text('borrower_name'),
+  quantity: integer().notNull().default(1),
   checkedOutAt: timestamp('checked_out_at', { withTimezone: true }).defaultNow(),
   expectedReturnAt: timestamp('expected_return_at', { withTimezone: true }),
   returnedAt: timestamp('returned_at', { withTimezone: true }),

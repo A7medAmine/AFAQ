@@ -3,8 +3,9 @@
  * guessing columns is shared with the member import; this file only knows
  * what an inventory row looks like.
  *
- * Every inventory row is one physical unit with its own asset code and QR
- * label, so a "Quantity" of 5 becomes five rows.
+ * One inventory row per kind of item, with its quantity. A sheet row that
+ * matches an item already in stock (same name, location and condition) adds
+ * to that item's count instead of making a second entry.
  */
 
 import { findPart } from './partsCatalog'
@@ -13,9 +14,9 @@ import { normalizeHeader, oneOf, text, toDate } from './memberImport'
 export const CATEGORIES = ['Electronics', 'Tools', 'Lab equipment', 'Furniture', 'Consumables', 'Other']
 export const CONDITIONS = ['new', 'good', 'worn', 'damaged']
 
-/** One sheet is capped so a stray "5000" in the quantity column can't flood the table. */
-export const MAX_QUANTITY = 200
-export const MAX_UNITS = 2000
+/** Caps that catch a wrong column mapped as quantity, and oversized sheets. */
+export const MAX_QUANTITY = 100000
+export const MAX_ROWS = 2000
 
 export const ITEM_FIELDS = [
   { key: 'name', label: 'Name', aliases: ['name', 'item', 'item name', 'part', 'part name', 'component', 'designation', 'nom', 'article', 'composant', 'libelle', 'الاسم', 'العنصر', 'القطعة'] },
@@ -89,9 +90,12 @@ function toQuantity(value) {
  */
 export function buildItemRows(body, mapping, existing, catalog = []) {
   const stock = new Map()
+  const targets = new Map()
   for (const item of existing) {
+    if (item.status === 'retired') continue
     const key = normalizeHeader(item.name)
-    stock.set(key, (stock.get(key) || 0) + 1)
+    stock.set(key, (stock.get(key) || 0) + (item.quantity ?? 1))
+    if (!item.serial) targets.set(itemKey(item), item)
   }
   const cell = (row, key) => (mapping[key] === undefined ? undefined : row[mapping[key]])
 
@@ -125,7 +129,6 @@ export function buildItemRows(body, mapping, existing, catalog = []) {
     if (purchaseDate === undefined) warnings.push('Purchase date not understood, left empty')
 
     const serial = text(cell(row, 'serial'))
-    if (serial && quantity > 1) warnings.push('Serial number kept on the first unit only')
 
     const payload = {
       name,
@@ -146,16 +149,38 @@ export function buildItemRows(body, mapping, existing, catalog = []) {
       quantity: quantity || 0,
       part,
       inStock: name ? stock.get(normalizeHeader(name)) || 0 : 0,
+      // Already have this exact item: the row tops up its count.
+      target: name && !serial ? targets.get(itemKey(payload)) || null : null,
       errors,
       warnings,
     }
   })
 }
 
-/** One insert row per unit; the serial only belongs to the first. */
-export function expandUnits(rows) {
-  return rows.flatMap(r => Array.from({ length: r.quantity }, (_, n) => ({
-    ...r.payload,
-    serial: n === 0 ? r.serial : null,
-  })))
+/** Same item = same name, location and condition, ignoring case and spacing. */
+function itemKey(item) {
+  return [normalizeHeader(item.name), normalizeHeader(item.location || ''), item.condition || 'good'].join('|')
+}
+
+/**
+ * What the import will do: top up items already in stock, and insert one row
+ * per new item, with sheet rows for the same item added together.
+ */
+export function planImport(rows) {
+  const restock = new Map()
+  const inserts = new Map()
+  rows.forEach((r, i) => {
+    if (r.target) {
+      restock.set(r.target.id, (restock.get(r.target.id) || 0) + r.quantity)
+      return
+    }
+    const key = r.serial ? `serial:${i}` : itemKey(r.payload)
+    const prev = inserts.get(key)
+    if (prev) prev.quantity += r.quantity
+    else inserts.set(key, { ...r.payload, serial: r.serial, quantity: r.quantity })
+  })
+  return {
+    restock: [...restock].map(([id, quantity]) => ({ id, quantity })),
+    inserts: [...inserts.values()],
+  }
 }

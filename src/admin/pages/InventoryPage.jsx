@@ -22,6 +22,9 @@ import ImportItemsModal from '../components/inventory/ImportItemsModal'
 import { CATEGORIES, MAX_QUANTITY } from '../lib/inventoryImport'
 import { createShelf, loadShelves } from '../lib/shelves'
 
+/** Rows from before the quantity column count as one. */
+const qty = item => item.quantity ?? 1
+
 const FILTERS = [
   { value: 'all', label: 'All' },
   { value: 'available', label: 'Available' },
@@ -103,8 +106,8 @@ export default function InventoryPage() {
     if (ids.length) navigate(`/admin/inventory/labels?ids=${ids.join(',')}`)
   }
 
-  const exportHeaders = ['Asset code', 'Name', 'Category', 'Serial', 'Condition', 'Location', 'Status', 'Added']
-  const exportRows = filtered.map(r => [r.asset_code, r.name, r.category, r.serial, r.condition, r.location, r.status, formatDate(r.created_at)])
+  const exportHeaders = ['Asset code', 'Name', 'Category', 'Serial', 'Condition', 'Location', 'Status', 'Added', 'Quantity', 'On loan']
+  const exportRows = filtered.map(r => [r.asset_code, r.name, r.category, r.serial, r.condition, r.location, r.status, formatDate(r.created_at), qty(r), r.on_loan || 0])
 
   const columns = useMemo(() => [
     {
@@ -118,6 +121,20 @@ export default function InventoryPage() {
           </span>
         </span>
       ),
+    },
+    {
+      header: 'Qty',
+      id: 'quantity',
+      accessorFn: r => qty(r),
+      cell: ({ row }) => {
+        const r = row.original
+        return (
+          <span className="adm-data text-[13px]">
+            {qty(r)}
+            {r.on_loan > 0 && <span className="block text-[11px]" style={{ color: 'var(--adm-silk-faint)' }}>{r.on_loan} on loan</span>}
+          </span>
+        )
+      },
     },
     { header: 'Category', accessorKey: 'category', cell: ({ row }) => (
       <span className="text-[13px]" style={{ color: 'var(--adm-silk-dim)' }}>{row.original.category || '—'}</span>
@@ -231,6 +248,9 @@ export default function InventoryPage() {
             }} />
             <div className="grid grid-cols-2 gap-4">
               <DetailRow label="Asset code" mono>{detail.asset_code}</DetailRow>
+              <DetailRow label="Quantity" mono>
+                {qty(detail)}{detail.on_loan > 0 ? ` (${detail.on_loan} on loan, ${qty(detail) - detail.on_loan} here)` : ''}
+              </DetailRow>
               <DetailRow label="Category">{detail.category || '—'}</DetailRow>
               <DetailRow label="Serial" mono>{detail.serial || '—'}</DetailRow>
               <DetailRow label="Condition">{detail.condition || '—'}</DetailRow>
@@ -325,20 +345,21 @@ const DIGIKEY_SCOPES = [
   { value: 'all', label: 'All parts' },
 ]
 
-const LABEL_CONCURRENCY = 8
-
 /** The asset code comes from the row's own id, so it's assigned after insert. */
 async function labelItem(id) {
   const assetCode = `INV-${String(id).padStart(5, '0')}`
   const qrCode = await QRCode.toDataURL(assetCode, { width: 300, margin: 2 })
   await run(supabase.from('inventory_items').update({ asset_code: assetCode, qr_code: qrCode }).eq('id', id))
+  return assetCode
 }
 
+const sameText = (a, b) => (a || '').trim().toLowerCase() === (b || '').trim().toLowerCase()
+
 /**
- * Adds one part, as one or more identical units — like the Excel import, each
- * unit is its own row with its own asset code and QR label. "Add & next"
- * keeps the dialog open with category, condition and location carried over,
- * so a box of parts can be entered one after another from the keyboard.
+ * Adds an item with how many the club has of it — one row, one asset code.
+ * The same item already on the same shelf in the same condition just gets its
+ * count raised. "Add & next" keeps the dialog open with category, condition
+ * and location carried over, so a box of parts can be entered from the keyboard.
  */
 function AddItem({ open, onClose, onAdded, existing, shelves, onShelfCreated }) {
   const navigate = useNavigate()
@@ -366,6 +387,17 @@ function AddItem({ open, onClose, onAdded, existing, shelves, onShelfCreated }) 
     setForm(f => ({ ...f, [key]: value }))
     setErrors(e => ({ ...e, [key]: undefined }))
   }
+
+  // A serial number marks one specific unit, so that one always gets its own row.
+  // Rows added in this dialog count too, before the list behind it reloads.
+  const match = useMemo(() => {
+    if (!form.name.trim() || form.serial.trim()) return null
+    const fits = r => r.status !== 'retired' && sameText(r.name, form.name) && sameText(r.location, form.location) && r.condition === form.condition
+    const fromSession = session.find(fits)
+    const fromList = existing.find(fits)
+    if (fromSession && fromList?.id === fromSession.id) return { ...fromList, quantity: fromSession.quantity }
+    return fromSession || fromList || null
+  }, [form.name, form.serial, form.location, form.condition, existing, session])
 
   /** A suggestion from PartNameField: our own stock or the offline parts catalog. */
   const applyPart = part => {
@@ -407,40 +439,49 @@ function AddItem({ open, onClose, onAdded, existing, shelves, onShelfCreated }) 
     if (Object.keys(next).length) { setErrors(next); if (next.name) nameRef.current?.focus(); return }
     setSaving(then)
 
-    // The serial belongs to one physical unit, so only the first gets it.
-    const unit = {
-      name,
-      category: form.category,
-      condition: form.condition,
-      location: form.location.trim() || null,
-      value: form.value ? Number(form.value) : null,
-      notes: form.notes.trim() || null,
-      photo_url: form.photo_url || null,
-      status: 'available',
+    let entry
+    if (match) {
+      const { ok, data: total } = await run(
+        supabase.rpc('inventory_restock', { p_item: match.id, p_qty: quantity }),
+        { failure: 'The count was not updated.' }
+      )
+      if (!ok) { setSaving(null); return }
+      logActivity('restocked', 'inventory_items', match.id, { name: match.name, added: quantity, quantity: total })
+      entry = { ...match, added: quantity, quantity: total, merged: true }
+    } else {
+      const { ok, data } = await run(
+        supabase.from('inventory_items').insert({
+          name,
+          quantity,
+          category: form.category,
+          serial: form.serial.trim() || null,
+          condition: form.condition,
+          location: form.location.trim() || null,
+          value: form.value ? Number(form.value) : null,
+          notes: form.notes.trim() || null,
+          photo_url: form.photo_url || null,
+          status: 'available',
+        }).select().single(),
+        { failure: 'The item was not added.' }
+      )
+      if (!ok) { setSaving(null); return }
+      // QR labels are generated in-browser — same lib the backend uses.
+      const asset_code = await labelItem(data.id)
+      logActivity('created', 'inventory_items', data.id, quantity > 1 ? { name, quantity } : { name })
+      entry = { ...data, asset_code, added: quantity }
     }
-    const units = Array.from({ length: quantity }, (_, i) => ({ ...unit, serial: i === 0 ? form.serial.trim() || null : null }))
 
-    const { ok, data } = await run(
-      supabase.from('inventory_items').insert(units).select('id'),
-      { failure: 'The item was not added.' }
-    )
-    if (!ok) { setSaving(null); return }
-
-    // QR labels are generated in-browser — same lib the backend uses.
-    const ids = data.map(r => r.id)
-    let at = 0
-    await Promise.all(Array.from({ length: Math.min(LABEL_CONCURRENCY, ids.length) }, async () => {
-      while (at < ids.length) await labelItem(ids[at++])
-    }))
-
-    logActivity('created', 'inventory_items', ids[0], quantity > 1 ? { name, quantity } : { name })
     setSaving(null)
     onAdded()
-
     if (then === 'close') { onClose(); return }
 
-    addToast(quantity > 1 ? `Added ${quantity} × ${name}.` : `Added ${name}.`, 'success')
-    setSession(s => [{ name, quantity, ids, location: unit.location }, ...s])
+    addToast(entry.merged
+      ? `${entry.name}: ${entry.added} more, ${entry.quantity} in total.`
+      : `Added ${quantity > 1 ? `${quantity} × ` : ''}${name}.`, 'success')
+    setSession(s => {
+      const prev = s.find(r => r.id === entry.id)
+      return [{ ...entry, added: entry.added + (prev?.added || 0) }, ...s.filter(r => r.id !== entry.id)]
+    })
     // Keep where it's stored and what kind of thing it is; clear what's per-part.
     setForm(f => ({ ...blank, category: f.category, condition: f.condition, location: f.location }))
     setErrors({})
@@ -459,7 +500,7 @@ function AddItem({ open, onClose, onAdded, existing, shelves, onShelfCreated }) 
     submit(e.ctrlKey || e.metaKey ? 'close' : 'next')
   }
 
-  const sessionIds = session.flatMap(s => s.ids)
+  const sessionIds = session.map(s => s.id)
   const sessionUnits = sessionIds.length
 
   return (
@@ -467,7 +508,7 @@ function AddItem({ open, onClose, onAdded, existing, shelves, onShelfCreated }) 
       open={open}
       onClose={onClose}
       title="Add items"
-      description="Each unit gets its own asset code and QR label. Press Enter to add and start the next one."
+      description="One entry per item with how many you have. Press Enter to add and start the next one."
       footer={
         <>
           {sessionUnits > 0 && (
@@ -500,6 +541,12 @@ function AddItem({ open, onClose, onAdded, existing, shelves, onShelfCreated }) 
           />
           <QuantityField value={form.quantity} error={errors.quantity} onChange={v => set('quantity', v)} onStep={stepQuantity} />
         </div>
+        {match && (
+          <p className="text-[12.5px] rounded-md px-3 py-2" style={{ background: 'var(--adm-panel-raise)', color: 'var(--adm-silk-dim)' }}>
+            Already {qty(match)} in stock{match.location ? ` on ${match.location}` : ''} ({match.asset_code}).
+            {' '}Adding puts the count up to <strong>{qty(match) + (Number.isInteger(quantity) && quantity > 0 ? quantity : 0)}</strong>.
+          </p>
+        )}
         <DigiKeySearch key={digikeyKey} open={open} request={digikeyRequest} onPick={applyProduct} />
         <div className="grid sm:grid-cols-2 gap-4">
           <SelectField label="Category" value={form.category} onChange={e => set('category', e.target.value)}>
@@ -512,7 +559,7 @@ function AddItem({ open, onClose, onAdded, existing, shelves, onShelfCreated }) 
             <option value="damaged">Damaged</option>
           </SelectField>
           <TextField label="Serial number" value={form.serial} onChange={e => set('serial', e.target.value)}
-            hint={quantity > 1 ? 'Goes on the first unit only.' : undefined} />
+            hint="Only for a single, specific unit — it gets its own entry." />
           <ShelfSelect shelves={shelves} value={form.location} onChange={v => set('location', v)} onCreated={onShelfCreated} />
           <TextField label="Value (DA)" type="number" value={form.value} onChange={e => set('value', e.target.value)} />
         </div>
@@ -605,12 +652,14 @@ const STATUSES = [
 function EditItem({ item, shelves, onShelfCreated, onClose, onSaved }) {
   const [form, setForm] = useState(null)
   const [error, setError] = useState(null)
+  const [quantityError, setQuantityError] = useState(null)
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     if (!item) return
     setForm({
       name: item.name || '',
+      quantity: String(qty(item)),
       category: item.category || 'Other',
       condition: item.condition || 'good',
       status: item.status || 'available',
@@ -620,16 +669,27 @@ function EditItem({ item, shelves, onShelfCreated, onClose, onSaved }) {
       notes: item.notes || '',
     })
     setError(null)
+    setQuantityError(null)
   }, [item])
 
   const set = (key, value) => setForm(f => ({ ...f, [key]: value }))
   const borrowed = item?.status === 'borrowed'
+  const onLoan = item?.on_loan || 0
+  const quantity = Number(form?.quantity)
+  const minQuantity = Math.max(1, onLoan)
 
   const save = async () => {
     if (!form.name.trim()) { setError('Enter the item name.'); return }
+    if (!Number.isInteger(quantity) || quantity < minQuantity) { setError(null); setQuantityError(onLoan ? `At least ${onLoan} — that many are out on loan.` : 'A whole number, 1 or more.'); return }
     setSaving(true)
+    // "Borrowed" means every unit is out, so it follows the count; loans
+    // themselves are opened and closed from Borrowing.
+    const status = borrowed || form.status === 'available'
+      ? (quantity > onLoan ? 'available' : 'borrowed')
+      : form.status
     const changes = {
       name: form.name.trim(),
+      quantity,
       category: form.category,
       condition: form.condition,
       serial: form.serial.trim() || null,
@@ -637,8 +697,7 @@ function EditItem({ item, shelves, onShelfCreated, onClose, onSaved }) {
       value: form.value === '' ? null : Number(form.value),
       notes: form.notes.trim() || null,
       updated_at: new Date().toISOString(),
-      // A loan is closed from Borrowing, which also sets the status back.
-      ...(borrowed ? {} : { status: form.status }),
+      status,
     }
     const { ok } = await run(
       supabase.from('inventory_items').update(changes).eq('id', item.id),
@@ -665,8 +724,20 @@ function EditItem({ item, shelves, onShelfCreated, onClose, onSaved }) {
         <div className="space-y-4" onKeyDown={e => {
           if (e.key === 'Enter' && !e.defaultPrevented && e.target.tagName === 'INPUT') { e.preventDefault(); save() }
         }}>
-          <TextField label="Name" required value={form.name} error={error}
-            onChange={e => { set('name', e.target.value); setError(null) }} />
+          <div className="grid grid-cols-[1fr_auto] gap-3 items-start">
+            <TextField label="Name" required value={form.name} error={error}
+              onChange={e => { set('name', e.target.value); setError(null) }} />
+            <QuantityField
+              value={form.quantity}
+              error={quantityError}
+              min={minQuantity}
+              onChange={v => { set('quantity', v); setQuantityError(null) }}
+              onStep={d => { set('quantity', String(Math.min(MAX_QUANTITY, Math.max(minQuantity, (Number.isInteger(quantity) ? quantity : minQuantity) + d)))); setQuantityError(null) }}
+            />
+          </div>
+          {onLoan > 0 && (
+            <p className="text-[12.5px]" style={{ color: 'var(--adm-silk-faint)' }}>{onLoan} out on loan right now.</p>
+          )}
           <div className="grid sm:grid-cols-2 gap-4">
             <SelectField label="Category" value={form.category} onChange={e => set('category', e.target.value)}>
               {!CATEGORIES.includes(form.category) && <option value={form.category}>{form.category}</option>}
@@ -695,18 +766,18 @@ function EditItem({ item, shelves, onShelfCreated, onClose, onSaved }) {
   )
 }
 
-function QuantityField({ value, error, onChange, onStep }) {
+function QuantityField({ value, error, onChange, onStep, min = 1 }) {
   return (
     <Field label="Quantity" error={error} className="w-[132px]">
       {a11y => (
         <div className="flex items-center gap-1">
-          <IconButton icon={Minus} label="One less" size={14} tabIndex={-1} onClick={() => onStep(-1)} disabled={Number(value) <= 1} />
+          <IconButton icon={Minus} label="One less" size={14} tabIndex={-1} onClick={() => onStep(-1)} disabled={Number(value) <= min} />
           <input
             {...a11y}
             className="adm-input adm-data text-center"
             type="number"
             inputMode="numeric"
-            min={1}
+            min={min}
             max={MAX_QUANTITY}
             step={1}
             value={value}
@@ -726,15 +797,15 @@ function AddedSoFar({ session, units }) {
     <div className="rounded-lg p-3" style={{ background: 'var(--adm-panel-raise)' }}>
       <p className="flex items-center gap-1.5 text-[12.5px] font-semibold" style={{ color: 'var(--adm-ok)' }}>
         <CheckCircle2 size={14} aria-hidden="true" />
-        Added {units} unit{units === 1 ? '' : 's'} of {session.length} part{session.length === 1 ? '' : 's'}
+        {units} item{units === 1 ? '' : 's'} added or topped up
       </p>
       <ul className="mt-2 space-y-1 overflow-y-auto" style={{ maxHeight: 112 }}>
         {session.map(s => (
-          <li key={s.ids[0]} className="flex items-baseline gap-2 text-[13px]">
-            <span className="adm-data shrink-0" style={{ color: 'var(--adm-silk-dim)', minWidth: 32 }}>{s.quantity}×</span>
+          <li key={s.id} className="flex items-baseline gap-2 text-[13px]">
+            <span className="adm-data shrink-0" style={{ color: 'var(--adm-silk-dim)', minWidth: 40 }}>+{s.added}</span>
             <span className="adm-truncate flex-1 min-w-0">{s.name}</span>
             <span className="adm-data text-[11px] shrink-0" style={{ color: 'var(--adm-silk-faint)' }}>
-              INV-{String(s.ids[0]).padStart(5, '0')}{s.ids.length > 1 ? ` → ${String(s.ids[s.ids.length - 1]).padStart(5, '0')}` : ''}
+              {s.merged ? `now ${s.quantity} · ` : ''}{s.asset_code}
             </span>
           </li>
         ))}

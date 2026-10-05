@@ -31,8 +31,8 @@ export default function PartNameField({ value, onChange, onPick, onSearchOnline,
       const key = fold(item.name).trim()
       if (!key) continue
       const entry = byName.get(key)
-      if (entry) entry.count++
-      else byName.set(key, { name: item.name, category: item.category, image: item.photo_url, count: 1, source: 'inventory' })
+      if (entry) entry.count += item.quantity ?? 1
+      else byName.set(key, { name: item.name, category: item.category, image: item.photo_url, count: item.quantity ?? 1, source: 'inventory' })
     }
     return [...byName.values()].map(e => index({ ...e, family: '', keywords: '' }))
   }, [existing])

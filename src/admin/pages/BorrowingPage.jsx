@@ -42,12 +42,12 @@ export default function BorrowingPage() {
       read(
         supabase
           .from('borrow_records')
-          .select('*, item:inventory_items(id, name, asset_code, category, location, status), member:members(full_name, member_code)')
+          .select('*, item:inventory_items(id, name, asset_code, category, location, status, quantity, on_loan), member:members(full_name, member_code)')
           .order('checked_out_at', { ascending: false })
       ),
       read(
         supabase.from('inventory_items')
-          .select('id, name, asset_code, category, location, status')
+          .select('id, name, asset_code, category, location, status, quantity, on_loan')
           .neq('status', 'retired')
           .order('name')
       ),
@@ -82,11 +82,11 @@ export default function BorrowingPage() {
             filename={`borrowing-history-${new Date().toISOString().slice(0, 10)}`}
             title="Borrowing history"
             subtitle={formatDateTime(new Date())}
-            headers={['Item', 'Asset code', 'Borrower', 'Checked out', 'Due', 'Returned', 'Status']}
+            headers={['Item', 'Asset code', 'Borrower', 'Checked out', 'Due', 'Returned', 'Status', 'Quantity']}
             rows={withOverdue.map(r => [
               r.item?.name, r.item?.asset_code, r.member?.full_name || r.borrower_name,
               formatDateTime(r.checked_out_at), r.expected_return_at ? formatDate(r.expected_return_at) : '',
-              r.returned_at ? formatDateTime(r.returned_at) : '', r.computedStatus,
+              r.returned_at ? formatDateTime(r.returned_at) : '', r.computedStatus, r.quantity ?? 1,
             ])}
             statusColumnIndex={6}
             disabled={!withOverdue.length}
@@ -121,12 +121,21 @@ export default function BorrowingPage() {
   )
 }
 
+/** Units on the shelf right now — the rest are out on loan. */
+const available = item => (item.quantity ?? 1) - (item.on_loan || 0)
+
 function ItemOption({ item }) {
+  const total = item.quantity ?? 1
   return (
     <span className="min-w-0 block">
       <span className="block text-sm font-semibold adm-truncate">{item.name}</span>
       <span className="adm-data block text-[11px] adm-truncate" style={{ color: 'var(--adm-silk-faint)' }}>
-        {[item.asset_code, item.category, item.location].filter(Boolean).join(' · ')}
+        {[
+          item.asset_code,
+          total > 1 ? `${available(item)} of ${total} available` : null,
+          item.category,
+          item.location,
+        ].filter(Boolean).join(' · ')}
       </span>
     </span>
   )
@@ -156,7 +165,13 @@ function CheckOutForm({ items, members, loading, onDone }) {
   const [borrower, setBorrower] = useState(null)
   const [expectedReturn, setExpectedReturn] = useState('')
   const [note, setNote] = useState('')
+  const [count, setCount] = useState('1')
   const [busy, setBusy] = useState(false)
+
+  const max = item ? available(item) : 1
+  const n = Number(count)
+  const countOk = Number.isInteger(n) && n >= 1 && n <= max
+  const pick = i => { setItem(i); setCount('1') }
 
   // Available items first so the suggestions lead with what can be lent.
   const sortedItems = useMemo(
@@ -167,15 +182,14 @@ function CheckOutForm({ items, members, loading, onDone }) {
   const submit = async e => {
     e.preventDefault()
     if (!item) { addToast('Pick the item being borrowed.', 'error'); return }
+    if (!countOk) { addToast(`Lend between 1 and ${max}.`, 'error'); return }
     setBusy(true)
 
-    // Flip the status only while it is still available, so the same item
-    // can't be lent twice from two screens.
-    const { data: claimed, error: claimErr } = await supabase
-      .from('inventory_items').update({ status: 'borrowed' })
-      .eq('id', item.id).eq('status', 'available').select('id')
-    if (claimErr || !claimed?.length) {
-      addToast(claimErr ? 'The checkout was not recorded.' : `${item.name} is no longer available.`, 'error')
+    // Take the units in one database step that checks enough are left, so
+    // the same last unit can't be lent twice from two screens.
+    const { data: claimed, error: claimErr } = await supabase.rpc('inventory_lend', { p_item: item.id, p_qty: n })
+    if (claimErr || !claimed) {
+      addToast(claimErr ? 'The checkout was not recorded.' : `Not enough ${item.name} left to lend ${n}.`, 'error')
       setBusy(false)
       onDone()
       return
@@ -184,6 +198,7 @@ function CheckOutForm({ items, members, loading, onDone }) {
     const member = borrower && !borrower.guest ? borrower : null
     const { error: insertErr } = await supabase.from('borrow_records').insert({
       item_id: item.id,
+      quantity: n,
       member_id: member?.id ?? null,
       borrower_name: borrower?.full_name ?? null,
       expected_return_at: expectedReturn ? endOfDay(expectedReturn) : null,
@@ -191,15 +206,15 @@ function CheckOutForm({ items, members, loading, onDone }) {
       status: 'active',
     })
     if (insertErr) {
-      await supabase.from('inventory_items').update({ status: 'available' }).eq('id', item.id)
+      await supabase.rpc('inventory_release', { p_item: item.id, p_qty: n })
       addToast('The checkout was not recorded.', 'error')
       setBusy(false)
       return
     }
 
-    logActivity('checked_out', 'inventory_items', item.id, { name: item.name, borrower: borrower?.full_name })
-    addToast(`${item.name} checked out${borrower ? ` to ${borrower.full_name}` : ''}.`)
-    setItem(null); setBorrower(null); setExpectedReturn(''); setNote('')
+    logActivity('checked_out', 'inventory_items', item.id, { name: item.name, quantity: n, borrower: borrower?.full_name })
+    addToast(`${n > 1 ? `${n} × ` : ''}${item.name} checked out${borrower ? ` to ${borrower.full_name}` : ''}.`)
+    setItem(null); setCount('1'); setBorrower(null); setExpectedReturn(''); setNote('')
     setBusy(false)
     onDone()
   }
@@ -212,7 +227,7 @@ function CheckOutForm({ items, members, loading, onDone }) {
           placeholder={loading ? 'Loading inventory…' : 'Search by name or asset code…'}
           options={sortedItems}
           value={item}
-          onChange={setItem}
+          onChange={pick}
           getKey={itemKey}
           getCode={itemCode}
           getSearchText={itemText}
@@ -221,6 +236,20 @@ function CheckOutForm({ items, members, loading, onDone }) {
           emptyText="No item matches. Add it from Inventory first."
           autoFocus
         />
+        {item && max > 1 && (
+          <TextField
+            label="How many"
+            type="number"
+            inputMode="numeric"
+            min={1}
+            max={max}
+            step={1}
+            value={count}
+            error={count !== '' && !countOk ? `Between 1 and ${max} — that's how many are on the shelf.` : undefined}
+            hint={`${max} of ${item.quantity ?? 1} available`}
+            onChange={e => setCount(e.target.value)}
+          />
+        )}
         <SearchPicker
           label="Borrower (optional)"
           placeholder="Search member by name or code…"
@@ -243,7 +272,9 @@ function CheckOutForm({ items, members, loading, onDone }) {
           onChange={e => setExpectedReturn(e.target.value)}
         />
         <TextArea label="Condition notes" value={note} onChange={e => setNote(e.target.value)} placeholder="Working, minor scuff on the case…" />
-        <Button type="submit" variant="primary" icon={PackageMinus} busy={busy} busyLabel="Checking out…" disabled={!item}>Check out</Button>
+        <Button type="submit" variant="primary" icon={PackageMinus} busy={busy} busyLabel="Checking out…" disabled={!item || !countOk}>
+          Check out{item && n > 1 && countOk ? ` ${n}` : ''}
+        </Button>
       </form>
     </Panel>
   )
@@ -258,10 +289,13 @@ function LoanOption({ loan }) {
   return (
     <span className="flex items-center gap-3 min-w-0">
       <span className="min-w-0 flex-1 block">
-        <span className="block text-sm font-semibold adm-truncate">{loan.item?.name}</span>
+        <span className="block text-sm font-semibold adm-truncate">
+          {(loan.quantity ?? 1) > 1 ? `${loan.quantity} × ` : ''}{loan.item?.name}
+        </span>
         <span className="adm-data block text-[11px] adm-truncate" style={{ color: 'var(--adm-silk-faint)' }}>
           {[
             loan.item?.asset_code,
+            loan.orphan ? 'no open loan record' : null,
             who ? `with ${who}` : null,
             loan.expected_return_at ? `due ${formatDate(loan.expected_return_at)}` : null,
           ].filter(Boolean).join(' · ')}
@@ -278,13 +312,15 @@ function ReturnForm({ loans, items, loading, onDone }) {
   const [note, setNote] = useState('')
   const [busy, setBusy] = useState(false)
 
-  // Items marked borrowed with no open record (a half-finished checkout) were
+  // Units counted as out with no open record (a half-finished checkout) were
   // stuck forever before — offer them too so they can be released.
   const options = useMemo(() => {
-    const open = new Set(loans.map(l => l.item_id))
+    const open = new Map()
+    for (const l of loans) open.set(l.item_id, (open.get(l.item_id) || 0) + (l.quantity ?? 1))
     const orphans = items
-      .filter(i => i.status === 'borrowed' && !open.has(i.id))
-      .map(i => ({ id: `orphan:${i.id}`, orphan: true, item_id: i.id, item: i, status: 'active', computedStatus: 'active' }))
+      .map(i => ({ i, stray: (i.on_loan || 0) - (open.get(i.id) || 0) }))
+      .filter(({ stray }) => stray > 0)
+      .map(({ i, stray }) => ({ id: `orphan:${i.id}`, orphan: true, item_id: i.id, item: i, quantity: stray, status: 'active', computedStatus: 'active' }))
     return [...loans, ...orphans]
   }, [loans, items])
 
@@ -299,11 +335,12 @@ function ReturnForm({ loans, items, loading, onDone }) {
       }).eq('id', loan.id)
       if (error) { addToast('The return was not recorded.', 'error'); setBusy(false); return }
     }
-    const { error: itemErr } = await supabase.from('inventory_items').update({ status: 'available' }).eq('id', loan.item_id)
-    if (itemErr) addToast('Return logged, but the item is still marked borrowed.', 'error')
-    else addToast(`${loan.item.name} marked returned.`)
+    const n = loan.quantity ?? 1
+    const { error: itemErr } = await supabase.rpc('inventory_release', { p_item: loan.item_id, p_qty: n })
+    if (itemErr) addToast('Return logged, but the item still counts it as out.', 'error')
+    else addToast(`${n > 1 ? `${n} × ` : ''}${loan.item.name} marked returned.`)
 
-    logActivity('returned', 'inventory_items', loan.item_id, { name: loan.item.name })
+    logActivity('returned', 'inventory_items', loan.item_id, { name: loan.item.name, quantity: n })
     setLoan(null); setNote('')
     setBusy(false)
     onDone()
@@ -337,7 +374,9 @@ function HistoryTable({ rows, loading }) {
   const columns = useMemo(() => [
     { header: 'Item', accessorKey: 'item.name', cell: ({ row }) => (
       <span className="min-w-0 block">
-        <span className="block text-sm font-semibold adm-truncate" style={{ maxWidth: 200 }}>{row.original.item?.name || '—'}</span>
+        <span className="block text-sm font-semibold adm-truncate" style={{ maxWidth: 200 }}>
+          {(row.original.quantity ?? 1) > 1 ? `${row.original.quantity} × ` : ''}{row.original.item?.name || '—'}
+        </span>
         <span className="adm-data block text-[11px]" style={{ color: 'var(--adm-silk-faint)' }}>{row.original.item?.asset_code}</span>
       </span>
     )},

@@ -12,11 +12,11 @@ const ROWS_WITH_DROPDOWNS = 1000
 
 const HELP = [
   ['Name', 'Required. What the item is called. Exact catalog names (e.g. “Arduino Uno R3”) get a photo automatically.'],
-  ['Quantity', `How many identical units. Each unit gets its own asset code and QR label. Empty = 1. Max ${MAX_QUANTITY} per row.`],
+  ['Quantity', `How many you have. The item gets one asset code and QR label; an item already in stock on the same shelf gets this added to its count. Empty = 1.`],
   ['Category', `One of: ${CATEGORIES.join(', ')}. Empty = taken from the catalog, or Electronics.`],
   ['Condition', `One of: ${CONDITIONS.join(', ')}. Empty = good.`],
   ['Location', 'Where it is kept, e.g. “Lab shelf 2”.'],
-  ['Serial number', 'Optional. With a quantity above 1 it is kept on the first unit only.'],
+  ['Serial number', 'Optional. Only for one specific unit — a row with a serial always becomes its own item.'],
   ['Value (DA)', 'Price of one unit in dinars. Numbers only.'],
   ['Purchase date', 'Optional. dd/mm/yyyy.'],
   ['Notes', 'Anything else.'],

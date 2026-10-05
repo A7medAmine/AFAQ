@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
 import { Tag } from 'lucide-react'
 import { read, supabase } from '../lib/db'
@@ -36,6 +36,7 @@ const DEFAULTS = {
   nameLines: 2,
   padding: 2.5,
   copies: 1,
+  perUnit: false,
   skip: 0,
   guides: true,
   offsetX: 0,
@@ -87,7 +88,7 @@ export default function LabelPrintPage({ kind = 'items' }) {
       if (!ids.length) { setState({ loading: false, error: 'No items were chosen for printing.' }); return }
       const { ok, data, message } = await read(shelves
         ? supabase.from('shelves').select('id, name, code, description').in('id', ids)
-        : supabase.from('inventory_items').select('id, name, asset_code, category, location').in('id', ids)
+        : supabase.from('inventory_items').select('id, name, asset_code, category, location, quantity').in('id', ids)
       )
       if (cancelled) return
       if (!ok) { setState({ loading: false, error: message }); return }
@@ -116,9 +117,14 @@ export default function LabelPrintPage({ kind = 'items' }) {
   const paper = PAPERS[custom ? s.paper : 'a4'] || PAPERS.a4
 
   const perPage = grid.cols * grid.rows
+  // Optionally one label for every unit in stock, to stick on each of them.
+  const perItem = useCallback(
+    list => (s.perUnit && !shelves ? list.flatMap(i => Array.from({ length: Math.max(1, i.quantity ?? 1) }, () => i)) : list),
+    [s.perUnit, shelves]
+  )
   const pages = useMemo(
-    () => paginate(repeat(items, s.copies), perPage, clamp(s.skip, 0, perPage - 1)),
-    [items, s.copies, s.skip, perPage]
+    () => paginate(repeat(perItem(items), s.copies), perPage, clamp(s.skip, 0, perPage - 1)),
+    [perItem, items, s.copies, s.skip, perPage]
   )
 
   if (state.loading) return null
@@ -144,7 +150,7 @@ export default function LabelPrintPage({ kind = 'items' }) {
     }),
   }))
 
-  const total = items.length * Math.max(1, Math.floor(s.copies) || 1)
+  const total = perItem(items).length * Math.max(1, Math.floor(s.copies) || 1)
 
   return (
     <PrintWorkspace
@@ -185,6 +191,9 @@ export default function LabelPrintPage({ kind = 'items' }) {
               <NumberSetting label="Skip first" value={s.skip} min={0} max={perPage - 1} onChange={v => set('skip', v)}
                 hint="Labels already used" />
             </div>
+            {!shelves && (
+              <CheckField label="One label per unit" description="Prints as many labels as the item's quantity" checked={s.perUnit} onChange={v => set('perUnit', v)} />
+            )}
           </SettingsGroup>
 
           <SettingsGroup title="Content">
