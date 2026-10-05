@@ -737,6 +737,103 @@ select.adm-input {
   background: var(--adm-signal-wash);
 }
 
+/* Inline edit controls in table cells: quiet until hovered or focused. */
+.adm-cell-select.adm-input,
+.adm-cell-input.adm-input {
+  min-height: 30px;
+  padding: 4px 8px;
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+.adm-cell-select.adm-input {
+  width: auto;
+  max-width: 170px;
+  padding-right: 28px;
+  border-color: transparent;
+  background-color: transparent;
+  color: var(--adm-silk-dim);
+  background-position: calc(100% - 13px) 51%, calc(100% - 8px) 51%;
+}
+
+.adm-table tbody tr:hover .adm-cell-select.adm-input:not(:disabled),
+.adm-cell-select.adm-input:focus {
+  border-color: var(--adm-trace);
+  background-color: var(--adm-board);
+  color: var(--adm-silk);
+}
+
+.adm-cell-text {
+  border-radius: 6px;
+  padding: 1px 4px;
+  margin: -1px -4px;
+  cursor: text;
+}
+
+.adm-cell-text:hover {
+  background: var(--adm-board);
+  box-shadow: inset 0 0 0 1px var(--adm-trace);
+}
+
+.adm-qty {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid transparent;
+  border-radius: 8px;
+}
+
+.adm-table tbody tr:hover .adm-qty,
+.adm-qty:focus-within {
+  border-color: var(--adm-trace);
+  background: var(--adm-board);
+}
+
+.adm-qty button {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 28px;
+  color: var(--adm-silk-faint);
+  opacity: 0;
+  transition: opacity 0.12s ease;
+}
+
+.adm-table tbody tr:hover .adm-qty button,
+.adm-qty:focus-within button {
+  opacity: 1;
+}
+
+.adm-qty button:hover:not(:disabled) {
+  color: var(--adm-silk);
+}
+
+.adm-qty button:disabled {
+  opacity: 0.3 !important;
+  cursor: not-allowed;
+}
+
+.adm-qty input {
+  width: 44px;
+  height: 28px;
+  text-align: center;
+  font-size: 13px;
+  background: transparent;
+  color: var(--adm-silk);
+  border: 0;
+  outline: none;
+  -moz-appearance: textfield;
+}
+
+.adm-qty input::-webkit-outer-spin-button,
+.adm-qty input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+@media (hover: none) {
+  .adm-qty button { opacity: 1; }
+}
+
 /* ── Utility ────────────────────────────────────────────────────────────── */
 
 .adm-scroll::-webkit-scrollbar {

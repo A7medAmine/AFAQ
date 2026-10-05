@@ -27,10 +27,10 @@ const DEFAULTS = {
   clubName: 'AFAQ Scientific Club',
   textScale: 100,
   fontMode: 'auto',
-  nameSize: 9,
-  codeSize: 7,
-  detailSize: 6.5,
-  clubSize: 5.5,
+  nameSize: 11,
+  codeSize: 9,
+  detailSize: 8,
+  clubSize: 6.5,
   fontFamily: 'default',
   nameBold: true,
   nameLines: 2,
@@ -280,10 +280,10 @@ function Label({ item, w, h, s }) {
   const iw = w - 2 * pad
   const ih = h - 2 * pad
   // Font sizes in pt: either derived from the label height, or set exactly.
-  const base = clamp(h * 0.2, 4.5, 11) * clamp(s.textScale, 50, 200) / 100
+  const base = clamp(h * 0.27, 5.5, 14) * clamp(s.textScale, 50, 200) / 100
   const size = s.fontMode === 'custom'
     ? { name: clamp(s.nameSize, 3, 48), code: clamp(s.codeSize, 3, 48), detail: clamp(s.detailSize, 3, 48), club: clamp(s.clubSize, 3, 48) }
-    : { name: base, code: base * 0.8, detail: base * 0.72, club: base * 0.62 }
+    : { name: base, code: base * 0.85, detail: base * 0.75, club: base * 0.62 }
   const family = (FONT_FAMILIES[s.fontFamily] || FONT_FAMILIES.default).css
   const withQr = s.code === 'qr' || s.code === 'both'
   const withBar = s.code === 'barcode' || s.code === 'both'

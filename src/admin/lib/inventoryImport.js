@@ -14,6 +14,17 @@ import { normalizeHeader, oneOf, text, toDate } from './memberImport'
 export const CATEGORIES = ['Electronics', 'Tools', 'Lab equipment', 'Furniture', 'Consumables', 'Other']
 export const CONDITIONS = ['new', 'good', 'worn', 'damaged']
 
+/** What happens when someone takes one: it comes back, or it's used up. */
+export const TRACKING_MODES = [
+  { value: 'returnable', label: 'Lent — comes back' },
+  { value: 'consumable', label: 'Used up — handed out' },
+]
+export const defaultTracking = category => (category === 'Consumables' ? 'consumable' : 'returnable')
+
+/** On the shelf right now, and whether that's at or under the item's minimum. */
+export const onShelf = item => (item.quantity ?? 1) - (item.on_loan || 0)
+export const isLowStock = item => item.min_stock != null && item.status !== 'retired' && onShelf(item) <= item.min_stock
+
 /** Caps that catch a wrong column mapped as quantity, and oversized sheets. */
 export const MAX_QUANTITY = 100000
 export const MAX_ROWS = 2000
@@ -139,6 +150,7 @@ export function buildItemRows(body, mapping, existing, catalog = []) {
       purchase_date: purchaseDate || null,
       notes: text(cell(row, 'notes')) || null,
       photo_url: part?.image || null,
+      tracking_mode: defaultTracking(category),
       status: 'available',
     }
 

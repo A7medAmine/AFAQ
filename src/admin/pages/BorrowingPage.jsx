@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { PackageCheck, PackageMinus, ScrollText } from 'lucide-react'
+import { PackageCheck, PackageMinus, PackageX, ScrollText } from 'lucide-react'
 import { logActivity, read, supabase } from '../lib/db'
 import useAdminStore from '../store/adminStore'
 import PageHeader, { FilterTabs } from '../components/ui/PageHeader'
@@ -9,7 +9,7 @@ import Panel from '../components/ui/Panel'
 import Button from '../components/ui/Button'
 import ExportMenu from '../components/ui/ExportMenu'
 import { StatusBadge } from '../components/ui/Badge'
-import { TextArea, TextField } from '../components/ui/Field'
+import { CheckField, TextArea, TextField } from '../components/ui/Field'
 import SearchPicker from '../components/ui/SearchPicker'
 import { formatDate, formatDateTime } from '../lib/format'
 
@@ -18,6 +18,14 @@ const TABS = [
   { value: 'return', label: 'Return' },
   { value: 'history', label: 'History' },
 ]
+
+// A loan comes back; an issue is handed out for good (a part used in a build).
+const KINDS = [
+  { value: 'loan', label: 'Lend — comes back' },
+  { value: 'issue', label: 'Hand out — used up' },
+]
+
+const kindLabel = record => (record.kind === 'issue' ? 'Handed out' : 'Loan')
 
 // A due date picked as "YYYY-MM-DD" means the end of that day locally —
 // `new Date('YYYY-MM-DD')` is UTC midnight and flagged loans overdue early.
@@ -42,12 +50,12 @@ export default function BorrowingPage() {
       read(
         supabase
           .from('borrow_records')
-          .select('*, item:inventory_items(id, name, asset_code, category, location, status, quantity, on_loan), member:members(full_name, member_code)')
+          .select('*, item:inventory_items(id, name, asset_code, category, location, status, quantity, on_loan, tracking_mode), member:members(full_name, member_code)')
           .order('checked_out_at', { ascending: false })
       ),
       read(
         supabase.from('inventory_items')
-          .select('id, name, asset_code, category, location, status, quantity, on_loan')
+          .select('id, name, asset_code, category, location, status, quantity, on_loan, tracking_mode')
           .neq('status', 'retired')
           .order('name')
       ),
@@ -76,17 +84,18 @@ export default function BorrowingPage() {
       <PageHeader
         eyebrow="Operate"
         title="Borrowing"
-        description="Check tools and equipment in and out. Type the item or member name, or scan the label or card with a barcode scanner."
+        description="Lend tools that come back, or hand out parts that get used in a build. Type the item or member name, or scan the label or card with a barcode scanner."
         actions={tab === 'history' && (
           <ExportMenu
             filename={`borrowing-history-${new Date().toISOString().slice(0, 10)}`}
             title="Borrowing history"
             subtitle={formatDateTime(new Date())}
-            headers={['Item', 'Asset code', 'Borrower', 'Checked out', 'Due', 'Returned', 'Status', 'Quantity']}
+            headers={['Item', 'Asset code', 'Borrower', 'Checked out', 'Due', 'Returned', 'Status', 'Quantity', 'Type', 'For', 'Used up']}
             rows={withOverdue.map(r => [
               r.item?.name, r.item?.asset_code, r.member?.full_name || r.borrower_name,
               formatDateTime(r.checked_out_at), r.expected_return_at ? formatDate(r.expected_return_at) : '',
               r.returned_at ? formatDateTime(r.returned_at) : '', r.computedStatus, r.quantity ?? 1,
+              kindLabel(r), r.purpose || '', r.consumed_quantity || 0,
             ])}
             statusColumnIndex={6}
             disabled={!withOverdue.length}
@@ -103,7 +112,7 @@ export default function BorrowingPage() {
         />
         {activeLoans.length > 0 && (
           <span className="text-xs" style={{ color: overdueCount ? 'var(--adm-fault)' : 'var(--adm-silk-faint)' }}>
-            {activeLoans.length} out{overdueCount > 0 ? `, ${overdueCount} overdue` : ''}
+            {activeLoans.length} on loan{overdueCount > 0 ? `, ${overdueCount} overdue` : ''}
           </span>
         )}
       </div>
@@ -123,6 +132,8 @@ export default function BorrowingPage() {
 
 /** Units on the shelf right now — the rest are out on loan. */
 const available = item => (item.quantity ?? 1) - (item.on_loan || 0)
+
+const UNAVAILABLE = { borrowed: 'all out', out_of_stock: 'out of stock', repair: 'in repair', retired: 'retired' }
 
 function ItemOption({ item }) {
   const total = item.quantity ?? 1
@@ -166,12 +177,16 @@ function CheckOutForm({ items, members, loading, onDone }) {
   const [expectedReturn, setExpectedReturn] = useState('')
   const [note, setNote] = useState('')
   const [count, setCount] = useState('1')
+  const [kind, setKind] = useState('loan')
+  const [purpose, setPurpose] = useState('')
   const [busy, setBusy] = useState(false)
 
   const max = item ? available(item) : 1
   const n = Number(count)
   const countOk = Number.isInteger(n) && n >= 1 && n <= max
-  const pick = i => { setItem(i); setCount('1') }
+  const issue = kind === 'issue'
+  // The item says whether it usually comes back; the switch can still override it.
+  const pick = i => { setItem(i); setCount('1'); if (i) setKind(i.tracking_mode === 'consumable' ? 'issue' : 'loan') }
 
   // Available items first so the suggestions lead with what can be lent.
   const sortedItems = useMemo(
@@ -182,14 +197,15 @@ function CheckOutForm({ items, members, loading, onDone }) {
   const submit = async e => {
     e.preventDefault()
     if (!item) { addToast('Pick the item being borrowed.', 'error'); return }
-    if (!countOk) { addToast(`Lend between 1 and ${max}.`, 'error'); return }
+    if (!countOk) { addToast(`${issue ? 'Hand out' : 'Lend'} between 1 and ${max}.`, 'error'); return }
     setBusy(true)
 
     // Take the units in one database step that checks enough are left, so
-    // the same last unit can't be lent twice from two screens.
-    const { data: claimed, error: claimErr } = await supabase.rpc('inventory_lend', { p_item: item.id, p_qty: n })
+    // the same last unit can't go out twice from two screens. A loan counts
+    // them as out; an issue takes them off the count for good.
+    const { data: claimed, error: claimErr } = await supabase.rpc(issue ? 'inventory_issue' : 'inventory_lend', { p_item: item.id, p_qty: n })
     if (claimErr || !claimed) {
-      addToast(claimErr ? 'The checkout was not recorded.' : `Not enough ${item.name} left to lend ${n}.`, 'error')
+      addToast(claimErr ? 'The checkout was not recorded.' : `Not enough ${item.name} left to ${issue ? 'hand out' : 'lend'} ${n}.`, 'error')
       setBusy(false)
       onDone()
       return
@@ -198,23 +214,30 @@ function CheckOutForm({ items, members, loading, onDone }) {
     const member = borrower && !borrower.guest ? borrower : null
     const { error: insertErr } = await supabase.from('borrow_records').insert({
       item_id: item.id,
+      kind,
       quantity: n,
+      consumed_quantity: issue ? n : 0,
       member_id: member?.id ?? null,
       borrower_name: borrower?.full_name ?? null,
-      expected_return_at: expectedReturn ? endOfDay(expectedReturn) : null,
+      purpose: purpose.trim() || null,
+      expected_return_at: !issue && expectedReturn ? endOfDay(expectedReturn) : null,
       condition_note_out: note.trim() || null,
-      status: 'active',
+      status: issue ? 'consumed' : 'active',
     })
     if (insertErr) {
-      await supabase.rpc('inventory_release', { p_item: item.id, p_qty: n })
+      await (issue
+        ? supabase.rpc('inventory_restock', { p_item: item.id, p_qty: n })
+        : supabase.rpc('inventory_release', { p_item: item.id, p_qty: n }))
       addToast('The checkout was not recorded.', 'error')
       setBusy(false)
       return
     }
 
-    logActivity('checked_out', 'inventory_items', item.id, { name: item.name, quantity: n, borrower: borrower?.full_name })
-    addToast(`${n > 1 ? `${n} × ` : ''}${item.name} checked out${borrower ? ` to ${borrower.full_name}` : ''}.`)
-    setItem(null); setCount('1'); setBorrower(null); setExpectedReturn(''); setNote('')
+    logActivity(issue ? 'issued' : 'checked_out', 'inventory_items', item.id, {
+      name: item.name, quantity: n, borrower: borrower?.full_name, purpose: purpose.trim() || undefined,
+    })
+    addToast(`${n > 1 ? `${n} × ` : ''}${item.name} ${issue ? 'handed out' : 'checked out'}${borrower ? ` to ${borrower.full_name}` : ''}.`)
+    setItem(null); setCount('1'); setBorrower(null); setExpectedReturn(''); setNote(''); setPurpose('')
     setBusy(false)
     onDone()
   }
@@ -232,10 +255,20 @@ function CheckOutForm({ items, members, loading, onDone }) {
           getCode={itemCode}
           getSearchText={itemText}
           renderOption={i => <ItemOption item={i} />}
-          isDisabled={i => (i.status !== 'available' ? i.status : null)}
+          isDisabled={i => (i.status !== 'available' ? UNAVAILABLE[i.status] || i.status : null)}
           emptyText="No item matches. Add it from Inventory first."
           autoFocus
         />
+        {item && (
+          <div>
+            <FilterTabs options={KINDS} value={kind} onChange={setKind} label="Comes back or used up" />
+            <p className="text-[12px] mt-1.5" style={{ color: 'var(--adm-silk-faint)' }}>
+              {issue
+                ? 'Leaves the stock for good — for parts that go into a build.'
+                : 'Counted as out until it\'s returned.'}
+            </p>
+          </div>
+        )}
         {item && max > 1 && (
           <TextField
             label="How many"
@@ -251,7 +284,7 @@ function CheckOutForm({ items, members, loading, onDone }) {
           />
         )}
         <SearchPicker
-          label="Borrower (optional)"
+          label={issue ? 'Given to (optional)' : 'Borrower (optional)'}
           placeholder="Search member by name or code…"
           options={members}
           value={borrower}
@@ -261,19 +294,29 @@ function CheckOutForm({ items, members, loading, onDone }) {
           getSearchText={memberText}
           renderOption={m => <MemberOption member={m} />}
           onFreeText={name => setBorrower({ id: `guest:${name}`, full_name: name, guest: true })}
-          freeTextLabel={name => `Lend to “${name}” (not a member)`}
+          freeTextLabel={name => `${issue ? 'Give' : 'Lend'} to “${name}” (not a member)`}
           emptyText="No member matches."
         />
         <TextField
-          label="Expected return date"
-          type="date"
-          value={expectedReturn}
-          min={new Date().toISOString().slice(0, 10)}
-          onChange={e => setExpectedReturn(e.target.value)}
+          label="For (optional)"
+          value={purpose}
+          onChange={e => setPurpose(e.target.value)}
+          placeholder="Line-follower robot, Arduino workshop…"
+          hint={issue ? 'The project or event it goes into.' : undefined}
         />
-        <TextArea label="Condition notes" value={note} onChange={e => setNote(e.target.value)} placeholder="Working, minor scuff on the case…" />
-        <Button type="submit" variant="primary" icon={PackageMinus} busy={busy} busyLabel="Checking out…" disabled={!item || !countOk}>
-          Check out{item && n > 1 && countOk ? ` ${n}` : ''}
+        {!issue && (
+          <TextField
+            label="Expected return date"
+            type="date"
+            value={expectedReturn}
+            min={new Date().toISOString().slice(0, 10)}
+            onChange={e => setExpectedReturn(e.target.value)}
+          />
+        )}
+        <TextArea label={issue ? 'Notes' : 'Condition notes'} value={note} onChange={e => setNote(e.target.value)}
+          placeholder={issue ? 'Optional' : 'Working, minor scuff on the case…'} />
+        <Button type="submit" variant="primary" icon={PackageMinus} busy={busy} busyLabel={issue ? 'Handing out…' : 'Checking out…'} disabled={!item || !countOk}>
+          {issue ? 'Hand out' : 'Check out'}{item && n > 1 && countOk ? ` ${n}` : ''}
         </Button>
       </form>
     </Panel>
@@ -310,7 +353,17 @@ function ReturnForm({ loans, items, loading, onDone }) {
   const addToast = useAdminStore(s => s.addToast)
   const [loan, setLoan] = useState(null)
   const [note, setNote] = useState('')
+  const [back, setBack] = useState('')
+  const [kept, setKept] = useState(false)
   const [busy, setBusy] = useState(false)
+
+  // Some or all of a loan can be used up instead of coming back: 10 servos
+  // out, 6 back, 4 went into the robot.
+  const total = loan?.quantity ?? 1
+  const returned = total > 1 ? Number(back) : kept ? 0 : 1
+  const backOk = Number.isInteger(returned) && returned >= 0 && returned <= total
+  const used = backOk ? total - returned : 0
+  const pick = l => { setLoan(l); setBack(String(l?.quantity ?? 1)); setKept(false) }
 
   // Units counted as out with no open record (a half-finished checkout) were
   // stuck forever before — offer them too so they can be released.
@@ -327,21 +380,27 @@ function ReturnForm({ loans, items, loading, onDone }) {
   const submit = async e => {
     e.preventDefault()
     if (!loan) { addToast('Pick the item being returned.', 'error'); return }
+    if (!backOk) { addToast(`Between 0 and ${total} came back.`, 'error'); return }
     setBusy(true)
 
     if (!loan.orphan) {
       const { error } = await supabase.from('borrow_records').update({
-        status: 'returned', returned_at: new Date().toISOString(), condition_note_in: note.trim() || null,
+        status: used === 0 ? 'returned' : returned === 0 ? 'consumed' : 'partially_consumed',
+        consumed_quantity: used,
+        returned_at: new Date().toISOString(),
+        condition_note_in: note.trim() || null,
       }).eq('id', loan.id)
       if (error) { addToast('The return was not recorded.', 'error'); setBusy(false); return }
     }
-    const n = loan.quantity ?? 1
-    const { error: itemErr } = await supabase.rpc('inventory_release', { p_item: loan.item_id, p_qty: n })
+    const { error: itemErr } = await supabase.rpc('inventory_settle', { p_item: loan.item_id, p_returned: returned, p_used: used })
+    const name = loan.item.name
     if (itemErr) addToast('Return logged, but the item still counts it as out.', 'error')
-    else addToast(`${n > 1 ? `${n} × ` : ''}${loan.item.name} marked returned.`)
+    else if (used === 0) addToast(`${total > 1 ? `${total} × ` : ''}${name} marked returned.`)
+    else if (returned === 0) addToast(`${total > 1 ? `${total} × ` : ''}${name} marked used up and taken off the stock.`)
+    else addToast(`${name}: ${returned} back on the shelf, ${used} used up.`)
 
-    logActivity('returned', 'inventory_items', loan.item_id, { name: loan.item.name, quantity: n })
-    setLoan(null); setNote('')
+    logActivity(used ? 'settled' : 'returned', 'inventory_items', loan.item_id, { name, quantity: total, returned, used })
+    setLoan(null); setNote(''); setBack(''); setKept(false)
     setBusy(false)
     onDone()
   }
@@ -354,7 +413,7 @@ function ReturnForm({ loans, items, loading, onDone }) {
           placeholder={loading ? 'Loading loans…' : 'Search by item, code or borrower…'}
           options={options}
           value={loan}
-          onChange={setLoan}
+          onChange={pick}
           getKey={loanKey}
           getCode={loanCode}
           getSearchText={loanText}
@@ -363,27 +422,71 @@ function ReturnForm({ loans, items, loading, onDone }) {
           limit={20}
           autoFocus
         />
+        {loan && total > 1 && (
+          <TextField
+            label="How many came back"
+            type="number"
+            inputMode="numeric"
+            min={0}
+            max={total}
+            step={1}
+            value={back}
+            error={back !== '' && !backOk ? `Between 0 and ${total}.` : undefined}
+            hint={backOk && used > 0 ? `The other ${used} were used up and leave the stock.` : `All ${total} back on the shelf.`}
+            onChange={e => setBack(e.target.value)}
+          />
+        )}
+        {loan && total === 1 && (
+          <CheckField
+            label="Not coming back"
+            description="Used in a project — it leaves the stock."
+            checked={kept}
+            onChange={setKept}
+          />
+        )}
         <TextArea label="Return condition notes" value={note} onChange={e => setNote(e.target.value)} placeholder="Returned in good condition…" />
-        <Button type="submit" variant="primary" icon={PackageCheck} busy={busy} busyLabel="Returning…" disabled={!loan}>Mark returned</Button>
+        <Button type="submit" variant="primary" icon={used > 0 ? PackageX : PackageCheck} busy={busy} busyLabel="Saving…" disabled={!loan || !backOk}>
+          {used === 0 ? 'Mark returned' : returned === 0 ? 'Mark used up' : `Return ${returned}, ${used} used up`}
+        </Button>
       </form>
     </Panel>
   )
 }
 
+const HISTORY_KINDS = [
+  { value: 'all', label: 'All' },
+  { value: 'loan', label: 'Loans' },
+  { value: 'issue', label: 'Handed out' },
+]
+
 function HistoryTable({ rows, loading }) {
+  const [kind, setKind] = useState('all')
+  const shown = useMemo(() => (kind === 'all' ? rows : rows.filter(r => (r.kind || 'loan') === kind)), [rows, kind])
+
   const columns = useMemo(() => [
     { header: 'Item', accessorKey: 'item.name', cell: ({ row }) => (
       <span className="min-w-0 block">
         <span className="block text-sm font-semibold adm-truncate" style={{ maxWidth: 200 }}>
           {(row.original.quantity ?? 1) > 1 ? `${row.original.quantity} × ` : ''}{row.original.item?.name || '—'}
         </span>
-        <span className="adm-data block text-[11px]" style={{ color: 'var(--adm-silk-faint)' }}>{row.original.item?.asset_code}</span>
+        <span className="adm-data block text-[11px]" style={{ color: 'var(--adm-silk-faint)' }}>
+          {[
+            row.original.item?.asset_code,
+            row.original.kind !== 'issue' && row.original.consumed_quantity > 0 ? `${row.original.consumed_quantity} used up` : null,
+          ].filter(Boolean).join(' · ')}
+        </span>
       </span>
+    )},
+    { header: 'Type', id: 'kind', accessorFn: kindLabel, cell: ({ row }) => (
+      <span className="text-[13px]" style={{ color: 'var(--adm-silk-dim)' }}>{kindLabel(row.original)}</span>
     )},
     { header: 'Borrower', accessorKey: 'borrower_name', cell: ({ row }) => (
       <span className="text-[13px]" style={{ color: 'var(--adm-silk-dim)' }}>
         {row.original.member?.full_name || row.original.borrower_name || '—'}
       </span>
+    )},
+    { header: 'For', accessorKey: 'purpose', cell: ({ row }) => (
+      <span className="text-[13px] block adm-truncate" style={{ color: 'var(--adm-silk-dim)', maxWidth: 180 }}>{row.original.purpose || '—'}</span>
     )},
     { header: 'Checked out', accessorKey: 'checked_out_at', cell: ({ row }) => (
       <span className="adm-data text-[12px]">{formatDateTime(row.original.checked_out_at)}</span>
@@ -400,10 +503,11 @@ function HistoryTable({ rows, loading }) {
   return (
     <DataTable
       columns={columns}
-      data={rows}
+      data={shown}
       loading={loading}
       getRowId={row => String(row.id)}
-      searchPlaceholder="Search by item or borrower…"
+      toolbar={<FilterTabs options={HISTORY_KINDS} value={kind} onChange={setKind} label="Type filter" />}
+      searchPlaceholder="Search by item, borrower or project…"
       emptyState={<EmptyState icon={ScrollText} title="No borrow history yet" description="Check out an item to start the log." />}
     />
   )

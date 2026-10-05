@@ -1,6 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import QRCode from 'qrcode'
-import { Boxes, CheckCircle2, FileSpreadsheet, IdCard, Library, Loader2, Minus, PackagePlus, Pencil, Plus, Printer, Search, Trash2, Upload } from 'lucide-react'
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import { Boxes, CheckCircle2, Eye, FileSpreadsheet, IdCard, Library, Loader2, Minus, PackagePlus, Pencil, Plus, Printer, Search, Trash2, Upload } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { api, logActivity, read, run, supabase, uploadFile } from '../lib/db'
 import useAdminStore from '../store/adminStore'
@@ -19,8 +18,13 @@ import Panel from '../components/ui/Panel'
 import { Field, SelectField, TextArea, TextField } from '../components/ui/Field'
 import PartNameField from '../components/inventory/PartNameField'
 import ImportItemsModal from '../components/inventory/ImportItemsModal'
-import { CATEGORIES, MAX_QUANTITY } from '../lib/inventoryImport'
+import { CATEGORIES, MAX_QUANTITY, TRACKING_MODES, defaultTracking, isLowStock } from '../lib/inventoryImport'
 import { createShelf, loadShelves } from '../lib/shelves'
+import { labelItem } from '../lib/assetCodes'
+import {
+  InlineEdit, NameCell, QuantityCell, CategoryCell, LocationCell, ConditionCell, StatusCell, CONDITIONS, STATUSES,
+  minQuantityFor, statusFor,
+} from '../components/inventory/InlineCells'
 
 /** Rows from before the quantity column count as one. */
 const qty = item => item.quantity ?? 1
@@ -29,9 +33,16 @@ const FILTERS = [
   { value: 'all', label: 'All' },
   { value: 'available', label: 'Available' },
   { value: 'borrowed', label: 'Borrowed' },
+  { value: 'low', label: 'Low stock' },
+  { value: 'out_of_stock', label: 'Out of stock' },
   { value: 'repair', label: 'In repair' },
   { value: 'retired', label: 'Retired' },
 ]
+
+/** "Low stock" is worked out from the counts, not stored as a status. */
+const inFilter = (row, filter) => (filter === 'all' ? true : filter === 'low' ? isLowStock(row) : row.status === filter)
+
+const trackingLabel = mode => TRACKING_MODES.find(m => m.value === mode)?.label || TRACKING_MODES[0].label
 
 export default function InventoryPage() {
   const navigate = useNavigate()
@@ -49,6 +60,7 @@ export default function InventoryPage() {
   const [remove, setRemove] = useState(null)
   const [editing, setEditing] = useState(null)
   const [destroying, setDestroying] = useState(null)
+  const [bulkDeleting, setBulkDeleting] = useState(null) // { items, clear }
   const [shelves, setShelves] = useState(null) // null until loaded, or if the shelves table isn't there yet
 
   // If the shelves migration hasn't run yet, location stays a free-text box.
@@ -76,13 +88,13 @@ export default function InventoryPage() {
   }, [newFlag, setNewFlag])
 
   const filtered = useMemo(
-    () => (status === 'all' ? rows : rows.filter(r => r.status === status)),
+    () => (status === 'all' ? rows : rows.filter(r => inFilter(r, status))),
     [rows, status]
   )
 
   const filterOptions = FILTERS.map(f => ({
     ...f,
-    count: f.value === 'all' ? rows.length : rows.filter(r => r.status === f.value).length,
+    count: f.value === 'all' ? rows.length : rows.filter(r => inFilter(r, f.value)).length,
   }))
 
   const retire = async item => {
@@ -101,64 +113,93 @@ export default function InventoryPage() {
     if (ok) { logActivity('deleted', 'inventory_items', item.id, { name: item.name, asset_code: item.asset_code }); setDestroying(null); setDetail(null); await load() }
   }
 
+  /**
+   * Saves one field change from the table. The row updates right away and
+   * rolls back if the database refuses.
+   */
+  const patch = useCallback(async (item, changes) => {
+    const before = rows.find(r => r.id === item.id) || item
+    const apply = values => {
+      setRows(rs => rs.map(r => r.id === item.id ? { ...r, ...values } : r))
+      setDetail(d => d && d.id === item.id ? { ...d, ...values } : d)
+    }
+    apply(changes)
+    const { ok } = await run(
+      supabase.from('inventory_items').update({ ...changes, updated_at: new Date().toISOString() }).eq('id', item.id),
+      { failure: `${item.name} was not saved.` }
+    )
+    if (!ok) { apply(Object.fromEntries(Object.keys(changes).map(k => [k, before[k]]))); return false }
+    logActivity('updated', 'inventory_items', item.id, { name: changes.name || item.name, ...changes })
+    return true
+  }, [rows])
+
+  /** One change to every selected item: shelf, category, condition or status. */
+  const bulkUpdate = async (items, field, value, done) => {
+    const label = { location: 'shelf', category: 'category', condition: 'condition', status: 'status' }[field]
+    // The counts decide borrowed and out-of-stock, so those keep theirs.
+    const target = (field === 'status' ? items.filter(i => i.status !== 'borrowed' && i.status !== 'out_of_stock') : items).map(i => i.id)
+    if (!target.length) { addToast('All of those are out on loan or out of stock, so their status follows the count.', 'error'); return }
+    const { ok } = await run(
+      supabase.from('inventory_items').update({ [field]: value || null, updated_at: new Date().toISOString() }).in('id', target),
+      { success: `Changed the ${label} of ${target.length} item${target.length === 1 ? '' : 's'}.`, failure: 'Nothing was changed.' }
+    )
+    if (!ok) return
+    logActivity('updated', 'inventory_items', null, { name: `Bulk ${label} change`, [field]: value || null, count: target.length })
+    const ids = new Set(target)
+    setRows(rs => rs.map(r => ids.has(r.id) ? { ...r, [field]: value || null } : r))
+    done()
+  }
+
+  const bulkDestroy = async ({ items, clear }) => {
+    const { ok } = await run(
+      supabase.from('inventory_items').delete().in('id', items.map(i => i.id)),
+      { success: `Deleted ${items.length} item${items.length === 1 ? '' : 's'}.`, failure: 'Nothing was deleted.' }
+    )
+    if (!ok) return
+    logActivity('deleted', 'inventory_items', null, { name: 'Bulk delete', count: items.length, asset_codes: items.map(i => i.asset_code) })
+    clear()
+    setBulkDeleting(null)
+    await load()
+  }
+
   const printLabels = items => {
     const ids = items.filter(i => i.asset_code).map(i => i.id)
     if (ids.length) navigate(`/admin/inventory/labels?ids=${ids.join(',')}`)
   }
 
-  const exportHeaders = ['Asset code', 'Name', 'Category', 'Serial', 'Condition', 'Location', 'Status', 'Added', 'Quantity', 'On loan']
-  const exportRows = filtered.map(r => [r.asset_code, r.name, r.category, r.serial, r.condition, r.location, r.status, formatDate(r.created_at), qty(r), r.on_loan || 0])
+  const exportHeaders = ['Asset code', 'Name', 'Category', 'Serial', 'Condition', 'Location', 'Status', 'Added', 'Quantity', 'On loan', 'Type', 'Min stock']
+  const exportRows = filtered.map(r => [
+    r.asset_code, r.name, r.category, r.serial, r.condition, r.location, r.status, formatDate(r.created_at), qty(r), r.on_loan || 0,
+    trackingLabel(r.tracking_mode), r.min_stock ?? '',
+  ])
 
+  // Cells get the save function from context, so these columns never change.
   const columns = useMemo(() => [
-    {
-      header: 'Item',
-      accessorKey: 'name',
-      cell: ({ row }) => (
-        <span className="min-w-0 block">
-          <span className="block text-sm font-semibold adm-truncate" style={{ maxWidth: 220 }}>{row.original.name}</span>
-          <span className="adm-data block text-[11px] adm-truncate" style={{ color: 'var(--adm-silk-faint)' }}>
-            {row.original.asset_code}
-          </span>
-        </span>
-      ),
-    },
-    {
-      header: 'Qty',
-      id: 'quantity',
-      accessorFn: r => qty(r),
-      cell: ({ row }) => {
-        const r = row.original
-        return (
-          <span className="adm-data text-[13px]">
-            {qty(r)}
-            {r.on_loan > 0 && <span className="block text-[11px]" style={{ color: 'var(--adm-silk-faint)' }}>{r.on_loan} on loan</span>}
-          </span>
-        )
-      },
-    },
-    { header: 'Category', accessorKey: 'category', cell: ({ row }) => (
-      <span className="text-[13px]" style={{ color: 'var(--adm-silk-dim)' }}>{row.original.category || '—'}</span>
-    )},
-    { header: 'Location', accessorKey: 'location', cell: ({ row }) => (
-      <span className="text-[13px]" style={{ color: 'var(--adm-silk-dim)' }}>{row.original.location || '—'}</span>
-    )},
-    { header: 'Condition', accessorKey: 'condition', cell: ({ row }) => (
-      <span className="text-[13px] capitalize" style={{ color: 'var(--adm-silk-dim)' }}>{row.original.condition || '—'}</span>
-    )},
-    { header: 'Status', accessorKey: 'status', cell: ({ row }) => <StatusBadge status={row.original.status} /> },
+    { header: 'Item', accessorKey: 'name', cell: ({ row }) => <NameCell item={row.original} /> },
+    { header: 'Qty', id: 'quantity', accessorFn: r => qty(r), cell: ({ row }) => <QuantityCell item={row.original} /> },
+    { header: 'Category', accessorKey: 'category', cell: ({ row }) => <CategoryCell item={row.original} /> },
+    { header: 'Location', accessorKey: 'location', cell: ({ row }) => <LocationCell item={row.original} /> },
+    { header: 'Condition', accessorKey: 'condition', cell: ({ row }) => <ConditionCell item={row.original} /> },
+    { header: 'Status', accessorKey: 'status', cell: ({ row }) => <StatusCell item={row.original} /> },
     {
       header: 'Added',
       accessorKey: 'created_at',
       cell: ({ row }) => <span className="adm-data text-[12px]">{formatDate(row.original.created_at)}</span>,
     },
+    { id: 'actions', header: '', enableSorting: false, cell: ({ row }) => <RowActions item={row.original} /> },
   ], [])
+
+  const inline = useMemo(
+    () => ({ patch, shelves, open: setDetail, edit: setEditing, destroy: setDestroying }),
+    [patch, shelves]
+  )
 
   return (
     <div>
       <PageHeader
         eyebrow="Operate"
         title="Inventory"
-        description="Electronics, tools and everything else the club owns. Each item gets a QR label to scan for borrowing."
+        description="Edit right in the table: click a name to rename it, use − / + for the count, and the dropdowns for the rest. Changes save as you go."
         actions={
           <>
             <ExportMenu
@@ -184,6 +225,7 @@ export default function InventoryPage() {
       {state.error ? (
         <Panel><ErrorState message={state.error} onRetry={load} /></Panel>
       ) : (
+        <InlineEdit.Provider value={inline}>
         <DataTable
           columns={columns}
           data={filtered}
@@ -192,10 +234,28 @@ export default function InventoryPage() {
           getRowId={row => String(row.id)}
           onRowClick={setDetail}
           enableSelection
-          bulkActions={selected => (
-            <Button size="sm" variant="primary" icon={Printer} onClick={() => printLabels(selected)}>
-              Print {selected.length} label{selected.length === 1 ? '' : 's'}
-            </Button>
+          bulkActions={(selected, clear) => (
+            <>
+              {shelves && (
+                <BulkSelect label="Move to shelf…" onPick={v => bulkUpdate(selected, 'location', v, clear)}>
+                  <option value={NO_VALUE}>No shelf</option>
+                  {shelves.map(sh => <option key={sh.id} value={sh.name}>{sh.name}</option>)}
+                </BulkSelect>
+              )}
+              <BulkSelect label="Category…" onPick={v => bulkUpdate(selected, 'category', v, clear)}>
+                {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+              </BulkSelect>
+              <BulkSelect label="Condition…" onPick={v => bulkUpdate(selected, 'condition', v, clear)}>
+                {CONDITIONS.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+              </BulkSelect>
+              <BulkSelect label="Status…" onPick={v => bulkUpdate(selected, 'status', v, clear)}>
+                {STATUSES.map(st => <option key={st.value} value={st.value}>{st.label}</option>)}
+              </BulkSelect>
+              <Button size="sm" variant="danger" icon={Trash2} onClick={() => setBulkDeleting({ items: selected, clear })}>Delete</Button>
+              <Button size="sm" variant="primary" icon={Printer} onClick={() => printLabels(selected)}>
+                Print {selected.length} label{selected.length === 1 ? '' : 's'}
+              </Button>
+            </>
           )}
           searchPlaceholder="Search by name, asset code, location…"
           toolbar={<FilterTabs options={filterOptions} value={status} onChange={setStatus} label="Status filter" />}
@@ -217,6 +277,7 @@ export default function InventoryPage() {
             )
           }
         />
+        </InlineEdit.Provider>
       )}
 
       <Drawer
@@ -256,6 +317,10 @@ export default function InventoryPage() {
               <DetailRow label="Condition">{detail.condition || '—'}</DetailRow>
               <DetailRow label="Location">{detail.location || '—'}</DetailRow>
               <DetailRow label="Value">{detail.value ? `${detail.value} DA` : '—'}</DetailRow>
+              <DetailRow label="Type">{trackingLabel(detail.tracking_mode)}</DetailRow>
+              <DetailRow label="Low stock at" mono>
+                {detail.min_stock ?? '—'}{isLowStock(detail) ? ' (low now)' : ''}
+              </DetailRow>
             </div>
             <DetailRow label="Notes">
               {detail.notes
@@ -287,6 +352,15 @@ export default function InventoryPage() {
           ? `${destroying.name} (${destroying.asset_code || 'no code'}) and its borrowing history will be removed. This can't be undone — use Retire instead to keep the record.`
           : ''}
       />
+      <ConfirmDialog
+        open={!!bulkDeleting}
+        onClose={() => setBulkDeleting(null)}
+        onConfirm={() => bulkDestroy(bulkDeleting)}
+        title={`Delete ${bulkDeleting?.items.length || 0} items for good?`}
+        message={bulkDeleting
+          ? `${bulkDeleting.items.slice(0, 5).map(i => i.name).join(', ')}${bulkDeleting.items.length > 5 ? ` and ${bulkDeleting.items.length - 5} more` : ''} will be removed with their borrowing history. This can't be undone.`
+          : ''}
+      />
       <ImportItemsModal open={importOpen} existing={rows} onClose={() => setImportOpen(false)} onImported={load} />
 
       <ConfirmDialog
@@ -300,6 +374,36 @@ export default function InventoryPage() {
         message={remove ? `${remove.name} will be marked retired and taken out of the available pool.` : ''}
       />
     </div>
+  )
+}
+
+function RowActions({ item }) {
+  const { open, edit, destroy } = useContext(InlineEdit)
+  return (
+    <span className="flex items-center justify-end gap-0.5" onClick={e => e.stopPropagation()}>
+      <IconButton icon={Eye} label="Details" size={15} onClick={() => open(item)} />
+      <IconButton icon={Pencil} label="Edit all fields" size={15} onClick={() => edit(item)} />
+      <IconButton icon={Trash2} label="Delete" size={15} danger onClick={() => destroy(item)} />
+    </span>
+  )
+}
+
+const PLACEHOLDER = '__placeholder'
+const NO_VALUE = '__none'
+
+/** A dropdown in the selection bar that applies its choice to every selected row. */
+function BulkSelect({ label, onPick, children }) {
+  return (
+    <select
+      className="adm-input adm-cell-select"
+      style={{ borderColor: 'var(--adm-signal-edge)', backgroundColor: 'var(--adm-panel)', color: 'var(--adm-silk)', maxWidth: 160 }}
+      aria-label={label}
+      value={PLACEHOLDER}
+      onChange={e => onPick(e.target.value === NO_VALUE ? '' : e.target.value)}
+    >
+      <option value={PLACEHOLDER} disabled>{label}</option>
+      {children}
+    </select>
   )
 }
 
@@ -345,14 +449,6 @@ const DIGIKEY_SCOPES = [
   { value: 'all', label: 'All parts' },
 ]
 
-/** The asset code comes from the row's own id, so it's assigned after insert. */
-async function labelItem(id) {
-  const assetCode = `INV-${String(id).padStart(5, '0')}`
-  const qrCode = await QRCode.toDataURL(assetCode, { width: 300, margin: 2 })
-  await run(supabase.from('inventory_items').update({ asset_code: assetCode, qr_code: qrCode }).eq('id', id))
-  return assetCode
-}
-
 const sameText = (a, b) => (a || '').trim().toLowerCase() === (b || '').trim().toLowerCase()
 
 /**
@@ -364,7 +460,7 @@ const sameText = (a, b) => (a || '').trim().toLowerCase() === (b || '').trim().t
 function AddItem({ open, onClose, onAdded, existing, shelves, onShelfCreated }) {
   const navigate = useNavigate()
   const addToast = useAdminStore(s => s.addToast)
-  const blank = { name: '', quantity: '1', category: 'Electronics', serial: '', condition: 'new', location: '', value: '', notes: '', photo_url: '' }
+  const blank = { name: '', quantity: '1', category: 'Electronics', tracking_mode: 'returnable', min_stock: '', serial: '', condition: 'new', location: '', value: '', notes: '', photo_url: '' }
   const [form, setForm] = useState(blank)
   const [errors, setErrors] = useState({})
   const [saving, setSaving] = useState(null) // null | 'next' | 'close'
@@ -436,6 +532,8 @@ function AddItem({ open, onClose, onAdded, existing, shelves, onShelfCreated }) 
     const next = {}
     if (!name) next.name = 'Enter the item name.'
     if (!Number.isInteger(quantity) || quantity < 1 || quantity > MAX_QUANTITY) next.quantity = `A whole number from 1 to ${MAX_QUANTITY}.`
+    const minStock = parseMinStock(form.min_stock)
+    if (minStock === undefined) next.min_stock = 'A whole number, 0 or more — or leave it empty.'
     if (Object.keys(next).length) { setErrors(next); if (next.name) nameRef.current?.focus(); return }
     setSaving(then)
 
@@ -454,6 +552,8 @@ function AddItem({ open, onClose, onAdded, existing, shelves, onShelfCreated }) 
           name,
           quantity,
           category: form.category,
+          tracking_mode: form.tracking_mode,
+          min_stock: minStock,
           serial: form.serial.trim() || null,
           condition: form.condition,
           location: form.location.trim() || null,
@@ -483,7 +583,7 @@ function AddItem({ open, onClose, onAdded, existing, shelves, onShelfCreated }) 
       return [{ ...entry, added: entry.added + (prev?.added || 0) }, ...s.filter(r => r.id !== entry.id)]
     })
     // Keep where it's stored and what kind of thing it is; clear what's per-part.
-    setForm(f => ({ ...blank, category: f.category, condition: f.condition, location: f.location }))
+    setForm(f => ({ ...blank, category: f.category, tracking_mode: f.tracking_mode, condition: f.condition, location: f.location }))
     setErrors({})
     setDigikeyRequest(null)
     setDigikeyKey(k => k + 1)
@@ -549,7 +649,8 @@ function AddItem({ open, onClose, onAdded, existing, shelves, onShelfCreated }) 
         )}
         <DigiKeySearch key={digikeyKey} open={open} request={digikeyRequest} onPick={applyProduct} />
         <div className="grid sm:grid-cols-2 gap-4">
-          <SelectField label="Category" value={form.category} onChange={e => set('category', e.target.value)}>
+          <SelectField label="Category" value={form.category}
+            onChange={e => { const category = e.target.value; setForm(f => ({ ...f, category, tracking_mode: defaultTracking(category) })) }}>
             {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
           </SelectField>
           <SelectField label="Condition" value={form.condition} onChange={e => set('condition', e.target.value)}>
@@ -558,6 +659,7 @@ function AddItem({ open, onClose, onAdded, existing, shelves, onShelfCreated }) 
             <option value="worn">Worn</option>
             <option value="damaged">Damaged</option>
           </SelectField>
+          <TrackingFields form={form} errors={errors} set={set} />
           <TextField label="Serial number" value={form.serial} onChange={e => set('serial', e.target.value)}
             hint="Only for a single, specific unit — it gets its own entry." />
           <ShelfSelect shelves={shelves} value={form.location} onChange={v => set('location', v)} onCreated={onShelfCreated} />
@@ -566,6 +668,29 @@ function AddItem({ open, onClose, onAdded, existing, shelves, onShelfCreated }) 
         <TextArea label="Notes" rows={4} value={form.notes} onChange={e => set('notes', e.target.value)} />
       </div>
     </Modal>
+  )
+}
+
+/** "" → null, "3" → 3, anything else → undefined (invalid). */
+function parseMinStock(raw) {
+  if (String(raw).trim() === '') return null
+  const n = Number(raw)
+  return Number.isInteger(n) && n >= 0 ? n : undefined
+}
+
+/** What happens when it's taken, and the count that flags it as low. */
+function TrackingFields({ form, errors = {}, set }) {
+  return (
+    <>
+      <SelectField label="When someone takes it" value={form.tracking_mode} onChange={e => set('tracking_mode', e.target.value)}
+        hint={form.tracking_mode === 'consumable' ? 'Borrowing hands it out for good by default.' : 'Borrowing lends it by default.'}>
+        {TRACKING_MODES.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
+      </SelectField>
+      <TextField label="Low stock at (optional)" type="number" inputMode="numeric" min={0} step={1}
+        value={form.min_stock} error={errors.min_stock} placeholder="e.g. 5"
+        hint="Flagged when this many or fewer are on the shelf."
+        onChange={e => set('min_stock', e.target.value)} />
+    </>
   )
 }
 
@@ -643,12 +768,6 @@ function ShelfSelect({ shelves, value, onChange, onCreated }) {
   )
 }
 
-const STATUSES = [
-  { value: 'available', label: 'Available' },
-  { value: 'repair', label: 'In repair' },
-  { value: 'retired', label: 'Retired' },
-]
-
 function EditItem({ item, shelves, onShelfCreated, onClose, onSaved }) {
   const [form, setForm] = useState(null)
   const [error, setError] = useState(null)
@@ -661,6 +780,8 @@ function EditItem({ item, shelves, onShelfCreated, onClose, onSaved }) {
       name: item.name || '',
       quantity: String(qty(item)),
       category: item.category || 'Other',
+      tracking_mode: item.tracking_mode || 'returnable',
+      min_stock: item.min_stock ?? '',
       condition: item.condition || 'good',
       status: item.status || 'available',
       serial: item.serial || '',
@@ -673,24 +794,26 @@ function EditItem({ item, shelves, onShelfCreated, onClose, onSaved }) {
   }, [item])
 
   const set = (key, value) => setForm(f => ({ ...f, [key]: value }))
-  const borrowed = item?.status === 'borrowed'
+  // Borrowed and out of stock follow the count, so they can't be picked here.
+  const counted = item?.status === 'borrowed' || item?.status === 'out_of_stock'
   const onLoan = item?.on_loan || 0
   const quantity = Number(form?.quantity)
-  const minQuantity = Math.max(1, onLoan)
+  const minQuantity = item && form ? minQuantityFor({ ...item, tracking_mode: form.tracking_mode }) : 1
 
   const save = async () => {
     if (!form.name.trim()) { setError('Enter the item name.'); return }
-    if (!Number.isInteger(quantity) || quantity < minQuantity) { setError(null); setQuantityError(onLoan ? `At least ${onLoan} — that many are out on loan.` : 'A whole number, 1 or more.'); return }
+    if (!Number.isInteger(quantity) || quantity < minQuantity) { setError(null); setQuantityError(onLoan ? `At least ${onLoan} — that many are out on loan.` : `A whole number, ${minQuantity} or more.`); return }
+    const minStock = parseMinStock(form.min_stock)
+    if (minStock === undefined) { setError('Low stock at: a whole number, 0 or more — or leave it empty.'); return }
     setSaving(true)
-    // "Borrowed" means every unit is out, so it follows the count; loans
-    // themselves are opened and closed from Borrowing.
-    const status = borrowed || form.status === 'available'
-      ? (quantity > onLoan ? 'available' : 'borrowed')
-      : form.status
+    // Loans themselves are opened and closed from Borrowing.
+    const status = statusFor(item, quantity, counted ? 'available' : form.status)
     const changes = {
       name: form.name.trim(),
       quantity,
       category: form.category,
+      tracking_mode: form.tracking_mode,
+      min_stock: minStock,
       condition: form.condition,
       serial: form.serial.trim() || null,
       location: form.location || null,
@@ -749,13 +872,14 @@ function EditItem({ item, shelves, onShelfCreated, onClose, onSaved }) {
               <option value="worn">Worn</option>
               <option value="damaged">Damaged</option>
             </SelectField>
-            <SelectField label="Status" value={borrowed ? 'borrowed' : form.status} disabled={borrowed}
-              hint={borrowed ? 'Out on loan — return it from Borrowing.' : undefined}
+            <SelectField label="Status" value={counted ? item.status : form.status} disabled={counted}
+              hint={counted ? (item.status === 'out_of_stock' ? 'None left — raise the quantity to restock.' : 'Out on loan — return it from Borrowing.') : undefined}
               onChange={e => set('status', e.target.value)}>
-              {borrowed && <option value="borrowed">Borrowed</option>}
+              {counted && <option value={item.status}>{item.status === 'out_of_stock' ? 'Out of stock' : 'Borrowed'}</option>}
               {STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
             </SelectField>
             <ShelfSelect shelves={shelves} value={form.location} onChange={v => set('location', v)} onCreated={onShelfCreated} />
+            <TrackingFields form={form} set={set} />
             <TextField label="Serial number" value={form.serial} onChange={e => set('serial', e.target.value)} />
             <TextField label="Value (DA)" type="number" value={form.value} onChange={e => set('value', e.target.value)} />
           </div>

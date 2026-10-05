@@ -1,6 +1,5 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import QRCode from 'qrcode'
 import { AlertTriangle, CheckCircle2, Download, FileSpreadsheet, Loader2, Printer, Upload } from 'lucide-react'
 import { logActivity, run, supabase } from '../../lib/db'
 import { downloadCSV } from '../../lib/format'
@@ -9,6 +8,7 @@ import {
   ITEM_FIELDS, MAX_ROWS, TEMPLATE_EXAMPLES, TEMPLATE_HEADERS, buildItemRows, planImport,
 } from '../../lib/inventoryImport'
 import { loadCatalog } from '../../lib/partsCatalog'
+import { labelItem } from '../../lib/assetCodes'
 import Modal from '../ui/Modal'
 import Button from '../ui/Button'
 import Badge from '../ui/Badge'
@@ -95,14 +95,6 @@ export default function ImportItemsModal({ open, existing = [], onClose, onImpor
   const tooMany = plan.valid.length > MAX_ROWS
   const canContinue = mapping.name !== undefined
 
-  /** Same as a hand-added item: the asset code comes from the row's own id. */
-  const label = async item => {
-    const assetCode = `INV-${String(item.id).padStart(5, '0')}`
-    const qrCode = await QRCode.toDataURL(assetCode, { width: 300, margin: 2 })
-    const { ok } = await run(supabase.from('inventory_items').update({ asset_code: assetCode, qr_code: qrCode }).eq('id', item.id))
-    return ok
-  }
-
   const doImport = async () => {
     setImporting(true)
     setFrozenRows(rows)
@@ -134,16 +126,13 @@ export default function ImportItemsModal({ open, existing = [], onClose, onImpor
       }
     }))
 
+    // One at a time, so codes follow the sheet's order and don't race each other.
     let labelled = 0
-    let next = 0
     setProgress({ phase: 'Making QR labels', done: 0, total: created.length })
-    await Promise.all(Array.from({ length: LABEL_CONCURRENCY }, async () => {
-      while (next < created.length) {
-        const item = created[next++]
-        if (await label(item)) labelled++
-        setProgress(p => ({ ...p, done: p.done + 1 }))
-      }
-    }))
+    for (const item of created) {
+      if (await labelItem(item.id)) labelled++
+      setProgress(p => ({ ...p, done: p.done + 1 }))
+    }
 
     if (created.length || toppedUp) {
       logActivity('created', 'inventory_items', null, {

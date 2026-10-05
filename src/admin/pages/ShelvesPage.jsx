@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowLeft, Library, Plus, Printer, Trash2 } from 'lucide-react'
+import { ArrowLeft, Library, Pencil, Plus, Printer, Trash2 } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { logActivity, read, run, supabase } from '../lib/db'
 import { createShelf, loadShelves, updateShelf } from '../lib/shelves'
 import PageHeader from '../components/ui/PageHeader'
 import DataTable from '../components/ui/DataTable'
 import Modal from '../components/ui/Modal'
+import Drawer from '../components/ui/Drawer'
 import ConfirmDialog from '../components/ui/ConfirmDialog'
 import EmptyState, { ErrorState } from '../components/ui/EmptyState'
 import Button from '../components/ui/Button'
@@ -19,31 +20,38 @@ import { TextField } from '../components/ui/Field'
 export default function ShelvesPage() {
   const navigate = useNavigate()
   const [shelves, setShelves] = useState([])
-  const [counts, setCounts] = useState(new Map())
+  const [stock, setStock] = useState(new Map()) // shelf name → items on it
   const [state, setState] = useState({ loading: true, error: null })
   const [adding, setAdding] = useState(false)
   const [editing, setEditing] = useState(null)
+  const [openId, setOpenId] = useState(null)
   const [remove, setRemove] = useState(null)
 
   const load = useCallback(async () => {
     setState(s => ({ ...s, error: null }))
     const [shelfRes, itemRes] = await Promise.all([
       loadShelves(),
-      read(supabase.from('inventory_items').select('location').neq('status', 'retired')),
+      read(supabase.from('inventory_items').select('id, name, asset_code, quantity, on_loan, status, location').neq('status', 'retired').order('name')),
     ])
     if (!shelfRes.ok) { setState({ loading: false, error: shelfRes.message }); return }
     const byName = new Map()
-    for (const { location } of itemRes.data || []) {
-      if (location) byName.set(location, (byName.get(location) || 0) + 1)
+    for (const item of itemRes.data || []) {
+      if (!item.location) continue
+      if (!byName.has(item.location)) byName.set(item.location, [])
+      byName.get(item.location).push(item)
     }
     setShelves(shelfRes.data || [])
-    setCounts(byName)
+    setStock(byName)
     setState({ loading: false, error: null })
   }, [])
 
   useEffect(() => { load() }, [load])
 
-  const rows = useMemo(() => shelves.map(s => ({ ...s, items: counts.get(s.name) || 0 })), [shelves, counts])
+  const rows = useMemo(() => shelves.map(s => {
+    const list = stock.get(s.name) || []
+    return { ...s, list, items: list.length, units: list.reduce((n, i) => n + (i.quantity ?? 1), 0) }
+  }), [shelves, stock])
+  const open = rows.find(r => r.id === openId) || null
 
   const printLabels = list => {
     const ids = list.filter(s => s.code).map(s => s.id)
@@ -55,7 +63,7 @@ export default function ShelvesPage() {
       supabase.from('shelves').delete().eq('id', shelf.id),
       { success: `${shelf.name} deleted.`, failure: 'The shelf was not deleted.' }
     )
-    if (ok) { logActivity('deleted', 'shelves', shelf.id, { name: shelf.name }); setRemove(null); setEditing(null); await load() }
+    if (ok) { logActivity('deleted', 'shelves', shelf.id, { name: shelf.name }); setRemove(null); setEditing(null); setOpenId(null); await load() }
   }
 
   const columns = useMemo(() => [
@@ -73,8 +81,37 @@ export default function ShelvesPage() {
       <span className="text-[13px]" style={{ color: 'var(--adm-silk-dim)' }}>{row.original.description || '—'}</span>
     )},
     { header: 'Items', accessorKey: 'items', cell: ({ row }) => (
-      <span className="adm-data text-[13px]">{row.original.items}</span>
+      <span className="adm-data text-[13px] whitespace-nowrap">
+        {row.original.items}
+        {row.original.units !== row.original.items && (
+          <span className="block text-[11px]" style={{ color: 'var(--adm-silk-faint)' }}>{row.original.units} units</span>
+        )}
+      </span>
     )},
+    {
+      header: 'What’s on it',
+      id: 'contents',
+      accessorFn: r => r.list.map(i => i.name).join(' '),
+      enableSorting: false,
+      cell: ({ row }) => {
+        const list = row.original.list
+        if (!list.length) return <span className="text-[13px]" style={{ color: 'var(--adm-silk-faint)' }}>Empty</span>
+        const shown = list.slice(0, 4)
+        return (
+          <span className="flex flex-wrap gap-1" style={{ maxWidth: 460 }}>
+            {shown.map(i => (
+              <span key={i.id} className="text-[12px] rounded-md px-1.5 py-0.5 adm-truncate"
+                style={{ background: 'var(--adm-panel-raise)', color: 'var(--adm-silk-dim)', maxWidth: 180 }}>
+                {i.name}{(i.quantity ?? 1) > 1 ? ` ×${i.quantity}` : ''}
+              </span>
+            ))}
+            {list.length > shown.length && (
+              <span className="text-[12px] px-1 py-0.5" style={{ color: 'var(--adm-silk-faint)' }}>+{list.length - shown.length} more</span>
+            )}
+          </span>
+        )
+      },
+    },
   ], [])
 
   return (
@@ -100,14 +137,14 @@ export default function ShelvesPage() {
           data={rows}
           loading={state.loading}
           getRowId={row => String(row.id)}
-          onRowClick={setEditing}
+          onRowClick={r => setOpenId(r.id)}
           enableSelection
           bulkActions={selected => (
             <Button size="sm" variant="primary" icon={Printer} onClick={() => printLabels(selected)}>
               Print {selected.length} label{selected.length === 1 ? '' : 's'}
             </Button>
           )}
-          searchPlaceholder="Search shelves…"
+          searchPlaceholder="Search shelves or items on them…"
           emptyState={
             <EmptyState
               icon={Library}
@@ -119,6 +156,13 @@ export default function ShelvesPage() {
         />
       )}
 
+      <ShelfContents
+        shelf={open}
+        onClose={() => setOpenId(null)}
+        onEdit={() => setEditing(open)}
+        onDelete={() => setRemove(open)}
+        onPrint={() => printLabels([open])}
+      />
       <AddShelves open={adding} onClose={() => setAdding(false)} onAdded={load} />
       <EditShelf
         shelf={editing}
@@ -140,6 +184,54 @@ export default function ShelvesPage() {
           : ''}
       />
     </div>
+  )
+}
+
+/** Everything stored on one shelf; each item opens in Inventory. */
+function ShelfContents({ shelf, onClose, onEdit, onDelete, onPrint }) {
+  return (
+    <Drawer
+      open={!!shelf}
+      onClose={onClose}
+      title={shelf?.name || ''}
+      subtitle={shelf ? [shelf.code, shelf.description].filter(Boolean).join(' · ') : ''}
+      footer={shelf && (
+        <>
+          <Button className="mr-auto" variant="danger" icon={Trash2} onClick={onDelete}>Delete</Button>
+          <Button icon={Pencil} onClick={onEdit}>Rename</Button>
+          <Button variant="primary" icon={Printer} onClick={onPrint}>Print label</Button>
+        </>
+      )}
+    >
+      {shelf && (
+        shelf.list.length ? (
+          <div>
+            <p className="text-[12.5px] mb-3" style={{ color: 'var(--adm-silk-faint)' }}>
+              {shelf.items} item{shelf.items === 1 ? '' : 's'}, {shelf.units} unit{shelf.units === 1 ? '' : 's'} in all.
+            </p>
+            <ul className="rounded-lg overflow-hidden" style={{ border: '1px solid var(--adm-trace)' }}>
+              {shelf.list.map((i, n) => (
+                <li key={i.id} style={{ borderTop: n ? '1px solid var(--adm-trace)' : 0 }}>
+                  <Link to={`/admin/inventory?q=${encodeURIComponent(i.asset_code || i.name)}`}
+                    className="flex items-center gap-3 px-3 py-2.5 hover:bg-[var(--adm-panel-hover)]">
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-sm font-semibold adm-truncate">{i.name}</span>
+                      <span className="adm-data block text-[11px]" style={{ color: 'var(--adm-silk-faint)' }}>{i.asset_code}</span>
+                    </span>
+                    <span className="adm-data text-[13px] text-right shrink-0">
+                      ×{i.quantity ?? 1}
+                      {i.on_loan > 0 && <span className="block text-[11px]" style={{ color: 'var(--adm-silk-faint)' }}>{i.on_loan} on loan</span>}
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : (
+          <EmptyState compact icon={Library} title="Nothing on this shelf" description="Pick this shelf as the location of an item in Inventory." />
+        )
+      )}
+    </Drawer>
   )
 }
 
