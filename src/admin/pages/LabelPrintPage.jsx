@@ -43,6 +43,16 @@ const DEFAULTS = {
   offsetY: 0,
 }
 
+// Shelf labels lead with the shelf number, so they default to QR + text only.
+const SHELF_DEFAULTS = {
+  ...DEFAULTS,
+  code: 'qr',
+  showLocation: true,
+  showCount: true,
+  showClub: false,
+  nameLines: 1,
+}
+
 const FONT_MODES = [
   { value: 'auto', label: 'Fit to label' },
   { value: 'custom', label: 'Exact sizes' },
@@ -80,7 +90,7 @@ export default function LabelPrintPage({ kind = 'items' }) {
 
   const [items, setItems] = useState([])
   const [state, setState] = useState({ loading: true, error: null })
-  const [s, set, reset] = usePrintSettings(shelves ? 'afaq.print.shelf-labels' : 'afaq.print.labels', DEFAULTS)
+  const [s, set, reset] = usePrintSettings(shelves ? 'afaq.print.shelf-labels.v2' : 'afaq.print.labels', shelves ? SHELF_DEFAULTS : DEFAULTS)
 
   useEffect(() => {
     let cancelled = false
@@ -92,9 +102,20 @@ export default function LabelPrintPage({ kind = 'items' }) {
       )
       if (cancelled) return
       if (!ok) { setState({ loading: false, error: message }); return }
-      const rows = shelves
-        ? (data || []).map(r => ({ id: r.id, name: r.name, asset_code: r.code, category: null, location: r.description }))
-        : data || []
+      let rows = data || []
+      if (shelves) {
+        // How many things sit on each shelf, for the label's item count.
+        const counts = new Map()
+        const names = rows.map(r => r.name)
+        if (names.length) {
+          const stock = await read(
+            supabase.from('inventory_items').select('location, quantity').in('location', names).neq('status', 'retired')
+          )
+          if (cancelled) return
+          for (const it of stock.data || []) counts.set(it.location, (counts.get(it.location) || 0) + (it.quantity ?? 1))
+        }
+        rows = rows.map(r => ({ id: r.id, name: r.name, asset_code: r.code, category: null, location: r.description, count: counts.get(r.name) || 0 }))
+      }
       const byId = new Map(rows.map(i => [i.id, i]))
       setItems(ids.map(i => byId.get(i)).filter(i => i?.asset_code))
       setState({ loading: false, error: null })
@@ -144,7 +165,9 @@ export default function LabelPrintPage({ kind = 'items' }) {
       const { x, y } = cellPosition(grid, slot)
       return (
         <Cell key={i} x={x} y={y} w={grid.w} h={grid.h} guide={s.guides}>
-          <Label item={item} w={grid.w} h={grid.h} s={s} />
+          {shelves
+            ? <ShelfLabel shelf={item} w={grid.w} h={grid.h} s={s} />
+            : <Label item={item} w={grid.w} h={grid.h} s={s} />}
         </Cell>
       )
     }),
@@ -202,7 +225,8 @@ export default function LabelPrintPage({ kind = 'items' }) {
               <ChoiceSetting label="Barcode type" options={BARCODE_FORMATS} value={s.barcodeFormat} onChange={v => set('barcodeFormat', v)} />
             )}
             <CheckField label={shelves ? 'Shelf name' : 'Item name'} checked={s.showName} onChange={v => set('showName', v)} />
-            <CheckField label={shelves ? 'Shelf code (text)' : 'Asset code (text)'} checked={s.showCode} onChange={v => set('showCode', v)} />
+            <CheckField label={shelves ? 'Shelf number (big)' : 'Asset code (text)'} checked={s.showCode} onChange={v => set('showCode', v)} />
+            {shelves && <CheckField label="Items on shelf" description="How many things are stored there" checked={s.showCount} onChange={v => set('showCount', v)} />}
             {!shelves && <CheckField label="Category" checked={s.showCategory} onChange={v => set('showCategory', v)} />}
             <CheckField label={shelves ? 'Description' : 'Location'} checked={s.showLocation} onChange={v => set('showLocation', v)} />
             <CheckField label="Club name" checked={s.showClub} onChange={v => set('showClub', v)} />
@@ -310,6 +334,75 @@ function Label({ item, w, h, s }) {
       <div style={{ minWidth: 0, flex: 1, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: withBar ? 'space-between' : 'center', gap: '0.8mm' }}>
         <div>{text}</div>
         {withBar && barBlock(Math.max(3.5, ih * 0.3))}
+      </div>
+    </div>
+  )
+}
+
+const PT_PER_MM = 2.835
+
+/**
+ * A shelf label: the shelf number is the headline, sized to fill the space
+ * next to the QR so it reads from across the room; name, description and
+ * item count sit under it.
+ */
+function ShelfLabel({ shelf, w, h, s }) {
+  const pad = clamp(s.padding, 0, Math.min(w, h) / 3)
+  const iw = w - 2 * pad
+  const ih = h - 2 * pad
+  const family = (FONT_FAMILIES[s.fontFamily] || FONT_FAMILIES.default).css
+  const scale = clamp(s.textScale, 50, 200) / 100
+  const withQr = s.code === 'qr' || s.code === 'both'
+  const withBar = s.code === 'barcode' || s.code === 'both'
+
+  // "SHF-007" → small "SHF" tag over a big "007".
+  const [prefix, number] = /^(.*?)-?(\d+)$/.test(shelf.asset_code || '')
+    ? shelf.asset_code.match(/^(.*?)-?(\d+)$/).slice(1)
+    : ['', shelf.asset_code || '']
+
+  const qrSize = withQr ? Math.min(ih, iw * 0.42) : 0
+  const gap = withQr ? Math.max(1.5, pad) : 0
+  const textW = iw - qrSize - gap
+
+  const detail = s.fontMode === 'custom' ? clamp(s.detailSize, 3, 48) : clamp(h * 0.16, 5, 12) * scale
+  const nameSize = s.fontMode === 'custom' ? clamp(s.nameSize, 3, 48) : clamp(h * 0.2, 6, 16) * scale
+  // Digits in a bold sans run about 0.6em wide; fit the width, and leave
+  // roughly half the height for the lines under the number.
+  const numberSize = s.fontMode === 'custom'
+    ? clamp(s.codeSize, 3, 120)
+    : Math.min((textW * PT_PER_MM) / (Math.max(2, number.length) * 0.62), ih * PT_PER_MM * (withBar ? 0.38 : 0.5)) * scale
+
+  const lines = [
+    s.showName && shelf.name && { text: shelf.name, size: nameSize, weight: s.nameBold ? 700 : 500, color: '#0F172A', clamp: clamp(s.nameLines, 1, 5) },
+    s.showLocation && shelf.location && { text: shelf.location, size: detail, color: '#475569', clamp: 2 },
+    s.showCount && { text: `${shelf.count} item${shelf.count === 1 ? '' : 's'}`, size: detail, color: '#475569', weight: 600 },
+    s.showClub && s.clubName && { text: s.clubName, size: detail * 0.85, color: '#94A3B8' },
+  ].filter(Boolean)
+
+  return (
+    <div style={{ width: '100%', height: '100%', padding: `${pad}mm`, boxSizing: 'border-box', display: 'flex', alignItems: 'center', gap: `${gap}mm`, background: '#fff' }}>
+      {withQr && <QrCode value={shelf.asset_code} size={qrSize} />}
+      <div style={{ minWidth: 0, flex: 1, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '0.6mm', '--print-font': family }}>
+        {s.showCode && (
+          <div style={{ lineHeight: 0.95, color: '#0F172A' }}>
+            {prefix && (
+              <div style={{ fontSize: `${Math.max(5, numberSize * 0.22)}pt`, fontWeight: 700, letterSpacing: '0.18em', color: '#64748B' }}>
+                {prefix.toUpperCase()}
+              </div>
+            )}
+            <div style={{ fontSize: `${numberSize}pt`, fontWeight: 800, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>
+              {number}
+            </div>
+          </div>
+        )}
+        {lines.map((l, i) => (
+          <div key={i} style={{
+            fontSize: `${l.size}pt`, fontWeight: l.weight || 400, color: l.color, lineHeight: 1.15,
+            overflow: 'hidden', wordBreak: 'break-word',
+            display: '-webkit-box', WebkitBoxOrient: 'vertical', WebkitLineClamp: l.clamp || 1,
+          }}>{l.text}</div>
+        ))}
+        {withBar && <Barcode value={shelf.asset_code} width="100%" height={Math.max(4, ih * 0.22)} format={s.barcodeFormat} />}
       </div>
     </div>
   )
