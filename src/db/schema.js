@@ -257,6 +257,16 @@ export const inventoryItems = pgTable('inventory_items', {
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
 })
 
+// A place items are kept. inventory_items.location holds the shelf's name as
+// text, so imports and items stored somewhere ad hoc keep working.
+export const shelves = pgTable('shelves', {
+  id: bigint({ mode: 'number' }).primaryKey().generatedAlwaysAsIdentity(),
+  code: text().unique(),
+  name: text().notNull().unique(),
+  description: text(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+})
+
 export const borrowRecords = pgTable('borrow_records', {
   id: bigint({ mode: 'number' }).primaryKey().generatedAlwaysAsIdentity(),
   itemId: bigint('item_id', { mode: 'number' }).notNull().references(() => inventoryItems.id, { onDelete: 'cascade' }),

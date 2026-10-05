@@ -33,6 +33,7 @@ const TasksPage = lazy(() => import('./admin/pages/TasksPage'))
 const FinancePage = lazy(() => import('./admin/pages/FinancePage'))
 const InventoryPage = lazy(() => import('./admin/pages/InventoryPage'))
 const LabelPrintPage = lazy(() => import('./admin/pages/LabelPrintPage'))
+const ShelvesPage = lazy(() => import('./admin/pages/ShelvesPage'))
 const BorrowingPage = lazy(() => import('./admin/pages/BorrowingPage'))
 const ProjectsPage = lazy(() => import('./admin/pages/ProjectsPage'))
 const GalleryPage = lazy(() => import('./admin/pages/GalleryPage'))
@@ -148,6 +149,12 @@ export default function App() {
             } />
             <Route path="inventory/labels" element={
               <RoleGuard permission="inventory.manage"><LabelPrintPage /></RoleGuard>
+            } />
+            <Route path="inventory/shelves" element={
+              <RoleGuard permission="inventory.manage"><ShelvesPage /></RoleGuard>
+            } />
+            <Route path="inventory/shelves/labels" element={
+              <RoleGuard permission="inventory.manage"><LabelPrintPage kind="shelves" /></RoleGuard>
             } />
             <Route path="borrowing" element={
               <RoleGuard permission="inventory.manage"><BorrowingPage /></RoleGuard>

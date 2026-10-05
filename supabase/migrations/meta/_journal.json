@@ -134,6 +134,13 @@
       "when": 1791151924284,
       "tag": "0018_drop_public_signup_inserts",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1791200000000,
+      "tag": "0019_shelves",
+      "breakpoints": true
     }
   ]
 }

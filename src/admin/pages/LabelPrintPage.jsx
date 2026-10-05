@@ -65,8 +65,11 @@ const CODE_OPTIONS = [
 /**
  * Inventory labels for one item (/admin/inventory/:id/label) or a batch
  * (/admin/inventory/labels?ids=1,2,3), laid out on pre-cut label sheets.
+ * With kind="shelves" it prints shelf labels (/admin/inventory/shelves/labels?ids=…):
+ * the shelf code goes where an asset code would, its description under the name.
  */
-export default function LabelPrintPage() {
+export default function LabelPrintPage({ kind = 'items' }) {
+  const shelves = kind === 'shelves'
   const { id } = useParams()
   const [params] = useSearchParams()
   const ids = useMemo(() => {
@@ -76,24 +79,28 @@ export default function LabelPrintPage() {
 
   const [items, setItems] = useState([])
   const [state, setState] = useState({ loading: true, error: null })
-  const [s, set, reset] = usePrintSettings('afaq.print.labels', DEFAULTS)
+  const [s, set, reset] = usePrintSettings(shelves ? 'afaq.print.shelf-labels' : 'afaq.print.labels', DEFAULTS)
 
   useEffect(() => {
     let cancelled = false
     const load = async () => {
       if (!ids.length) { setState({ loading: false, error: 'No items were chosen for printing.' }); return }
-      const { ok, data, message } = await read(
-        supabase.from('inventory_items').select('id, name, asset_code, category, location').in('id', ids)
+      const { ok, data, message } = await read(shelves
+        ? supabase.from('shelves').select('id, name, code, description').in('id', ids)
+        : supabase.from('inventory_items').select('id, name, asset_code, category, location').in('id', ids)
       )
       if (cancelled) return
       if (!ok) { setState({ loading: false, error: message }); return }
-      const byId = new Map((data || []).map(i => [i.id, i]))
+      const rows = shelves
+        ? (data || []).map(r => ({ id: r.id, name: r.name, asset_code: r.code, category: null, location: r.description }))
+        : data || []
+      const byId = new Map(rows.map(i => [i.id, i]))
       setItems(ids.map(i => byId.get(i)).filter(i => i?.asset_code))
       setState({ loading: false, error: null })
     }
     load()
     return () => { cancelled = true }
-  }, [ids])
+  }, [ids, shelves])
 
   const custom = s.template === 'custom'
   const grid = useMemo(() => {
@@ -119,7 +126,7 @@ export default function LabelPrintPage() {
   if (!items.length) {
     return (
       <Panel>
-        <EmptyState icon={Tag} title="Nothing to print" description="None of the chosen items have an asset code yet." />
+        <EmptyState icon={Tag} title="Nothing to print" description={shelves ? 'None of the chosen shelves have a code yet.' : 'None of the chosen items have an asset code yet.'} />
       </Panel>
     )
   }
@@ -141,9 +148,9 @@ export default function LabelPrintPage() {
 
   return (
     <PrintWorkspace
-      backTo="/admin/inventory"
-      backLabel="Back to inventory"
-      summary={`${total} label${total === 1 ? '' : 's'} (${items.length} item${items.length === 1 ? '' : 's'})`}
+      backTo={shelves ? '/admin/inventory/shelves' : '/admin/inventory'}
+      backLabel={shelves ? 'Back to shelves' : 'Back to inventory'}
+      summary={`${total} label${total === 1 ? '' : 's'} (${items.length} ${shelves ? (items.length === 1 ? 'shelf' : 'shelves') : (items.length === 1 ? 'item' : 'items')})`}
       paper={paper}
       sheets={sheets}
       onReset={reset}
@@ -174,7 +181,7 @@ export default function LabelPrintPage() {
 
           <SettingsGroup title="Quantity">
             <div className="grid grid-cols-2 gap-3">
-              <NumberSetting label="Copies per item" value={s.copies} min={1} max={500} onChange={v => set('copies', v)} />
+              <NumberSetting label={shelves ? 'Copies per shelf' : 'Copies per item'} value={s.copies} min={1} max={500} onChange={v => set('copies', v)} />
               <NumberSetting label="Skip first" value={s.skip} min={0} max={perPage - 1} onChange={v => set('skip', v)}
                 hint="Labels already used" />
             </div>
@@ -185,10 +192,10 @@ export default function LabelPrintPage() {
             {(s.code === 'barcode' || s.code === 'both') && (
               <ChoiceSetting label="Barcode type" options={BARCODE_FORMATS} value={s.barcodeFormat} onChange={v => set('barcodeFormat', v)} />
             )}
-            <CheckField label="Item name" checked={s.showName} onChange={v => set('showName', v)} />
-            <CheckField label="Asset code (text)" checked={s.showCode} onChange={v => set('showCode', v)} />
-            <CheckField label="Category" checked={s.showCategory} onChange={v => set('showCategory', v)} />
-            <CheckField label="Location" checked={s.showLocation} onChange={v => set('showLocation', v)} />
+            <CheckField label={shelves ? 'Shelf name' : 'Item name'} checked={s.showName} onChange={v => set('showName', v)} />
+            <CheckField label={shelves ? 'Shelf code (text)' : 'Asset code (text)'} checked={s.showCode} onChange={v => set('showCode', v)} />
+            {!shelves && <CheckField label="Category" checked={s.showCategory} onChange={v => set('showCategory', v)} />}
+            <CheckField label={shelves ? 'Description' : 'Location'} checked={s.showLocation} onChange={v => set('showLocation', v)} />
             <CheckField label="Club name" checked={s.showClub} onChange={v => set('showClub', v)} />
             {s.showClub && <TextField label="Club name text" value={s.clubName} onChange={e => set('clubName', e.target.value)} />}
           </SettingsGroup>

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import QRCode from 'qrcode'
-import { Boxes, CheckCircle2, FileSpreadsheet, IdCard, Loader2, Minus, PackagePlus, Plus, Printer, Search, Trash2, Upload } from 'lucide-react'
+import { Boxes, CheckCircle2, FileSpreadsheet, IdCard, Library, Loader2, Minus, PackagePlus, Pencil, Plus, Printer, Search, Trash2, Upload } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { api, logActivity, read, run, supabase, uploadFile } from '../lib/db'
 import useAdminStore from '../store/adminStore'
@@ -20,6 +20,7 @@ import { Field, SelectField, TextArea, TextField } from '../components/ui/Field'
 import PartNameField from '../components/inventory/PartNameField'
 import ImportItemsModal from '../components/inventory/ImportItemsModal'
 import { CATEGORIES, MAX_QUANTITY } from '../lib/inventoryImport'
+import { createShelf, loadShelves } from '../lib/shelves'
 
 const FILTERS = [
   { value: 'all', label: 'All' },
@@ -43,6 +44,17 @@ export default function InventoryPage() {
   const [addOpen, setAddOpen] = useState(false)
   const [importOpen, setImportOpen] = useState(false)
   const [remove, setRemove] = useState(null)
+  const [editing, setEditing] = useState(null)
+  const [destroying, setDestroying] = useState(null)
+  const [shelves, setShelves] = useState(null) // null until loaded, or if the shelves table isn't there yet
+
+  // If the shelves migration hasn't run yet, location stays a free-text box.
+  const loadShelfList = useCallback(async () => {
+    const { ok, data } = await loadShelves()
+    setShelves(ok ? data || [] : null)
+  }, [])
+  useEffect(() => { loadShelfList() }, [loadShelfList])
+  const addShelf = shelf => setShelves(list => [...(list || []), shelf].sort((a, b) => a.name.localeCompare(b.name)))
 
   const load = useCallback(async () => {
     setState(s => ({ ...s, error: null }))
@@ -76,6 +88,14 @@ export default function InventoryPage() {
       { success: `${item.name} retired.`, failure: 'The item was not updated.' }
     )
     if (ok) { logActivity('retired', 'inventory_items', item.id, { name: item.name }); await load(); setRemove(null); setDetail(null) }
+  }
+
+  const destroy = async item => {
+    const { ok } = await run(
+      supabase.from('inventory_items').delete().eq('id', item.id),
+      { success: `${item.name} deleted.`, failure: 'The item was not deleted.' }
+    )
+    if (ok) { logActivity('deleted', 'inventory_items', item.id, { name: item.name, asset_code: item.asset_code }); setDestroying(null); setDetail(null); await load() }
   }
 
   const printLabels = items => {
@@ -137,6 +157,7 @@ export default function InventoryPage() {
             <Button icon={Printer} disabled={!filtered.length} onClick={() => printLabels(filtered)}>
               Print {filtered.length === rows.length ? 'all' : filtered.length} labels
             </Button>
+            <Link to="/admin/inventory/shelves" className="adm-btn"><Library size={15} /> Shelves</Link>
             <Button icon={FileSpreadsheet} onClick={() => setImportOpen(true)}>Import</Button>
             <Button variant="primary" icon={PackagePlus} onClick={() => setAddOpen(true)}>Add item</Button>
           </>
@@ -190,9 +211,11 @@ export default function InventoryPage() {
         footer={
           detail && (
             <>
+              <Button className="mr-auto" variant="danger" icon={Trash2} onClick={() => setDestroying(detail)}>Delete</Button>
               {detail.status !== 'retired' && (
-                <Button icon={Trash2} onClick={() => setRemove(detail)}>Retire</Button>
+                <Button onClick={() => setRemove(detail)}>Retire</Button>
               )}
+              <Button icon={Pencil} onClick={() => setEditing(detail)}>Edit</Button>
               <Link to={`/admin/inventory/${detail.id}/label`} className="adm-btn adm-btn-primary">
                 <IdCard size={15} /> Print label
               </Link>
@@ -223,7 +246,27 @@ export default function InventoryPage() {
         )}
       </Drawer>
 
-      <AddItem open={addOpen} onClose={() => setAddOpen(false)} onAdded={load} existing={rows} />
+      <AddItem open={addOpen} onClose={() => setAddOpen(false)} onAdded={load} existing={rows} shelves={shelves} onShelfCreated={addShelf} />
+      <EditItem
+        item={editing}
+        shelves={shelves}
+        onShelfCreated={addShelf}
+        onClose={() => setEditing(null)}
+        onSaved={updated => {
+          setEditing(null)
+          setDetail(d => d && d.id === updated.id ? { ...d, ...updated } : d)
+          setRows(rs => rs.map(r => r.id === updated.id ? { ...r, ...updated } : r))
+        }}
+      />
+      <ConfirmDialog
+        open={!!destroying}
+        onClose={() => setDestroying(null)}
+        onConfirm={() => destroy(destroying)}
+        title="Delete this item for good?"
+        message={destroying
+          ? `${destroying.name} (${destroying.asset_code || 'no code'}) and its borrowing history will be removed. This can't be undone — use Retire instead to keep the record.`
+          : ''}
+      />
       <ImportItemsModal open={importOpen} existing={rows} onClose={() => setImportOpen(false)} onImported={load} />
 
       <ConfirmDialog
@@ -297,10 +340,10 @@ async function labelItem(id) {
  * keeps the dialog open with category, condition and location carried over,
  * so a box of parts can be entered one after another from the keyboard.
  */
-function AddItem({ open, onClose, onAdded, existing }) {
+function AddItem({ open, onClose, onAdded, existing, shelves, onShelfCreated }) {
   const navigate = useNavigate()
   const addToast = useAdminStore(s => s.addToast)
-  const blank = { name: '', quantity: '1', category: 'Electronics', serial: '', condition: 'good', location: '', value: '', notes: '', photo_url: '' }
+  const blank = { name: '', quantity: '1', category: 'Electronics', serial: '', condition: 'new', location: '', value: '', notes: '', photo_url: '' }
   const [form, setForm] = useState(blank)
   const [errors, setErrors] = useState({})
   const [saving, setSaving] = useState(null) // null | 'next' | 'close'
@@ -470,11 +513,184 @@ function AddItem({ open, onClose, onAdded, existing }) {
           </SelectField>
           <TextField label="Serial number" value={form.serial} onChange={e => set('serial', e.target.value)}
             hint={quantity > 1 ? 'Goes on the first unit only.' : undefined} />
-          <TextField label="Location" value={form.location} onChange={e => set('location', e.target.value)} placeholder="Lab shelf 2" />
+          <ShelfSelect shelves={shelves} value={form.location} onChange={v => set('location', v)} onCreated={onShelfCreated} />
           <TextField label="Value (DA)" type="number" value={form.value} onChange={e => set('value', e.target.value)} />
         </div>
         <TextArea label="Notes" rows={4} value={form.notes} onChange={e => set('notes', e.target.value)} />
       </div>
+    </Modal>
+  )
+}
+
+const NEW_SHELF = '__new_shelf__'
+
+/**
+ * Location as a dropdown of shelves. The last option creates a shelf on the
+ * spot; a location typed before shelves existed is kept and still shown.
+ */
+function ShelfSelect({ shelves, value, onChange, onCreated }) {
+  const [creating, setCreating] = useState(false)
+  const [name, setName] = useState('')
+  const [error, setError] = useState(null)
+  const [busy, setBusy] = useState(false)
+  const inputRef = useRef(null)
+  const known = !value || shelves?.some(s => s.name === value)
+
+  const create = async () => {
+    if (!name.trim()) { setError('Enter the shelf name.'); return }
+    setBusy(true)
+    const shelf = await createShelf({ name })
+    setBusy(false)
+    if (!shelf) return
+    logActivity('created', 'shelves', shelf.id, { name: shelf.name })
+    onCreated?.(shelf)
+    onChange(shelf.name)
+    setCreating(false)
+    setName('')
+  }
+
+  const cancel = () => { setCreating(false); setName(''); setError(null) }
+
+  if (!shelves) {
+    return <TextField label="Location" value={value} onChange={e => onChange(e.target.value)} placeholder="Lab shelf 2" />
+  }
+
+  if (creating) {
+    return (
+      <Field label="New shelf" error={error}>
+        {a11y => (
+          <div className="flex items-center gap-1.5">
+            <input
+              {...a11y}
+              ref={inputRef}
+              autoFocus
+              className="adm-input"
+              placeholder="Lab shelf 3, Drawer B2…"
+              value={name}
+              onChange={e => { setName(e.target.value); setError(null) }}
+              onKeyDown={e => {
+                if (e.key === 'Enter') { e.preventDefault(); create() }
+                else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); cancel() }
+              }}
+            />
+            <Button size="sm" variant="primary" onClick={create} busy={busy} busyLabel="Adding…">Add</Button>
+            <Button size="sm" onClick={cancel} disabled={busy}>Cancel</Button>
+          </div>
+        )}
+      </Field>
+    )
+  }
+
+  return (
+    <SelectField
+      label="Location"
+      value={value}
+      onChange={e => (e.target.value === NEW_SHELF ? setCreating(true) : onChange(e.target.value))}
+      hint={shelves.length ? undefined : 'No shelves yet — pick “New shelf…” to add one.'}
+    >
+      <option value="">No shelf</option>
+      {!known && <option value={value}>{value} (not a shelf)</option>}
+      {shelves.map(s => <option key={s.id} value={s.name}>{s.name}{s.code ? ` · ${s.code}` : ''}</option>)}
+      <option value={NEW_SHELF}>+ New shelf…</option>
+    </SelectField>
+  )
+}
+
+const STATUSES = [
+  { value: 'available', label: 'Available' },
+  { value: 'repair', label: 'In repair' },
+  { value: 'retired', label: 'Retired' },
+]
+
+function EditItem({ item, shelves, onShelfCreated, onClose, onSaved }) {
+  const [form, setForm] = useState(null)
+  const [error, setError] = useState(null)
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    if (!item) return
+    setForm({
+      name: item.name || '',
+      category: item.category || 'Other',
+      condition: item.condition || 'good',
+      status: item.status || 'available',
+      serial: item.serial || '',
+      location: item.location || '',
+      value: item.value ?? '',
+      notes: item.notes || '',
+    })
+    setError(null)
+  }, [item])
+
+  const set = (key, value) => setForm(f => ({ ...f, [key]: value }))
+  const borrowed = item?.status === 'borrowed'
+
+  const save = async () => {
+    if (!form.name.trim()) { setError('Enter the item name.'); return }
+    setSaving(true)
+    const changes = {
+      name: form.name.trim(),
+      category: form.category,
+      condition: form.condition,
+      serial: form.serial.trim() || null,
+      location: form.location || null,
+      value: form.value === '' ? null : Number(form.value),
+      notes: form.notes.trim() || null,
+      updated_at: new Date().toISOString(),
+      // A loan is closed from Borrowing, which also sets the status back.
+      ...(borrowed ? {} : { status: form.status }),
+    }
+    const { ok } = await run(
+      supabase.from('inventory_items').update(changes).eq('id', item.id),
+      { success: 'Item saved.', failure: 'The item was not saved.' }
+    )
+    setSaving(false)
+    if (ok) { logActivity('updated', 'inventory_items', item.id, { name: changes.name }); onSaved({ id: item.id, ...changes }) }
+  }
+
+  return (
+    <Modal
+      open={!!item}
+      onClose={onClose}
+      title="Edit item"
+      description={item?.asset_code ? `${item.asset_code} — the asset code and QR label stay the same.` : undefined}
+      footer={
+        <>
+          <Button onClick={onClose} data-dialog-dismiss="true">Cancel</Button>
+          <Button variant="primary" onClick={save} busy={saving} busyLabel="Saving…">Save</Button>
+        </>
+      }
+    >
+      {form && (
+        <div className="space-y-4" onKeyDown={e => {
+          if (e.key === 'Enter' && !e.defaultPrevented && e.target.tagName === 'INPUT') { e.preventDefault(); save() }
+        }}>
+          <TextField label="Name" required value={form.name} error={error}
+            onChange={e => { set('name', e.target.value); setError(null) }} />
+          <div className="grid sm:grid-cols-2 gap-4">
+            <SelectField label="Category" value={form.category} onChange={e => set('category', e.target.value)}>
+              {!CATEGORIES.includes(form.category) && <option value={form.category}>{form.category}</option>}
+              {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+            </SelectField>
+            <SelectField label="Condition" value={form.condition} onChange={e => set('condition', e.target.value)}>
+              <option value="new">New</option>
+              <option value="good">Good</option>
+              <option value="worn">Worn</option>
+              <option value="damaged">Damaged</option>
+            </SelectField>
+            <SelectField label="Status" value={borrowed ? 'borrowed' : form.status} disabled={borrowed}
+              hint={borrowed ? 'Out on loan — return it from Borrowing.' : undefined}
+              onChange={e => set('status', e.target.value)}>
+              {borrowed && <option value="borrowed">Borrowed</option>}
+              {STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+            </SelectField>
+            <ShelfSelect shelves={shelves} value={form.location} onChange={v => set('location', v)} onCreated={onShelfCreated} />
+            <TextField label="Serial number" value={form.serial} onChange={e => set('serial', e.target.value)} />
+            <TextField label="Value (DA)" type="number" value={form.value} onChange={e => set('value', e.target.value)} />
+          </div>
+          <TextArea label="Notes" rows={4} value={form.notes} onChange={e => set('notes', e.target.value)} />
+        </div>
+      )}
     </Modal>
   )
 }
