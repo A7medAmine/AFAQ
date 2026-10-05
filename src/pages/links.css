@@ -1,0 +1,136 @@
+/* /links — matches the Open Week poster: white ground, faint blue grid,
+   pixel type, hard offset shadows in the brand blues. */
+@font-face {
+  font-family: "Thmanyah Sans";
+  src: url("/brand/fonts/thmanyahsans-Medium.woff2") format("woff2");
+  font-weight: 500;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Thmanyah Sans";
+  src: url("/brand/fonts/thmanyahsans-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-display: swap;
+}
+
+.lt-page {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  justify-content: center;
+  padding: 48px 16px;
+  background-color: #ffffff;
+  background-image:
+    linear-gradient(rgba(35, 61, 255, 0.06) 2px, transparent 2px),
+    linear-gradient(90deg, rgba(35, 61, 255, 0.06) 2px, transparent 2px);
+  background-size: 36px 36px;
+  color: #050a30;
+}
+
+.lt-card {
+  width: 100%;
+  max-width: 460px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.lt-logo { width: 88px; height: 88px; }
+
+.lt-title {
+  margin: 16px 0 0;
+  font-family: "Minecraft", monospace;
+  font-weight: 400;
+  font-size: 56px;
+  line-height: 1;
+  letter-spacing: 0.04em;
+  color: #233dff;
+  text-shadow: 2px 2px 0 #050a30, 4px 4px 0 #050a30, 8px 8px 0 #5cbcf9;
+}
+
+.lt-sub {
+  margin: 14px 0 32px;
+  font-family: "Thmanyah Sans", system-ui, sans-serif;
+  font-weight: 500;
+  font-size: 17px;
+  color: #3c4c59;
+}
+
+.lt-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.lt-link {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 60px;
+  padding: 12px 18px;
+  background: #ffffff;
+  border: 3px solid #050a30;
+  box-shadow: 4px 4px 0 #050a30, 8px 8px 0 #5cbcf9;
+  color: #050a30;
+  text-decoration: none;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+.lt-link:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 #050a30, 10px 10px 0 #5cbcf9;
+}
+.lt-link:active {
+  transform: translate(4px, 4px);
+  box-shadow: 0 0 0 #050a30, 2px 2px 0 #5cbcf9;
+}
+.lt-link:focus-visible {
+  outline: 3px solid #233dff;
+  outline-offset: 4px;
+}
+
+.lt-icon {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  background: #233dff;
+  color: #ffffff;
+}
+
+.lt-label {
+  flex: 1;
+  min-width: 0;
+  font-family: "Thmanyah Sans", system-ui, sans-serif;
+  font-weight: 700;
+  font-size: 18px;
+  overflow-wrap: anywhere;
+}
+
+.lt-arrow { flex: none; color: #233dff; }
+[dir="rtl"] .lt-arrow { transform: scaleX(-1); }
+
+.lt-spin { margin-top: 12px; color: #233dff; }
+
+.lt-note {
+  font-family: "Thmanyah Sans", system-ui, sans-serif;
+  font-size: 16px;
+  color: #3c4c59;
+  text-align: center;
+}
+
+.lt-foot {
+  margin: 44px 0 0;
+  font-family: "Thmanyah Sans", system-ui, sans-serif;
+  font-size: 13px;
+  color: #3c4c59;
+  text-align: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lt-link { transition: none; }
+}

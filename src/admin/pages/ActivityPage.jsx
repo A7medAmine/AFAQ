@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
-  Calendar, CircuitBoard, Crown, IdCard, Images, ListChecks, Mail, Megaphone, ScrollText, Shield, UserCheck,
+  Calendar, CircuitBoard, Crown, IdCard, Images, Link2, ListChecks, Mail, Megaphone, ScrollText, Shield, UserCheck,
 } from 'lucide-react'
 import { read, supabase } from '../lib/db'
 import { formatDateTime, relativeTime } from '../lib/format'
@@ -26,6 +26,7 @@ const ENTITY = {
   member_roles: { icon: Crown, label: 'Role' },
   member_tasks: { icon: ListChecks, label: 'Task' },
   ai_knowledge: { icon: ScrollText, label: 'AI article' },
+  social_links: { icon: Link2, label: 'Link' },
 }
 
 const TONE = {

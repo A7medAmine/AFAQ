@@ -42,5 +42,11 @@
     "submit": "Envoyer",
     "sending": "Envoi en cours...",
     "close": "Fermer"
+  },
+  "links": {
+    "subtitle": "Club scientifique",
+    "loading": "Chargement des liens",
+    "empty": "Aucun lien pour le moment.",
+    "error": "Les liens n'ont pas pu être chargés. Réessayez dans un instant."
   }
 }

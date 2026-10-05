@@ -16,6 +16,7 @@ const Announcements = lazy(() => import('./pages/Announcements'))
 const Contact = lazy(() => import('./pages/Contact'))
 const VerifyMember = lazy(() => import('./pages/VerifyMember'))
 const Brand = lazy(() => import('./pages/Brand'))
+const Links = lazy(() => import('./pages/Links'))
 
 // Admin — none of this should ship to public visitors.
 const Login = lazy(() => import('./admin/pages/Login'))
@@ -39,6 +40,7 @@ const ProjectsPage = lazy(() => import('./admin/pages/ProjectsPage'))
 const GalleryPage = lazy(() => import('./admin/pages/GalleryPage'))
 const MessagesPage = lazy(() => import('./admin/pages/MessagesPage'))
 const AnnouncementsPage = lazy(() => import('./admin/pages/AnnouncementsPage'))
+const LinksPage = lazy(() => import('./admin/pages/LinksPage'))
 const EmailPage = lazy(() => import('./admin/pages/EmailPage'))
 const AdminUsersPage = lazy(() => import('./admin/pages/AdminUsersPage'))
 const SettingsPage = lazy(() => import('./admin/pages/SettingsPage'))
@@ -55,7 +57,7 @@ export default function App() {
   // The visitor chatbot is for the public site; it used to float over the
   // admin console too, covering the toast area. The brand kit is a design
   // reference page, so keep the mascot off it as well.
-  const hideChatbot = /^\/(admin|brand)(\/|$)/.test(pathname)
+  const hideChatbot = /^\/(admin|brand|links)(\/|$)/.test(pathname)
 
   // The chatbot (mascot avatar + framer) is ~60 KB gzip; fetch it once the
   // browser is idle so it never competes with the landing page's first paint.
@@ -96,6 +98,8 @@ export default function App() {
           </Route>
 
           <Route path="/verify/:memberCode" element={<VerifyMember />} />
+          {/* The QR on posters lands here, so it stands alone like /verify. */}
+          <Route path="/links" element={<Links />} />
 
           {/* Admin Routes */}
           <Route path="/admin/login" element={<Login />} />
@@ -170,6 +174,9 @@ export default function App() {
             } />
             <Route path="announcements" element={
               <RoleGuard permission="announcements.manage"><AnnouncementsPage /></RoleGuard>
+            } />
+            <Route path="links" element={
+              <RoleGuard permission="links.manage"><LinksPage /></RoleGuard>
             } />
             <Route path="email" element={
               <RoleGuard permission="email.send"><EmailPage /></RoleGuard>

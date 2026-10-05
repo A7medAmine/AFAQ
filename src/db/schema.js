@@ -270,6 +270,19 @@ export const shelves = pgTable('shelves', {
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
 })
 
+// The public /links page (the QR on posters points there). `platform` picks
+// the icon; anything unknown falls back to a plain link icon.
+export const socialLinks = pgTable('social_links', {
+  id: bigint({ mode: 'number' }).primaryKey().generatedAlwaysAsIdentity(),
+  label: text().notNull(),
+  url: text().notNull(),
+  platform: text().notNull().default('website'),
+  isActive: boolean('is_active').notNull().default(true),
+  sortOrder: integer('sort_order').notNull().default(0),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+})
+
 export const borrowRecords = pgTable('borrow_records', {
   id: bigint({ mode: 'number' }).primaryKey().generatedAlwaysAsIdentity(),
   itemId: bigint('item_id', { mode: 'number' }).notNull().references(() => inventoryItems.id, { onDelete: 'cascade' }),
