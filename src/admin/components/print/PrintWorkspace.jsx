@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { createPortal } from 'react-dom'
+import { createPortal, flushSync } from 'react-dom'
 import { Link } from 'react-router-dom'
 import { ArrowLeft, Printer, RotateCcw, ZoomIn, ZoomOut } from 'lucide-react'
 import Button, { IconButton } from '../ui/Button'
@@ -7,19 +7,38 @@ import { Field } from '../ui/Field'
 import Panel from '../ui/Panel'
 
 /**
- * Settings on the left, a to-scale preview of every sheet on the right. The
- * sheets are rendered a second time into a body-level portal that is the only
- * thing visible when printing, with the page margin forced to zero — the
+ * Settings on the left, a to-scale preview of every sheet on the right. While
+ * printing, the sheets are rendered a second time into a body-level portal
+ * that is the only thing visible, with the page margin forced to zero — the
  * sheets carry their own margins, so the admin chrome and the browser's
- * default margins can't shift anything.
+ * default margins can't shift anything. That copy only exists during the
+ * print, so a long run of labels isn't rendered twice on every change.
  */
 export default function PrintWorkspace({ backTo, backLabel, summary, paper, sheets, settings, onReset }) {
   const [zoom, setZoom] = useState(0.6)
+  const [printing, setPrinting] = useState(false)
 
   useEffect(() => {
     document.body.classList.add('adm-print-mode')
     return () => document.body.classList.remove('adm-print-mode')
   }, [])
+
+  // Ctrl+P skips the button, so build the print copy on beforeprint too.
+  useEffect(() => {
+    const before = () => flushSync(() => setPrinting(true))
+    const after = () => setPrinting(false)
+    window.addEventListener('beforeprint', before)
+    window.addEventListener('afterprint', after)
+    return () => {
+      window.removeEventListener('beforeprint', before)
+      window.removeEventListener('afterprint', after)
+    }
+  }, [])
+
+  const print = () => {
+    flushSync(() => setPrinting(true))
+    window.print()
+  }
 
   return (
     <div>
@@ -31,7 +50,7 @@ export default function PrintWorkspace({ backTo, backLabel, summary, paper, shee
           <span className="text-sm" style={{ color: 'var(--adm-silk-faint)' }}>
             {summary} · {sheets.length} page{sheets.length === 1 ? '' : 's'}
           </span>
-          <Button variant="primary" icon={Printer} disabled={!sheets.length} onClick={() => window.print()}>Print</Button>
+          <Button variant="primary" icon={Printer} disabled={!sheets.length} onClick={print}>Print</Button>
         </div>
       </div>
 
@@ -52,7 +71,8 @@ export default function PrintWorkspace({ backTo, backLabel, summary, paper, shee
           {/* Scrolls instead of spilling over the settings when zoomed past the column width. */}
           <div className="flex flex-wrap gap-6 overflow-x-auto pb-2" style={{ justifyContent: 'safe center' }}>
             {sheets.map(sheet => (
-              <div key={sheet.key}>
+              // Sheets scrolled out of view skip layout and paint.
+              <div key={sheet.key} style={{ contentVisibility: 'auto', containIntrinsicSize: `auto ${paper.w * zoom}mm auto ${paper.h * zoom + 6}mm` }}>
                 <p className="text-xs mb-1.5" style={{ color: 'var(--adm-silk-faint)' }}>{sheet.title}</p>
                 <div style={{ zoom, boxShadow: '0 2px 12px rgba(0,0,0,0.25)' }}>
                   <Sheet paper={paper}>{sheet.content}</Sheet>
@@ -63,7 +83,7 @@ export default function PrintWorkspace({ backTo, backLabel, summary, paper, shee
         </div>
       </div>
 
-      {createPortal(
+      {printing && createPortal(
         <div className="adm-print-root">
           <style>{`@page { size: ${paper.w}mm ${paper.h}mm; margin: 0; }`}</style>
           {sheets.map(sheet => <Sheet key={sheet.key} paper={paper}>{sheet.content}</Sheet>)}

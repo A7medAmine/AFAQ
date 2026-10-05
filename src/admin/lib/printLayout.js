@@ -91,12 +91,17 @@ export function clamp(value, min, max) {
   return Math.min(max, Math.max(min, n))
 }
 
-/** Print settings survive reloads, so a calibrated printer stays calibrated. */
-export function usePrintSettings(key, defaults) {
+/**
+ * Print settings survive reloads, so a calibrated printer stays calibrated.
+ * Keys in `fresh` (per-job values like copies) start from the default each visit.
+ */
+export function usePrintSettings(key, defaults, fresh = []) {
   const [settings, setSettings] = useState(() => {
     try {
       const saved = JSON.parse(localStorage.getItem(key) || 'null')
-      return saved ? { ...defaults, ...saved } : defaults
+      if (!saved) return defaults
+      for (const name of fresh) delete saved[name]
+      return { ...defaults, ...saved }
     } catch {
       return defaults
     }

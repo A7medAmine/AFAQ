@@ -803,6 +803,16 @@ select.adm-input {
   opacity: 1;
 }
 
+/* Outside a table (print settings) the stepper is always shown. */
+.adm-qty.adm-qty-shown {
+  border-color: var(--adm-trace);
+  background: var(--adm-board);
+}
+
+.adm-qty.adm-qty-shown button {
+  opacity: 1;
+}
+
 .adm-qty button:hover:not(:disabled) {
   color: var(--adm-silk);
 }

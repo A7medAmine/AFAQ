@@ -1,9 +1,9 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { memo, useDeferredValue, useEffect, useMemo, useState } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
-import { Tag } from 'lucide-react'
+import { Minus, Plus, Tag } from 'lucide-react'
 import { read, supabase } from '../lib/db'
 import {
-  LABEL_TEMPLATES, PAPERS, cellPosition, clamp, paginate, repeat, usePrintSettings,
+  LABEL_TEMPLATES, PAPERS, cellPosition, clamp, paginate, usePrintSettings,
 } from '../lib/printLayout'
 import PrintWorkspace, {
   Cell, ChoiceSetting, NumberSetting, SettingsGroup,
@@ -36,7 +36,9 @@ const DEFAULTS = {
   nameLines: 2,
   padding: 2.5,
   copies: 1,
+  copyMode: 'all',
   perUnit: false,
+  showQty: true,
   skip: 0,
   guides: true,
   offsetX: 0,
@@ -66,6 +68,20 @@ const FONT_FAMILIES = {
   mono: { label: 'Monospace', css: 'ui-monospace, Consolas, monospace' },
 }
 
+// How many to print is decided per print run, so these always open at 1 / 0.
+const PER_JOB = ['copies', 'skip']
+
+// A box of 50 resistors gets one label; a multimeter gets one on itself.
+const PER_OPTIONS = [
+  { value: 'box', label: 'Each box' },
+  { value: 'unit', label: 'Each component' },
+]
+
+const COPY_MODES = [
+  { value: 'all', label: 'Same for all' },
+  { value: 'each', label: 'Per label' },
+]
+
 const CODE_OPTIONS = [
   { value: 'qr', label: 'QR code' },
   { value: 'barcode', label: 'Barcode' },
@@ -90,7 +106,17 @@ export default function LabelPrintPage({ kind = 'items' }) {
 
   const [items, setItems] = useState([])
   const [state, setState] = useState({ loading: true, error: null })
-  const [s, set, reset] = usePrintSettings(shelves ? 'afaq.print.shelf-labels.v2' : 'afaq.print.labels', shelves ? SHELF_DEFAULTS : DEFAULTS)
+  const [s, set, reset] = usePrintSettings(
+    shelves ? 'afaq.print.shelf-labels.v2' : 'afaq.print.labels',
+    shelves ? SHELF_DEFAULTS : DEFAULTS,
+    PER_JOB
+  )
+  // Labels for one item set by hand, overriding the copies setting (id → count).
+  const [own, setOwn] = useState({})
+  // Settings apply to the sheets a beat later, so typing stays instant even
+  // when hundreds of labels redraw.
+  const view = useDeferredValue(s)
+  const ownView = useDeferredValue(own)
 
   useEffect(() => {
     let cancelled = false
@@ -124,28 +150,27 @@ export default function LabelPrintPage({ kind = 'items' }) {
     return () => { cancelled = true }
   }, [ids, shelves])
 
-  const custom = s.template === 'custom'
+  const custom = view.template === 'custom'
   const grid = useMemo(() => {
-    const t = custom ? s : LABEL_TEMPLATES[s.template] || LABEL_TEMPLATES.l7160
+    const t = custom ? view : LABEL_TEMPLATES[view.template] || LABEL_TEMPLATES.l7160
     const num = (v, min, max) => clamp(v, min, max)
     return {
       cols: num(t.cols, 1, 20), rows: num(t.rows, 1, 40),
       w: num(t.w, 10, 300), h: num(t.h, 5, 300),
-      top: num(t.top, 0, 100) + (Number(s.offsetY) || 0), left: num(t.left, 0, 100) + (Number(s.offsetX) || 0),
+      top: num(t.top, 0, 100) + (Number(view.offsetY) || 0), left: num(t.left, 0, 100) + (Number(view.offsetX) || 0),
       gapX: num(t.gapX, 0, 50), gapY: num(t.gapY, 0, 50),
     }
-  }, [custom, s])
-  const paper = PAPERS[custom ? s.paper : 'a4'] || PAPERS.a4
+  }, [custom, view])
+  const paper = PAPERS[custom ? view.paper : 'a4'] || PAPERS.a4
 
   const perPage = grid.cols * grid.rows
-  // Optionally one label for every unit in stock, to stick on each of them.
-  const perItem = useCallback(
-    list => (s.perUnit && !shelves ? list.flatMap(i => Array.from({ length: Math.max(1, i.quantity ?? 1) }, () => i)) : list),
-    [s.perUnit, shelves]
-  )
   const pages = useMemo(
-    () => paginate(repeat(perItem(items), s.copies), perPage, clamp(s.skip, 0, perPage - 1)),
-    [perItem, items, s.copies, s.skip, perPage]
+    () => paginate(
+      items.flatMap(i => Array.from({ length: labelCount(i, view, ownView, shelves) }, () => i)),
+      perPage,
+      clamp(view.skip, 0, perPage - 1)
+    ),
+    [items, view, ownView, shelves, perPage]
   )
 
   if (state.loading) return null
@@ -164,16 +189,16 @@ export default function LabelPrintPage({ kind = 'items' }) {
     content: page.map(({ slot, item }, i) => {
       const { x, y } = cellPosition(grid, slot)
       return (
-        <Cell key={i} x={x} y={y} w={grid.w} h={grid.h} guide={s.guides}>
+        <Cell key={i} x={x} y={y} w={grid.w} h={grid.h} guide={view.guides}>
           {shelves
-            ? <ShelfLabel shelf={item} w={grid.w} h={grid.h} s={s} />
-            : <Label item={item} w={grid.w} h={grid.h} s={s} />}
+            ? <ShelfLabel shelf={item} w={grid.w} h={grid.h} s={view} />
+            : <Label item={item} w={grid.w} h={grid.h} s={view} />}
         </Cell>
       )
     }),
   }))
 
-  const total = perItem(items).length * Math.max(1, Math.floor(s.copies) || 1)
+  const total = items.reduce((n, i) => n + labelCount(i, s, own, shelves), 0)
 
   return (
     <PrintWorkspace
@@ -209,14 +234,23 @@ export default function LabelPrintPage({ kind = 'items' }) {
           </SettingsGroup>
 
           <SettingsGroup title="Quantity">
-            <div className="grid grid-cols-2 gap-3">
-              <NumberSetting label={shelves ? 'Copies per shelf' : 'Copies per item'} value={s.copies} min={1} max={500} onChange={v => set('copies', v)} />
-              <NumberSetting label="Skip first" value={s.skip} min={0} max={perPage - 1} onChange={v => set('skip', v)}
-                hint="Labels already used" />
-            </div>
             {!shelves && (
-              <CheckField label="One label per unit" description="Prints as many labels as the item's quantity" checked={s.perUnit} onChange={v => set('perUnit', v)} />
+              <ChoiceSetting label="Print a label for" options={PER_OPTIONS} value={s.perUnit ? 'unit' : 'box'} onChange={v => { set('perUnit', v === 'unit'); setOwn({}) }} />
             )}
+            {items.length > 1 && (
+              <ChoiceSetting label="Copies" options={COPY_MODES} value={s.copyMode} onChange={v => set('copyMode', v)} />
+            )}
+            {s.copyMode === 'each' && items.length > 1 ? (
+              <EachLabelCopies items={items} s={s} own={own} setOwn={setOwn} shelves={shelves} />
+            ) : (
+              <NumberSetting
+                label={shelves ? 'Copies of each shelf' : s.perUnit ? 'Copies of each component label' : 'Copies of each box label'}
+                value={s.copies} min={1} max={500} onChange={v => set('copies', v)}
+                hint={!shelves && s.perUnit ? 'Times the item’s quantity: 1 copy of a box of 5 is 5 labels.' : undefined}
+              />
+            )}
+            <NumberSetting label="Skip first" value={s.skip} min={0} max={perPage - 1} onChange={v => set('skip', v)}
+              hint="Labels already used on the sheet" />
           </SettingsGroup>
 
           <SettingsGroup title="Content">
@@ -227,6 +261,7 @@ export default function LabelPrintPage({ kind = 'items' }) {
             <CheckField label={shelves ? 'Shelf name' : 'Item name'} checked={s.showName} onChange={v => set('showName', v)} />
             <CheckField label={shelves ? 'Shelf number (big)' : 'Asset code (text)'} checked={s.showCode} onChange={v => set('showCode', v)} />
             {shelves && <CheckField label="Items on shelf" description="How many things are stored there" checked={s.showCount} onChange={v => set('showCount', v)} />}
+            {!shelves && !s.perUnit && <CheckField label="Quantity in the box" description="“Box of 50” under the name" checked={s.showQty} onChange={v => set('showQty', v)} />}
             {!shelves && <CheckField label="Category" checked={s.showCategory} onChange={v => set('showCategory', v)} />}
             <CheckField label={shelves ? 'Description' : 'Location'} checked={s.showLocation} onChange={v => set('showLocation', v)} />
             <CheckField label="Club name" checked={s.showClub} onChange={v => set('showClub', v)} />
@@ -275,7 +310,7 @@ export default function LabelPrintPage({ kind = 'items' }) {
   )
 }
 
-function Label({ item, w, h, s }) {
+const Label = memo(function Label({ item, w, h, s }) {
   const pad = clamp(s.padding, 0, Math.min(w, h) / 3)
   const iw = w - 2 * pad
   const ih = h - 2 * pad
@@ -291,6 +326,7 @@ function Label({ item, w, h, s }) {
   const lines = [
     s.showName && { text: item.name, size: size.name, weight: s.nameBold ? 700 : 400, color: '#0F172A', clamp: clamp(s.nameLines, 1, 5) },
     s.showCode && !withBar && { text: item.asset_code, size: size.code, mono: true, color: '#334155' },
+    !s.perUnit && s.showQty && (item.quantity ?? 1) > 1 && { text: `Box of ${item.quantity}`, size: size.detail, weight: 600, color: '#334155' },
     s.showCategory && item.category && { text: item.category, size: size.detail, color: '#475569' },
     s.showLocation && item.location && { text: item.location, size: size.detail, color: '#475569' },
     s.showClub && s.clubName && { text: s.clubName, size: size.club, color: '#94A3B8' },
@@ -337,16 +373,86 @@ function Label({ item, w, h, s }) {
       </div>
     </div>
   )
-}
+})
 
 const PT_PER_MM = 2.835
+
+const MAX_COPIES = 500
+
+/** One per box, or one per component (the item's quantity). */
+const baseCount = (item, s, shelves) => (s.perUnit && !shelves ? Math.max(1, item.quantity ?? 1) : 1)
+
+/** Labels to print for one item: its own count in per-label mode, else base × copies. */
+function labelCount(item, s, own, shelves) {
+  if (s.copyMode === 'each' && own[item.id] !== undefined) return own[item.id]
+  return baseCount(item, s, shelves) * Math.max(1, Math.floor(s.copies) || 1)
+}
+
+/** A count for every label; each starts at what "Same for all" would print. */
+function EachLabelCopies({ items, s, own, setOwn, shelves }) {
+  const put = (id, value) => setOwn(o => ({ ...o, [id]: value }))
+  return (
+    <div className="flex flex-col gap-1.5">
+      <ul className="flex flex-col gap-1 rounded-lg p-2" style={{ maxHeight: 320, overflowY: 'auto', border: '1px solid var(--adm-trace)' }}>
+        {items.map(item => (
+          <li key={item.id} className="flex items-center gap-2">
+            <span className="min-w-0 flex-1">
+              <span className="block text-[12.5px] adm-truncate" style={{ color: 'var(--adm-silk)' }}>{item.name}</span>
+              <span className="adm-data block text-[10.5px]" style={{ color: 'var(--adm-silk-faint)' }}>
+                {[item.asset_code, !shelves && s.perUnit && (item.quantity ?? 1) > 1 ? `${item.quantity} components` : null].filter(Boolean).join(' · ')}
+              </span>
+            </span>
+            <CopyStepper label={`Labels for ${item.name}`} value={labelCount(item, s, own, shelves)} onChange={v => put(item.id, v)} />
+          </li>
+        ))}
+      </ul>
+      {Object.keys(own).length > 0 && (
+        <button type="button" className="self-start text-[12px] font-semibold" style={{ color: 'var(--adm-signal)' }} onClick={() => setOwn({})}>
+          Reset counts
+        </button>
+      )}
+    </div>
+  )
+}
+
+/** −/+ with a typed number; 0 leaves the item off the sheets. */
+function CopyStepper({ label, value, onChange }) {
+  const [draft, setDraft] = useState(null) // text while typing
+  const commit = raw => {
+    setDraft(null)
+    const n = Number(raw)
+    if (Number.isInteger(n) && n >= 0) onChange(Math.min(MAX_COPIES, n))
+  }
+  return (
+    <span className="adm-qty adm-qty-shown shrink-0">
+      <button type="button" aria-label="One less" disabled={value <= 0} onClick={() => onChange(value - 1)}><Minus size={12} /></button>
+      <input
+        className="adm-data"
+        type="number"
+        inputMode="numeric"
+        aria-label={label}
+        min={0}
+        max={MAX_COPIES}
+        value={draft ?? value}
+        onChange={e => setDraft(e.target.value)}
+        onFocus={e => e.target.select()}
+        onBlur={e => commit(e.target.value)}
+        onKeyDown={e => {
+          if (e.key === 'Enter') { e.preventDefault(); e.target.blur() }
+          else if (e.key === 'Escape') { e.preventDefault(); setDraft(null) }
+        }}
+      />
+      <button type="button" aria-label="One more" disabled={value >= MAX_COPIES} onClick={() => onChange(value + 1)}><Plus size={12} /></button>
+    </span>
+  )
+}
 
 /**
  * A shelf label: the shelf number is the headline, sized to fill the space
  * next to the QR so it reads from across the room; name, description and
  * item count sit under it.
  */
-function ShelfLabel({ shelf, w, h, s }) {
+const ShelfLabel = memo(function ShelfLabel({ shelf, w, h, s }) {
   const pad = clamp(s.padding, 0, Math.min(w, h) / 3)
   const iw = w - 2 * pad
   const ih = h - 2 * pad
@@ -406,4 +512,4 @@ function ShelfLabel({ shelf, w, h, s }) {
       </div>
     </div>
   )
-}
+})
