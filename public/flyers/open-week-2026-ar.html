@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>الأسبوع المفتوح 2026 · آفاق</title>
+<style>
+  @font-face { font-family: "Minecraft"; src: url("../brand/fonts/Minecraft.woff2") format("woff2"); }
+  @font-face { font-family: "Unixel"; src: url("../brand/fonts/unixel-Regular.ttf") format("truetype"); }
+  @font-face { font-family: "Thmanyah Sans"; src: url("../brand/fonts/thmanyahsans-Medium.woff2") format("woff2"); font-weight: 500; }
+  @font-face { font-family: "Thmanyah Sans"; src: url("../brand/fonts/thmanyahsans-Bold.woff2") format("woff2"); font-weight: 700; }
+  @font-face { font-family: "Thmanyah Sans"; src: url("../brand/fonts/thmanyahsans-Black.woff2") format("woff2"); font-weight: 900; }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #d9dfee; }
+
+  /* 1080 x 1528, roughly A-series portrait. Mirror of open-week-2026.html for RTL. */
+  .poster {
+    width: 1080px;
+    height: 1528px;
+    position: relative;
+    overflow: hidden;
+    margin: 0 auto;
+    background-color: #FFFFFF;
+    background-image:
+      linear-gradient(rgba(35, 61, 255, .06) 2px, transparent 2px),
+      linear-gradient(90deg, rgba(35, 61, 255, .06) 2px, transparent 2px);
+    background-size: 54px 54px;
+    color: #050A30;
+    font-family: "Thmanyah Sans", sans-serif;
+  }
+  .abs { position: absolute; }
+  .pixel { font-family: "Minecraft", monospace; direction: ltr; }
+  .pixel-ar { font-family: "Unixel", "Thmanyah Sans", sans-serif; font-weight: 400; }
+  .flip { transform: scaleX(-1); }
+
+  .mark-bg { right: 360px; top: -90px; width: 1060px; height: 1060px; transform: rotate(8deg) scaleX(-1); opacity: .18; }
+
+  .top { right: 56px; top: 50px; left: 56px; z-index: 1; display: flex; align-items: center; justify-content: space-between; }
+  .brand { display: flex; align-items: center; gap: 18px; }
+  .brand img { width: 68px; height: 68px; }
+  .brand b { display: block; font-size: 46px; line-height: 1; }
+  .brand small { display: block; font-size: 23px; font-weight: 500; color: #3C4C59; margin-top: 8px; }
+  .year { font-size: 48px; line-height: 1; color: #233DFF; letter-spacing: .04em; text-shadow: -4px 4px 0 #5CBCF9; }
+
+  .title { line-height: 1; color: #233DFF; white-space: nowrap; }
+  .open { right: 57px; top: 185px; font-size: 230px; text-shadow: -3px 3px 0 #050A30, -6px 6px 0 #050A30, -9px 9px 0 #050A30, -12px 12px 0 #050A30, -22px 22px 0 #5CBCF9; }
+  .week { right: 150px; top: 460px; font-size: 200px; transform: rotate(3deg); transform-origin: right top; text-shadow: -3px 3px 0 #050A30, -6px 6px 0 #050A30, -9px 9px 0 #050A30, -12px 12px 0 #050A30, -20px 20px 0 #5CBCF9; }
+
+  .tape {
+    right: -120px; top: 820px; width: 1320px; height: 82px;
+    background: #5CBCF9; transform: rotate(4deg);
+    border-top: 4px solid #050A30; border-bottom: 4px solid #050A30; box-shadow: 0 12px 0 #233DFF;
+    display: flex; align-items: center; gap: 30px; white-space: nowrap; overflow: hidden;
+    font-size: 38px; color: #050A30;
+  }
+  .tape i { width: 14px; height: 14px; flex: none; background: #050A30; }
+
+  .day {
+    top: 1018px; width: 284px; height: 200px;
+    background: #FFFFFF; color: #233DFF;
+    border: 5px solid #050A30; box-shadow: -8px 8px 0 #050A30, -18px 18px 0 #5CBCF9;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 168px; line-height: 1; padding-top: 24px;
+  }
+
+  .when { right: 56px; top: 1262px; left: 56px; display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; }
+  .month { font-size: 100px; line-height: 1; text-shadow: -6px 6px 0 #5CBCF9; }
+  .facts { display: flex; flex-direction: column; align-items: flex-end; gap: 14px; padding-bottom: 8px; font-size: 29px; font-weight: 700; line-height: 1; }
+  .facts p { display: flex; align-items: center; gap: 12px; }
+  .facts p::after { content: ""; width: 12px; height: 12px; background: #233DFF; box-shadow: -3px 3px 0 #5CBCF9; }
+
+  .tagline { right: 56px; left: 56px; top: 1394px; border-top: 4px solid #050A30; padding-top: 18px; font-size: 29px; font-weight: 500; line-height: 1.45; color: #3C4C59; }
+  .tagline strong { color: #233DFF; font-weight: 900; }
+
+  @media print {
+    @page { size: 1080px 1528px; margin: 0; }
+    body { background: none; }
+    .poster { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
+</style>
+</head>
+<body>
+  <main class="poster" data-document-role="page" data-label="AFAQ Open Week 2026 (Arabic)">
+    <img class="abs mark-bg" src="../brand/logo/afaq-mark-blue.svg" alt="">
+
+    <svg class="abs flip" style="right:850px;top:132px" width="230" height="110" viewBox="0 0 230 110" fill="none" aria-hidden="true">
+      <path d="M230 14 H130 V84 H44" stroke="#233DFF" stroke-width="5"/>
+      <rect x="30" y="77" width="14" height="14" fill="#050A30"/>
+      <path d="M230 40 H160 V104 H100" stroke="#5CBCF9" stroke-width="5"/>
+      <rect x="88" y="98" width="12" height="12" fill="#233DFF"/>
+    </svg>
+    <svg class="abs flip" style="right:0;top:520px" width="60" height="330" viewBox="0 0 60 330" fill="none" aria-hidden="true">
+      <path d="M0 10 H26 V300 H0" stroke="#233DFF" stroke-width="5"/>
+      <rect x="19" y="143" width="14" height="14" fill="#050A30"/>
+      <path d="M0 40 H12 V250" stroke="#5CBCF9" stroke-width="5"/>
+      <rect x="6" y="248" width="12" height="12" fill="#233DFF"/>
+    </svg>
+
+    <header class="abs top">
+      <div class="brand">
+        <img src="../brand/logo/afaq-mark-navy.svg" alt="شعار نادي آفاق">
+        <div><b class="pixel-ar">آفاق</b><small>نادٍ علمي</small></div>
+      </div>
+      <span class="pixel year">2026</span>
+    </header>
+
+    <h1 class="abs pixel-ar title open">الأسبوع</h1>
+    <p class="abs pixel-ar title week">المفتوح</p>
+
+    <svg class="abs" style="right:850px;top:600px;transform:rotate(-8deg) scaleX(-1)" width="150" height="150" viewBox="0 0 8.6 8.6" shape-rendering="crispEdges" aria-hidden="true">
+      <g fill="#050A30" transform="translate(0.6 0.6)"><rect x="4" y="0" width="3" height="1"/><rect x="3" y="1" width="3" height="1"/><rect x="2" y="2" width="3" height="1"/><rect x="1" y="3" width="6" height="1"/><rect x="4" y="4" width="2" height="1"/><rect x="3" y="5" width="2" height="1"/><rect x="2" y="6" width="2" height="1"/><rect x="2" y="7" width="1" height="1"/></g>
+      <g fill="#5CBCF9"><rect x="4" y="0" width="3" height="1"/><rect x="3" y="1" width="3" height="1"/><rect x="2" y="2" width="3" height="1"/><rect x="1" y="3" width="6" height="1"/><rect x="4" y="4" width="2" height="1"/><rect x="3" y="5" width="2" height="1"/><rect x="2" y="6" width="2" height="1"/><rect x="2" y="7" width="1" height="1"/></g>
+    </svg>
+    <div class="abs" style="right:760px;top:470px;width:14px;height:14px;background:#233DFF;box-shadow:-4px 4px 0 #050A30"></div>
+    <div class="abs" style="right:960px;top:760px;width:10px;height:10px;background:#5CBCF9;box-shadow:-3px 3px 0 #050A30"></div>
+
+    <div class="abs pixel-ar tape">
+      <span>أحضر صديقك واكتشف آفاق</span><i></i>
+      <span>أحضر صديقك واكتشف آفاق</span><i></i>
+      <span>أحضر صديقك واكتشف آفاق</span><i></i>
+      <span>أحضر صديقك واكتشف آفاق</span><i></i>
+      <span>أحضر صديقك واكتشف آفاق</span>
+    </div>
+
+    <div class="abs pixel day" style="right:56px">11</div>
+    <div class="abs pixel day" style="right:388px">12</div>
+    <div class="abs pixel day" style="right:720px">13</div>
+
+    <div class="abs when">
+      <p class="pixel-ar month">أكتوبر</p>
+      <div class="facts">
+        <p>ابتداءً من الساعة 08:00 صباحًا</p>
+        <p>عبر ثلاثة أقسام</p>
+      </div>
+    </div>
+
+    <p class="abs tagline">ثلاثة أيام <strong>للاكتشاف والتواصل والتعلّم والمرح،</strong> وللانضمام إلى مجتمعنا العلمي.</p>
+  </main>
+</body>
+</html>
