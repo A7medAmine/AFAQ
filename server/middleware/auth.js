@@ -43,3 +43,28 @@ export const requireRole =
     req.adminProfile = admin
     next()
   }
+
+/**
+ * Like requireRole, but a role created in the console also passes when its
+ * saved permission list (admin_roles.permissions) includes `permission`.
+ * `roles` are the built-in roles that hold the permission on the client.
+ */
+export const requirePermission =
+  (permission, ...roles) =>
+  async (req, res, next) => {
+    const { data: admin } = await supabaseAdmin
+      .from('admin_users')
+      .select('*, role:admin_roles(name, permissions)')
+      .eq('user_id', req.user.id)
+      .maybeSingle()
+
+    if (!admin?.is_active) return res.status(403).json({ error: 'Forbidden' })
+
+    const role = admin.role
+    const saved = Array.isArray(role?.permissions) ? role.permissions : null
+    const allowed = role?.name === 'super_admin' || (saved ? saved.includes(permission) : roles.includes(role?.name))
+    if (!allowed) return res.status(403).json({ error: 'Forbidden' })
+
+    req.adminProfile = admin
+    next()
+  }

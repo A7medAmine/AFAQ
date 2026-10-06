@@ -5,6 +5,8 @@
  */
 import regularUrl from '../assets/fonts/IBMPlexSansArabic-Regular.ttf?url'
 import boldUrl from '../assets/fonts/IBMPlexSansArabic-Bold.ttf?url'
+import universityLogoUrl from '../assets/letterhead/univ-bouira.png?url'
+import clubLogoUrl from '../assets/letterhead/afaq-bolt.jpg?url'
 import { formatDateFor, isRtl, t } from './exportI18n'
 
 export const FONT = 'PlexArabic'
@@ -22,6 +24,7 @@ export const THEME = {
 }
 
 let fontCache = null
+let logoCache = null
 
 async function toBase64(url) {
   const buffer = await (await fetch(url)).arrayBuffer()
@@ -39,6 +42,14 @@ function loadFonts() {
     throw err
   })
   return fontCache
+}
+
+function loadLogos() {
+  logoCache ||= Promise.all([toBase64(universityLogoUrl), toBase64(clubLogoUrl)]).catch(err => {
+    logoCache = null
+    throw err
+  })
+  return logoCache
 }
 
 const ARABIC = /[؀-ۿݐ-ݿࢠ-ࣿ]/
@@ -64,8 +75,8 @@ function patchBidi(doc) {
 
 /** A new A4 document with the shared font registered and bidi fixed. */
 export async function createPdf({ orientation = 'portrait' } = {}) {
-  const [{ default: jsPDF }, { default: autoTable }, [regular, bold]] = await Promise.all([
-    import('jspdf'), import('jspdf-autotable'), loadFonts(),
+  const [{ default: jsPDF }, { default: autoTable }, [regular, bold], [university, club]] = await Promise.all([
+    import('jspdf'), import('jspdf-autotable'), loadFonts(), loadLogos(),
   ])
   const doc = new jsPDF({ orientation, unit: 'pt', format: 'a4' })
   doc.addFileToVFS('PlexArabic-Regular.ttf', regular)
@@ -74,43 +85,77 @@ export async function createPdf({ orientation = 'portrait' } = {}) {
   doc.addFont('PlexArabic-Bold.ttf', FONT, 'bold')
   doc.setFont(FONT, 'normal')
   patchBidi(doc)
+  doc.letterheadLogos = { university, club }
   return { doc, autoTable }
 }
 
+// The club's official letterhead. It is an institutional document, so it
+// stays in French whatever language the rest of the export is in.
+const LETTERHEAD = [
+  'République Algérienne Démocratique et Populaire',
+  'Le Ministère de l’Enseignement Supérieur et de la Recherche Scientifique.',
+  'L’Université Akli Mohand Oulhadj – Bouira-',
+  'Tasadawit Akli Muhend Ulhag -Tubirett-',
+  'La Faculté des Sciences Appliquées.',
+  'Club Scientifique AFAQ',
+]
+const LETTERHEAD_RULE = [160, 160, 160]
+
 /**
- * Letterhead: club name and document title on the reading side, the
- * subtitle (period, date) on the other, and a thin rule underneath.
- * Returns the y where content can start.
+ * Letterhead: the university logo, the institutional lines centred and the
+ * club logo across the top, then the document title (the letter's "objet")
+ * and its subtitle centred between two grey rules. Drawn on the first page
+ * only. Returns the y where content can start.
  */
-export function drawHeader(doc, { lang, title, subtitle, margin }) {
+export function drawHeader(doc, { title, subtitle, margin }) {
   const width = doc.internal.pageSize.getWidth()
-  const rtl = isRtl(lang)
-  const start = rtl ? width - margin : margin
-  const end = rtl ? margin : width - margin
-  const startAlign = rtl ? 'right' : 'left'
-  const endAlign = rtl ? 'left' : 'right'
+  const center = width / 2
+  const top = margin - 12
+  const logo = 62
+  const lineHeight = 12
 
-  doc.setTextColor(...THEME.muted)
-  doc.setFont(FONT, 'normal')
-  doc.setFontSize(9)
-  doc.text(t(lang, 'club').toUpperCase(), start, margin + 4, { align: startAlign })
+  const { university, club } = doc.letterheadLogos || {}
+  if (university) doc.addImage(university, 'PNG', margin, top + 4, logo, logo, 'letterhead-university')
+  if (club) doc.addImage(club, 'JPEG', width - margin - logo, top + 4, logo, logo, 'letterhead-club')
 
-  doc.setTextColor(...THEME.ink)
+  // Fit the institutional lines between the two logos.
+  const room = width - (margin + logo + 10) * 2
   doc.setFont(FONT, 'bold')
-  doc.setFontSize(18)
-  doc.text(title, start, margin + 28, { align: startAlign })
+  doc.setTextColor(...THEME.ink)
+  let size = 9.5
+  doc.setFontSize(size)
+  while (size > 7 && Math.max(...LETTERHEAD.map(line => doc.getTextWidth(line))) > room) {
+    size -= 0.5
+    doc.setFontSize(size)
+  }
+  LETTERHEAD.forEach((line, i) => doc.text(line, center, top + 10 + i * lineHeight, { align: 'center' }))
+
+  let y = top + 10 + (LETTERHEAD.length - 1) * lineHeight + 12
+  doc.setDrawColor(...LETTERHEAD_RULE)
+  doc.setLineWidth(0.6)
+  doc.line(margin, y, width - margin, y)
+
+  y += 24
+  doc.setFont(FONT, 'bold')
+  doc.setFontSize(15)
+  doc.setTextColor(...THEME.ink)
+  const titleLines = doc.splitTextToSize(String(title), width - margin * 2)
+  titleLines.forEach((line, i) => doc.text(line, center, y + i * 18, { align: 'center' }))
+  y += (titleLines.length - 1) * 18
 
   if (subtitle) {
-    doc.setTextColor(...THEME.muted)
+    y += 15
     doc.setFont(FONT, 'normal')
     doc.setFontSize(9)
-    doc.text(subtitle, end, margin + 28, { align: endAlign })
+    doc.setTextColor(...THEME.muted)
+    doc.text(subtitle, center, y, { align: 'center' })
   }
 
-  doc.setDrawColor(...THEME.ink)
-  doc.setLineWidth(1)
-  doc.line(margin, margin + 40, width - margin, margin + 40)
-  return margin + 62
+  y += 12
+  doc.setDrawColor(...LETTERHEAD_RULE)
+  doc.setLineWidth(0.6)
+  doc.line(margin, y, width - margin, y)
+  return y + 22
 }
 
 /** "Generated …" and "Page n of N" on every page, under a hairline. */

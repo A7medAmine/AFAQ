@@ -1,7 +1,8 @@
 import { create } from 'zustand'
 import { supabase } from '../../lib/supabase'
+import { registerRolePermissions } from '../lib/permissions'
 
-const PROFILE_SELECT = '*, role:admin_roles(name, label, description)'
+const PROFILE_SELECT = '*, role:admin_roles(name, label, description, permissions)'
 
 const readStored = (key, fallback) => {
   try {
@@ -79,6 +80,7 @@ const store = (set, get) => ({
       return
     }
 
+    registerRolePermissions(profile.role?.name, profile.role?.permissions)
     set({
       user: session.user,
       adminProfile: profile,
@@ -114,6 +116,7 @@ const store = (set, get) => ({
       throw new Error('This admin account has been deactivated. Ask a super admin to restore it.')
     }
 
+    registerRolePermissions(profile.role?.name, profile.role?.permissions)
     set({
       user: data.user,
       adminProfile: profile,

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Loader2, Shield, ShieldOff, Trash2, UserPlus } from 'lucide-react'
+import { KeyRound, Loader2, Pencil, Plus, Shield, ShieldOff, Trash2, UserPlus } from 'lucide-react'
 import { api, logActivity, read, run, supabase } from '../lib/db'
 import useAdminStore from '../store/adminStore'
 import { formatDate, formatDateTime, initials } from '../lib/format'
@@ -12,7 +12,8 @@ import Button, { IconButton } from '../components/ui/Button'
 import ExportMenu from '../components/ui/ExportMenu'
 import Badge, { StatusBadge } from '../components/ui/Badge'
 import Panel from '../components/ui/Panel'
-import { SelectField, TextField } from '../components/ui/Field'
+import { CheckField, SelectField, TextField } from '../components/ui/Field'
+import { PERMISSIONS, PERMISSION_OPTIONS, permissionsOf } from '../lib/permissions'
 
 export default function AdminUsersPage() {
   const addToast = useAdminStore(s => s.addToast)
@@ -24,6 +25,8 @@ export default function AdminUsersPage() {
   const [addOpen, setAddOpen] = useState(false)
   const [pendingDelete, setPendingDelete] = useState(null)
   const [working, setWorking] = useState({})
+  const [editingRole, setEditingRole] = useState(null) // a role, or {} for a new one
+  const [deletingRole, setDeletingRole] = useState(null)
 
   const load = useCallback(async () => {
     setState(s => ({ ...s, error: null }))
@@ -53,6 +56,33 @@ export default function AdminUsersPage() {
     )
     setWorking(w => ({ ...w, [admin.id]: false }))
     if (ok) setAdmins(list => list.map(a => (a.id === admin.id ? { ...a, is_active: next } : a)))
+  }
+
+  const changeRole = async (admin, roleId) => {
+    const role = roles.find(r => String(r.id) === String(roleId))
+    if (!role) return
+    setWorking(w => ({ ...w, [admin.id]: true }))
+    const { ok } = await run(
+      supabase.from('admin_users').update({ role_id: role.id }).eq('id', admin.id),
+      { success: `${admin.full_name || admin.email} is now ${role.label}.`, failure: 'The role did not change.' }
+    )
+    setWorking(w => ({ ...w, [admin.id]: false }))
+    if (ok) {
+      logActivity('updated', 'admin_users', admin.id, { name: admin.full_name || admin.email, role: role.name })
+      setAdmins(list => list.map(a => (a.id === admin.id ? { ...a, role_id: role.id, role } : a)))
+    }
+  }
+
+  const deleteRole = async () => {
+    const role = deletingRole
+    const { ok } = await run(
+      supabase.from('admin_roles').delete().eq('id', role.id),
+      { success: `${role.label} deleted.`, failure: 'The role was not deleted. Move its admins to another role first.' }
+    )
+    if (!ok) return
+    logActivity('deleted', 'admin_roles', role.id, { name: role.label })
+    setDeletingRole(null)
+    load()
   }
 
   const remove = async () => {
@@ -103,7 +133,24 @@ export default function AdminUsersPage() {
       header: 'Role',
       id: 'role',
       accessorFn: row => row.role?.label || '',
-      cell: ({ row }) => <Badge tone="signal">{row.original.role?.label || 'No role'}</Badge>,
+      cell: ({ row }) => {
+        const a = row.original
+        // Changing your own role could lock you out of this screen.
+        if (a.user_id === me?.user_id) return <Badge tone="signal">{a.role?.label || 'No role'}</Badge>
+        return (
+          <select
+            className="adm-input adm-cell-select"
+            aria-label={`Role of ${a.full_name || a.email}`}
+            value={a.role_id || ''}
+            disabled={working[a.id]}
+            onClick={e => e.stopPropagation()}
+            onChange={e => changeRole(a, e.target.value)}
+          >
+            {!a.role_id && <option value="">No role</option>}
+            {roles.map(r => <option key={r.id} value={r.id}>{r.label}</option>)}
+          </select>
+        )
+      },
     },
     {
       header: 'Access',
@@ -143,7 +190,7 @@ export default function AdminUsersPage() {
         )
       },
     },
-  ], [me, working]) // eslint-disable-line react-hooks/exhaustive-deps
+  ], [me, working, roles]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div>
@@ -188,21 +235,71 @@ export default function AdminUsersPage() {
         />
       )}
 
-      {roles.length > 0 && (
-        <Panel className="mt-5 p-5">
-          <p className="adm-eyebrow mb-3">What each role may change</p>
-          <dl className="grid sm:grid-cols-2 gap-x-6 gap-y-3">
-            {roles.map(role => (
-              <div key={role.id} className="flex gap-3">
-                <dt className="text-sm font-semibold shrink-0" style={{ minWidth: 110 }}>{role.label}</dt>
-                <dd className="text-sm" style={{ color: 'var(--adm-silk-dim)' }}>
-                  {role.description || 'No description set.'}
-                </dd>
-              </div>
-            ))}
-          </dl>
-        </Panel>
-      )}
+      <Panel className="mt-5 p-5">
+        <div className="flex items-center justify-between gap-3 mb-3">
+          <div>
+            <p className="adm-eyebrow">Roles</p>
+            <p className="text-sm mt-1" style={{ color: 'var(--adm-silk-dim)' }}>
+              What each role may open. Make one for a team, such as logistics, and tick the screens it needs.
+            </p>
+          </div>
+          <Button icon={Plus} onClick={() => setEditingRole({})}>New role</Button>
+        </div>
+        <ul>
+          {roles.map(role => {
+            const isSuper = role.name === 'super_admin'
+            const granted = PERMISSION_OPTIONS.filter(p => permissionsOf(role).includes(p.value))
+            const inUse = admins.filter(a => a.role_id === role.id).length
+            return (
+              <li key={role.id} className="flex items-start gap-3 py-3" style={{ borderTop: '1px solid var(--adm-trace)' }}>
+                <KeyRound size={15} className="mt-0.5 shrink-0" style={{ color: 'var(--adm-silk-faint)' }} />
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold">
+                    {role.label}
+                    <span className="adm-data text-[11px] font-normal ml-2" style={{ color: 'var(--adm-silk-faint)' }}>
+                      {inUse} admin{inUse === 1 ? '' : 's'}
+                    </span>
+                  </p>
+                  {role.description && <p className="text-xs mt-0.5" style={{ color: 'var(--adm-silk-dim)' }}>{role.description}</p>}
+                  <p className="flex flex-wrap gap-1 mt-1.5">
+                    {isSuper ? <Badge tone="ok">Everything</Badge> : granted.length
+                      ? granted.map(p => <Badge key={p.value}>{p.label}</Badge>)
+                      : <span className="text-xs" style={{ color: 'var(--adm-silk-faint)' }}>No screens yet</span>}
+                  </p>
+                </div>
+                {!isSuper && (
+                  <span className="flex items-center gap-0.5 shrink-0">
+                    <IconButton icon={Pencil} label={`Edit ${role.label}`} onClick={() => setEditingRole(role)} />
+                    <IconButton
+                      icon={Trash2}
+                      danger
+                      label={inUse ? 'Move its admins to another role first' : `Delete ${role.label}`}
+                      disabled={inUse > 0}
+                      onClick={() => setDeletingRole(role)}
+                    />
+                  </span>
+                )}
+              </li>
+            )
+          })}
+        </ul>
+      </Panel>
+
+      <RoleEditor
+        role={editingRole}
+        roles={roles}
+        onClose={() => setEditingRole(null)}
+        onSaved={() => { setEditingRole(null); load() }}
+      />
+
+      <ConfirmDialog
+        open={!!deletingRole}
+        onClose={() => setDeletingRole(null)}
+        onConfirm={deleteRole}
+        title="Delete this role?"
+        message={deletingRole ? `${deletingRole.label} is removed for good. No admin holds it right now.` : ''}
+        confirmLabel="Delete role"
+      />
 
       <AddAdmin
         open={addOpen}
@@ -225,6 +322,102 @@ export default function AdminUsersPage() {
         confirmLabel="Delete admin"
       />
     </div>
+  )
+}
+
+/** Turns a label into the role's stored name: "Logistics team" becomes "logistics_team". */
+const roleSlug = label => label.trim().toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '')
+
+function RoleEditor({ role, roles, onClose, onSaved }) {
+  const open = !!role
+  const isNew = open && !role.id
+  const [form, setForm] = useState({ label: '', description: '', permissions: [] })
+  const [error, setError] = useState(null)
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    if (!open) return
+    setForm({
+      label: role.label || '',
+      description: role.description || '',
+      permissions: role.id ? [...permissionsOf(role)] : [],
+    })
+    setError(null)
+  }, [open, role])
+
+  const toggle = (value, on) => setForm(f => ({
+    ...f,
+    permissions: on ? [...f.permissions, value] : f.permissions.filter(p => p !== value),
+  }))
+
+  const submit = async () => {
+    const label = form.label.trim()
+    // Non-Latin labels still need a stored name, so fall back to a numbered one.
+    const name = isNew ? roleSlug(label) || `role_${Date.now()}` : role.name
+    if (!label) { setError('Give the role a name.'); return }
+    if (roles.some(r => r.id !== role.id && (r.name === name || r.label.toLowerCase() === label.toLowerCase()))) {
+      setError('A role with that name already exists.')
+      return
+    }
+
+    // Saved in the editor's order so lists read the same everywhere.
+    const permissions = PERMISSION_OPTIONS.map(p => p.value).filter(v => form.permissions.includes(v))
+    const values = { label, description: form.description.trim() || null, permissions }
+    setSaving(true)
+    const { ok, data } = await run(
+      isNew
+        ? supabase.from('admin_roles').insert({ name, ...values }).select('id').single()
+        : supabase.from('admin_roles').update(values).eq('id', role.id),
+      { success: isNew ? `${label} created.` : `${label} saved.`, failure: 'The role was not saved.' }
+    )
+    setSaving(false)
+    if (!ok) return
+    logActivity(isNew ? 'created' : 'updated', 'admin_roles', isNew ? data?.id : role.id, { name: label, permissions })
+    onSaved()
+  }
+
+  const builtIn = open && !isNew && PERMISSIONS[role.name] && !Array.isArray(role.permissions)
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      size="lg"
+      title={isNew ? 'New role' : `Edit ${role?.label || 'role'}`}
+      description="Admins with this role see only the screens ticked here. Changes reach them the next time they reload."
+      footer={
+        <>
+          <Button onClick={onClose} data-dialog-dismiss="true">Cancel</Button>
+          <Button variant="primary" onClick={submit} busy={saving} busyLabel="Saving…">{isNew ? 'Create role' : 'Save role'}</Button>
+        </>
+      }
+    >
+      <div className="space-y-4">
+        <TextField label="Name" required value={form.label} error={error} placeholder="Logistics"
+          onChange={e => { setForm(f => ({ ...f, label: e.target.value })); setError(null) }} />
+        <TextField label="Description" value={form.description} placeholder="Needs lists, inventory and borrowing"
+          onChange={e => setForm(f => ({ ...f, description: e.target.value }))} />
+        <div>
+          <span className="adm-label">Screens this role can open</span>
+          {builtIn && (
+            <p className="text-xs mb-2" style={{ color: 'var(--adm-silk-faint)' }}>
+              A built-in role, showing its default screens. Saving keeps your choices from now on.
+            </p>
+          )}
+          <div className="grid sm:grid-cols-2 gap-x-4 gap-y-2.5">
+            {PERMISSION_OPTIONS.map(p => (
+              <CheckField
+                key={p.value}
+                label={p.label}
+                description={p.description}
+                checked={form.permissions.includes(p.value)}
+                onChange={on => toggle(p.value, on)}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+    </Modal>
   )
 }
 

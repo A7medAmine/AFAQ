@@ -1,11 +1,11 @@
 import { Router } from 'express'
 import { SCOPES, searchProducts } from '../services/digikeyService.js'
-import { requireAuth, requireRole } from '../middleware/auth.js'
+import { requireAuth, requirePermission } from '../middleware/auth.js'
 
 const router = Router()
 
-// Same roles that hold inventory.manage on the client.
-router.use(requireAuth, requireRole('event_manager'))
+// Same roles that hold inventory.manage on the client, plus any role saved with it.
+router.use(requireAuth, requirePermission('inventory.manage', 'event_manager'))
 
 router.get('/search', async (req, res) => {
   const q = String(req.query.q || '').trim()

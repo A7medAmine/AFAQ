@@ -8,6 +8,9 @@ export const adminRoles = pgTable('admin_roles', {
   name: text().notNull().unique(),
   label: text().notNull(),
   description: text(),
+  // What the role may open in the console. Null keeps the built-in set from
+  // src/admin/lib/permissions.js; roles created in the console always list theirs.
+  permissions: text().array(),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
 })
 
@@ -537,3 +540,51 @@ export const reviewSettings = pgTable('review_settings', {
   staleDays: integer('stale_days').notNull().default(5),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
 })
+
+// Club departments (Tech, Media, Logistics…) that needs are grouped under.
+// Edited in the console; not the same thing as members.department, which is
+// the member's field of study.
+export const departments = pgTable('departments', {
+  id: bigint({ mode: 'number' }).primaryKey().generatedAlwaysAsIdentity(),
+  name: text().notNull().unique(),
+  color: text(),
+  description: text(),
+  sortOrder: integer('sort_order').notNull().default(0),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+})
+
+// A list of things logistics has to get together. `scope` says what it is
+// for: an event, one department's standing needs, or anything else.
+export const needLists = pgTable('need_lists', {
+  id: bigint({ mode: 'number' }).primaryKey().generatedAlwaysAsIdentity(),
+  title: text().notNull(),
+  scope: text().notNull().default('custom'),
+  eventId: bigint('event_id', { mode: 'number' }).references(() => events.id, { onDelete: 'set null' }),
+  departmentId: bigint('department_id', { mode: 'number' }).references(() => departments.id, { onDelete: 'set null' }),
+  dueDate: date('due_date'),
+  status: text().notNull().default('open'),
+  notes: text(),
+  createdBy: uuid('created_by'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+})
+
+// One line of a needs list. `source` is where it will come from (club stock,
+// buying it, borrowing it); `status` tracks it from needed to in hand.
+export const needItems = pgTable('need_items', {
+  id: bigint({ mode: 'number' }).primaryKey().generatedAlwaysAsIdentity(),
+  listId: bigint('list_id', { mode: 'number' }).notNull().references(() => needLists.id, { onDelete: 'cascade' }),
+  departmentId: bigint('department_id', { mode: 'number' }).references(() => departments.id, { onDelete: 'set null' }),
+  kind: text().notNull().default('equipment'),
+  name: text().notNull(),
+  quantity: integer().notNull().default(1),
+  unit: text(),
+  inventoryItemId: bigint('inventory_item_id', { mode: 'number' }).references(() => inventoryItems.id, { onDelete: 'set null' }),
+  source: text().notNull().default('buy'),
+  status: text().notNull().default('needed'),
+  priority: text().notNull().default('must'),
+  assignee: text(),
+  notes: text(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+}, t => [index('need_items_list_id_idx').on(t.listId)])

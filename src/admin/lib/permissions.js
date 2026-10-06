@@ -22,6 +22,7 @@ export const PERMISSIONS = {
     'activity.view',
     'settings.manage',
     'inventory.manage',
+    'needs.manage',
     'tasks.manage',
     'finance.manage',
     'applications.review',
@@ -35,6 +36,7 @@ export const PERMISSIONS = {
     'email.send',
     'messages.view',
     'inventory.manage',
+    'needs.manage',
     'tasks.manage',
     'applications.review',
   ],
@@ -61,10 +63,53 @@ export const PERMISSIONS = {
   ],
 }
 
+/** Every permission a role can be given, in the order the role editor lists them. */
+export const PERMISSION_OPTIONS = [
+  { value: 'events.manage', label: 'Events', description: 'Create and edit events' },
+  { value: 'events.registrations.manage', label: 'Registrations', description: 'Event sign-ups and badges' },
+  { value: 'applications.review', label: 'Review queue', description: 'Review membership applications' },
+  { value: 'membership.manage', label: 'Members', description: 'Applications, members, cards and review teams' },
+  { value: 'messages.view', label: 'Messages', description: 'Read contact messages' },
+  { value: 'tasks.manage', label: 'Tasks', description: 'Assign tasks to members' },
+  { value: 'inventory.manage', label: 'Inventory', description: 'Inventory, shelves and borrowing' },
+  { value: 'needs.manage', label: 'Needs lists', description: 'Needs lists and departments' },
+  { value: 'finance.manage', label: 'Finance', description: 'Income, expenses and budgets' },
+  { value: 'projects.manage', label: 'Projects', description: 'Publish projects' },
+  { value: 'gallery.manage', label: 'Gallery', description: 'Albums and photos' },
+  { value: 'announcements.manage', label: 'Announcements', description: 'Publish announcements' },
+  { value: 'links.manage', label: 'Links page', description: 'The public links page' },
+  { value: 'email.send', label: 'Email', description: 'Send email campaigns' },
+  { value: 'admin_users.manage', label: 'Admins', description: 'Admin accounts and roles' },
+  { value: 'ai_knowledge.manage', label: 'AI knowledge', description: 'What the chatbot answers from' },
+  { value: 'activity.view', label: 'Activity', description: 'The activity log' },
+  { value: 'settings.manage', label: 'Settings', description: 'Console settings' },
+]
+
+/**
+ * Roles saved with their own permission list (admin_roles.permissions), by
+ * name. The store fills this in when the signed-in admin's profile loads; a
+ * role that isn't here falls back to the built-in PERMISSIONS map.
+ */
+const stored = new Map()
+
+export function registerRolePermissions(name, permissions) {
+  if (!name) return
+  if (Array.isArray(permissions)) stored.set(name, permissions)
+  else stored.delete(name)
+}
+
+/** What a role may do: its saved list, else the built-in one. */
+export function permissionsOf(role) {
+  if (!role) return []
+  const name = typeof role === 'string' ? role : role.name
+  if (typeof role === 'object' && Array.isArray(role.permissions)) return role.permissions
+  return stored.get(name) || PERMISSIONS[name] || []
+}
+
 export function hasPermission(userRole, permission) {
   if (!userRole) return false
   if (userRole === ROLES.SUPER_ADMIN) return true
-  return (PERMISSIONS[userRole] || []).includes(permission)
+  return permissionsOf(userRole).includes(permission)
 }
 
 /**
@@ -91,6 +136,7 @@ export const NAV_ITEMS = [
 
   { label: 'Inventory', path: '/admin/inventory', icon: 'Boxes', group: 'resources', permission: 'inventory.manage' },
   { label: 'Borrowing', path: '/admin/borrowing', icon: 'ArrowLeftRight', group: 'resources', permission: 'inventory.manage' },
+  { label: 'Needs lists', path: '/admin/needs', icon: 'ClipboardList', group: 'resources', permission: 'needs.manage' },
   { label: 'Finance', path: '/admin/finance', icon: 'Wallet', group: 'resources', permission: 'finance.manage' },
 
   { label: 'Projects', path: '/admin/projects', icon: 'CircuitBoard', group: 'publish', permission: 'projects.manage' },

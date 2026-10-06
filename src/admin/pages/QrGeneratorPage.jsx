@@ -166,6 +166,9 @@ export default function QrGeneratorPage() {
           width: 1024,
           color: { dark: style.dark, light: style.light },
         })
+        // toCanvas pins an inline 1024px size; let the preview box scale it instead
+        canvas.style.width = '100%'
+        canvas.style.height = '100%'
         if (style.logo) {
           const { img } = await loadLogo()
           if (cancelled) return

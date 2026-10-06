@@ -35,6 +35,8 @@ const FinancePage = lazy(() => import('./admin/pages/FinancePage'))
 const InventoryPage = lazy(() => import('./admin/pages/InventoryPage'))
 const LabelPrintPage = lazy(() => import('./admin/pages/LabelPrintPage'))
 const ShelvesPage = lazy(() => import('./admin/pages/ShelvesPage'))
+const NeedsPage = lazy(() => import('./admin/pages/NeedsPage'))
+const NeedListPage = lazy(() => import('./admin/pages/NeedListPage'))
 const BorrowingPage = lazy(() => import('./admin/pages/BorrowingPage'))
 const ProjectsPage = lazy(() => import('./admin/pages/ProjectsPage'))
 const GalleryPage = lazy(() => import('./admin/pages/GalleryPage'))
@@ -163,6 +165,12 @@ export default function App() {
             } />
             <Route path="borrowing" element={
               <RoleGuard permission="inventory.manage"><BorrowingPage /></RoleGuard>
+            } />
+            <Route path="needs" element={
+              <RoleGuard permission="needs.manage"><NeedsPage /></RoleGuard>
+            } />
+            <Route path="needs/:id" element={
+              <RoleGuard permission="needs.manage"><NeedListPage /></RoleGuard>
             } />
             <Route path="projects" element={
               <RoleGuard permission="projects.manage"><ProjectsPage /></RoleGuard>

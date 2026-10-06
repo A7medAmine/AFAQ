@@ -169,6 +169,13 @@
       "when": 1791319879454,
       "tag": "0023_inventory_checkout",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1791323396941,
+      "tag": "0024_needs_lists",
+      "breakpoints": true
     }
   ]
 }
