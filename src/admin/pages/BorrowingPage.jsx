@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { PackageCheck, PackageMinus, PackageX, ScrollText } from 'lucide-react'
+import { Minus, PackageCheck, PackageMinus, PackageX, Plus, ScrollText, Trash2 } from 'lucide-react'
 import { logActivity, read, supabase } from '../lib/db'
 import useAdminStore from '../store/adminStore'
 import PageHeader, { FilterTabs } from '../components/ui/PageHeader'
 import DataTable from '../components/ui/DataTable'
 import EmptyState, { ErrorState } from '../components/ui/EmptyState'
 import Panel from '../components/ui/Panel'
-import Button from '../components/ui/Button'
+import Button, { IconButton } from '../components/ui/Button'
 import ExportMenu from '../components/ui/ExportMenu'
 import { StatusBadge } from '../components/ui/Badge'
 import { CheckField, TextArea, TextField } from '../components/ui/Field'
@@ -17,12 +17,6 @@ const TABS = [
   { value: 'checkout', label: 'Check out' },
   { value: 'return', label: 'Return' },
   { value: 'history', label: 'History' },
-]
-
-// A loan comes back; an issue is handed out for good (a part used in a build).
-const KINDS = [
-  { value: 'loan', label: 'Lend — comes back' },
-  { value: 'issue', label: 'Hand out — used up' },
 ]
 
 const kindLabel = record => (record.kind === 'issue' ? 'Handed out' : 'Loan')
@@ -170,122 +164,174 @@ const memberKey = m => m.id
 const memberCode = m => m.member_code
 const memberText = m => [m.full_name, m.member_code, m.department].join(' ')
 
+// One basket line per item. The item itself comes from the latest list, so
+// counts stay right after a reload.
+const defaultKind = item => (item.tracking_mode === 'consumable' ? 'issue' : 'loan')
+
+const LINE_KINDS = [
+  { value: 'loan', label: 'Lend' },
+  { value: 'issue', label: 'Hand out' },
+]
+
 function CheckOutForm({ items, members, loading, onDone }) {
   const addToast = useAdminStore(s => s.addToast)
-  const [item, setItem] = useState(null)
+  const [lines, setLines] = useState([]) // { itemId, qty: string, kind }
   const [borrower, setBorrower] = useState(null)
   const [expectedReturn, setExpectedReturn] = useState('')
   const [note, setNote] = useState('')
-  const [count, setCount] = useState('1')
-  const [kind, setKind] = useState('loan')
   const [purpose, setPurpose] = useState('')
+  const [shortId, setShortId] = useState(null) // line the database said ran out
   const [busy, setBusy] = useState(false)
 
-  const max = item ? available(item) : 1
-  const n = Number(count)
-  const countOk = Number.isInteger(n) && n >= 1 && n <= max
-  const issue = kind === 'issue'
-  // The item says whether it usually comes back; the switch can still override it.
-  const pick = i => { setItem(i); setCount('1'); if (i) setKind(i.tracking_mode === 'consumable' ? 'issue' : 'loan') }
+  const byId = useMemo(() => new Map(items.map(i => [i.id, i])), [items])
+  const basket = lines.map(l => {
+    const item = byId.get(l.itemId)
+    const max = item ? available(item) : 0
+    const n = Number(l.qty)
+    return { ...l, item, max, n, ok: !!item && Number.isInteger(n) && n >= 1 && n <= max }
+  })
+  const allOk = basket.length > 0 && basket.every(l => l.ok)
+  const units = basket.reduce((s, l) => s + (l.ok ? l.n : 0), 0)
+  const lending = basket.filter(l => l.kind === 'loan')
+  const handing = basket.filter(l => l.kind === 'issue')
+  const allKind = lending.length && !handing.length ? 'loan' : handing.length && !lending.length ? 'issue' : null
 
-  // Available items first so the suggestions lead with what can be lent.
+  // Available items first so the suggestions lead with what can go out.
   const sortedItems = useMemo(
     () => [...items].sort((a, b) => (a.status === 'available' ? 0 : 1) - (b.status === 'available' ? 0 : 1)),
     [items]
   )
 
+  const setLine = (itemId, changes) => setLines(ls => ls.map(l => (l.itemId === itemId ? { ...l, ...changes } : l)))
+  const removeLine = itemId => setLines(ls => ls.filter(l => l.itemId !== itemId))
+
+  // A scan of something already in the basket adds one more of it.
+  const add = item => {
+    if (!item) return
+    setShortId(null)
+    const line = lines.find(l => l.itemId === item.id)
+    if (!line) { setLines(ls => [...ls, { itemId: item.id, qty: '1', kind: defaultKind(item) }]); return }
+    const next = (Number(line.qty) || 0) + 1
+    if (next > available(item)) { addToast(`All ${available(item)} ${item.name} on the shelf are already in the basket.`, 'error'); return }
+    setLine(item.id, { qty: String(next) })
+  }
+
+  const reset = () => {
+    setLines([]); setBorrower(null); setExpectedReturn(''); setNote(''); setPurpose(''); setShortId(null)
+  }
+
   const submit = async e => {
     e.preventDefault()
-    if (!item) { addToast('Pick the item being borrowed.', 'error'); return }
-    if (!countOk) { addToast(`${issue ? 'Hand out' : 'Lend'} between 1 and ${max}.`, 'error'); return }
+    if (!basket.length) { addToast('Scan or pick at least one item.', 'error'); return }
+    const bad = basket.find(l => !l.ok)
+    if (bad) { addToast(`${bad.item?.name || 'An item'}: between 1 and ${bad.max}.`, 'error'); return }
     setBusy(true)
 
-    // Take the units in one database step that checks enough are left, so
-    // the same last unit can't go out twice from two screens. A loan counts
-    // them as out; an issue takes them off the count for good.
-    const { data: claimed, error: claimErr } = await supabase.rpc(issue ? 'inventory_issue' : 'inventory_lend', { p_item: item.id, p_qty: n })
-    if (claimErr || !claimed) {
-      addToast(claimErr ? 'The checkout was not recorded.' : `Not enough ${item.name} left to ${issue ? 'hand out' : 'lend'} ${n}.`, 'error')
-      setBusy(false)
-      onDone()
-      return
-    }
-
+    // One database step for the whole basket: every line goes out and is
+    // recorded, or none does — so the same last unit can't go out twice and
+    // a failure never leaves half a checkout behind.
     const member = borrower && !borrower.guest ? borrower : null
-    const { error: insertErr } = await supabase.from('borrow_records').insert({
-      item_id: item.id,
-      kind,
-      quantity: n,
-      consumed_quantity: issue ? n : 0,
-      member_id: member?.id ?? null,
-      borrower_name: borrower?.full_name ?? null,
-      purpose: purpose.trim() || null,
-      expected_return_at: !issue && expectedReturn ? endOfDay(expectedReturn) : null,
-      condition_note_out: note.trim() || null,
-      status: issue ? 'consumed' : 'active',
+    const { error } = await supabase.rpc('inventory_checkout', {
+      p_lines: basket.map(l => ({ item_id: l.itemId, quantity: l.n, kind: l.kind })),
+      p_member: member?.id ?? null,
+      p_borrower: borrower?.full_name ?? null,
+      p_purpose: purpose.trim() || null,
+      p_due: lending.length && expectedReturn ? endOfDay(expectedReturn) : null,
+      p_note: note.trim() || null,
     })
-    if (insertErr) {
-      await (issue
-        ? supabase.rpc('inventory_restock', { p_item: item.id, p_qty: n })
-        : supabase.rpc('inventory_release', { p_item: item.id, p_qty: n }))
-      addToast('The checkout was not recorded.', 'error')
-      setBusy(false)
+    setBusy(false)
+    if (error) {
+      const short = /not_enough:(\d+)/.exec(error.message || '')
+      if (short) {
+        const item = byId.get(Number(short[1]))
+        setShortId(Number(short[1]))
+        addToast(`Not enough ${item?.name || 'of one item'} left — nothing was checked out.`, 'error')
+        onDone()
+      } else {
+        addToast('The checkout was not recorded.', 'error')
+      }
       return
     }
 
-    logActivity(issue ? 'issued' : 'checked_out', 'inventory_items', item.id, {
-      name: item.name, quantity: n, borrower: borrower?.full_name, purpose: purpose.trim() || undefined,
-    })
-    addToast(`${n > 1 ? `${n} × ` : ''}${item.name} ${issue ? 'handed out' : 'checked out'}${borrower ? ` to ${borrower.full_name}` : ''}.`)
-    setItem(null); setCount('1'); setBorrower(null); setExpectedReturn(''); setNote(''); setPurpose('')
-    setBusy(false)
+    for (const l of basket) {
+      logActivity(l.kind === 'issue' ? 'issued' : 'checked_out', 'inventory_items', l.itemId, {
+        name: l.item.name, quantity: l.n, borrower: borrower?.full_name, purpose: purpose.trim() || undefined,
+      })
+    }
+    const parts = [
+      lending.length ? `${lending.length} lent` : null,
+      handing.length ? `${handing.length} handed out` : null,
+    ].filter(Boolean).join(', ')
+    const to = borrower ? ` to ${borrower.full_name}` : ''
+    addToast(basket.length === 1
+      ? `${units > 1 ? `${units} × ` : ''}${basket[0].item.name} ${basket[0].kind === 'issue' ? 'handed out' : 'checked out'}${to}.`
+      : `${basket.length} items checked out (${parts})${to}.`)
+    reset()
     onDone()
   }
 
   return (
-    <Panel className="p-5 sm:p-6">
-      <form onSubmit={submit} className="space-y-4 max-w-lg">
+    <form onSubmit={submit} className="grid lg:grid-cols-[minmax(0,1fr)_360px] gap-5 items-start">
+      <Panel className="p-5 sm:p-6 space-y-4">
         <SearchPicker
-          label="Item"
-          placeholder={loading ? 'Loading inventory…' : 'Search by name or asset code…'}
+          label="Scan or search items"
+          placeholder={loading ? 'Loading inventory…' : 'Scan a label, or type a name or asset code…'}
           options={sortedItems}
-          value={item}
-          onChange={pick}
+          value={null}
+          onChange={add}
           getKey={itemKey}
           getCode={itemCode}
           getSearchText={itemText}
           renderOption={i => <ItemOption item={i} />}
           isDisabled={i => (i.status !== 'available' ? UNAVAILABLE[i.status] || i.status : null)}
+          onRejected={(i, reason) => addToast(`${i.name} can't go out — ${reason}.`, 'error')}
           emptyText="No item matches. Add it from Inventory first."
           autoFocus
         />
-        {item && (
+
+        {basket.length > 0 ? (
           <div>
-            <FilterTabs options={KINDS} value={kind} onChange={setKind} label="Comes back or used up" />
-            <p className="text-[12px] mt-1.5" style={{ color: 'var(--adm-silk-faint)' }}>
-              {issue
-                ? 'Leaves the stock for good — for parts that go into a build.'
-                : 'Counted as out until it\'s returned.'}
-            </p>
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
+              <span className="text-[12.5px]" style={{ color: 'var(--adm-silk-faint)' }}>
+                {basket.length} {basket.length === 1 ? 'item' : 'items'} · {units} {units === 1 ? 'unit' : 'units'}
+              </span>
+              {basket.length > 1 && (
+                <div className="flex items-center gap-2">
+                  <span className="text-[12px]" style={{ color: 'var(--adm-silk-faint)' }}>All:</span>
+                  <FilterTabs
+                    options={LINE_KINDS}
+                    value={allKind}
+                    onChange={k => setLines(ls => ls.map(l => ({ ...l, kind: k })))}
+                    label="Set every item"
+                  />
+                </div>
+              )}
+            </div>
+            <ul className="rounded-xl" style={{ border: '1px solid var(--adm-trace)' }}>
+              {basket.map((l, i) => (
+                <BasketLine
+                  key={l.itemId}
+                  line={l}
+                  first={i === 0}
+                  short={shortId === l.itemId}
+                  onQty={qty => { setShortId(null); setLine(l.itemId, { qty }) }}
+                  onKind={kind => setLine(l.itemId, { kind })}
+                  onRemove={() => removeLine(l.itemId)}
+                />
+              ))}
+            </ul>
           </div>
+        ) : (
+          <p className="text-[13px] py-6 px-4 text-center rounded-xl" style={{ color: 'var(--adm-silk-faint)', border: '1px dashed var(--adm-trace)' }}>
+            The basket is empty. Scan each item's label — scan it again to add one more.
+          </p>
         )}
-        {item && max > 1 && (
-          <TextField
-            label="How many"
-            type="number"
-            inputMode="numeric"
-            min={1}
-            max={max}
-            step={1}
-            value={count}
-            error={count !== '' && !countOk ? `Between 1 and ${max} — that's how many are on the shelf.` : undefined}
-            hint={`${max} of ${item.quantity ?? 1} available`}
-            onChange={e => setCount(e.target.value)}
-          />
-        )}
+      </Panel>
+
+      <Panel className="p-5 sm:p-6 space-y-4">
         <SearchPicker
-          label={issue ? 'Given to (optional)' : 'Borrower (optional)'}
-          placeholder="Search member by name or code…"
+          label="Borrower (optional)"
+          placeholder="Scan a card, or search by name or code…"
           options={members}
           value={borrower}
           onChange={setBorrower}
@@ -294,7 +340,7 @@ function CheckOutForm({ items, members, loading, onDone }) {
           getSearchText={memberText}
           renderOption={m => <MemberOption member={m} />}
           onFreeText={name => setBorrower({ id: `guest:${name}`, full_name: name, guest: true })}
-          freeTextLabel={name => `${issue ? 'Give' : 'Lend'} to “${name}” (not a member)`}
+          freeTextLabel={name => `Give to “${name}” (not a member)`}
           emptyText="No member matches."
         />
         <TextField
@@ -302,24 +348,75 @@ function CheckOutForm({ items, members, loading, onDone }) {
           value={purpose}
           onChange={e => setPurpose(e.target.value)}
           placeholder="Line-follower robot, Arduino workshop…"
-          hint={issue ? 'The project or event it goes into.' : undefined}
+          hint="The project or event. Applies to every item."
         />
-        {!issue && (
+        {lending.length > 0 && (
           <TextField
             label="Expected return date"
             type="date"
             value={expectedReturn}
             min={new Date().toISOString().slice(0, 10)}
             onChange={e => setExpectedReturn(e.target.value)}
+            hint={handing.length ? 'For the lent items only.' : undefined}
           />
         )}
-        <TextArea label={issue ? 'Notes' : 'Condition notes'} value={note} onChange={e => setNote(e.target.value)}
-          placeholder={issue ? 'Optional' : 'Working, minor scuff on the case…'} />
-        <Button type="submit" variant="primary" icon={PackageMinus} busy={busy} busyLabel={issue ? 'Handing out…' : 'Checking out…'} disabled={!item || !countOk}>
-          {issue ? 'Hand out' : 'Check out'}{item && n > 1 && countOk ? ` ${n}` : ''}
-        </Button>
-      </form>
-    </Panel>
+        <TextArea label="Notes" value={note} onChange={e => setNote(e.target.value)}
+          placeholder={lending.length ? 'Working, minor scuff on the case…' : 'Optional'} />
+        <div className="flex flex-wrap gap-2">
+          <Button type="submit" variant="primary" icon={PackageMinus} busy={busy} busyLabel="Checking out…" disabled={!allOk}>
+            {checkoutLabel(lending.length, handing.length)}
+          </Button>
+          {basket.length > 0 && <Button variant="ghost" onClick={reset} disabled={busy}>Clear</Button>}
+        </div>
+      </Panel>
+    </form>
+  )
+}
+
+function checkoutLabel(lent, handed) {
+  if (!lent && !handed) return 'Check out'
+  if (!handed) return lent > 1 ? `Lend ${lent} items` : 'Lend'
+  if (!lent) return handed > 1 ? `Hand out ${handed} items` : 'Hand out'
+  return `Check out ${lent + handed} items`
+}
+
+function BasketLine({ line, first, short, onQty, onKind, onRemove }) {
+  const { item, max, n, ok } = line
+  if (!item) return null
+  const step = d => onQty(String(Math.min(max, Math.max(1, (Number.isInteger(n) ? n : 1) + d))))
+  return (
+    <li className="flex flex-wrap items-center gap-3 p-3" style={first ? undefined : { borderTop: '1px solid var(--adm-trace)' }}>
+      <span className="min-w-0 flex-1 basis-48 block">
+        <span className="block text-sm font-semibold adm-truncate">{item.name}</span>
+        <span className="adm-data block text-[11px] adm-truncate" style={{ color: short || !ok ? 'var(--adm-fault)' : 'var(--adm-silk-faint)' }}>
+          {short
+            ? `Only ${max} left now. Lower the count or remove it.`
+            : !ok
+              ? `Between 1 and ${max}`
+              : [item.asset_code, `${max} on the shelf`, item.location].filter(Boolean).join(' · ')}
+        </span>
+      </span>
+      <FilterTabs options={LINE_KINDS} value={line.kind} onChange={onKind} label={`${item.name}: lend or hand out`} />
+      <div className="flex items-center gap-1">
+        <IconButton icon={Minus} label="One less" size={14} tabIndex={-1} onClick={() => step(-1)} disabled={n <= 1} />
+        <input
+          className="adm-input adm-data text-center"
+          style={{ width: 60 }}
+          type="number"
+          inputMode="numeric"
+          aria-label={`How many ${item.name}`}
+          aria-invalid={!ok || undefined}
+          min={1}
+          max={max}
+          step={1}
+          value={line.qty}
+          onChange={e => onQty(e.target.value)}
+          onFocus={e => e.target.select()}
+        />
+        <IconButton icon={Plus} label="One more" size={14} tabIndex={-1} onClick={() => step(1)} disabled={n >= max} />
+      </div>
+      <IconButton icon={Trash2} label={`Remove ${item.name}`} danger size={15} onClick={onRemove} />
+    </li>
   )
 }
 

@@ -26,11 +26,13 @@ function fold(text) {
  * @param renderOption   option → row content in the suggestion list
  * @param isDisabled     option → reason string when it can't be picked
  * @param onFreeText     optional: query → offer "use this text" as a last row
+ * @param onRejected     optional: (option, reason) when a disabled option is
+ *                       picked, so a scan that can't be used still says why
  */
 export default function SearchPicker({
   label, placeholder, options, value, onChange,
   getKey, getCode, getSearchText, renderOption, renderSelected,
-  isDisabled = () => null, onFreeText, freeTextLabel,
+  isDisabled = () => null, onRejected, onFreeText, freeTextLabel,
   emptyText = 'No matches.', limit = 8, autoFocus,
 }) {
   const id = useId()
@@ -62,7 +64,11 @@ export default function SearchPicker({
   useEffect(() => { setActive(0) }, [query])
 
   const pick = option => {
-    if (isDisabled(option)) return
+    const reason = isDisabled(option)
+    if (reason) {
+      if (onRejected) { onRejected(option, reason); setQuery('') }
+      return
+    }
     onChange(option)
     setQuery('')
     setOpen(false)

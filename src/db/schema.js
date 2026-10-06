@@ -300,6 +300,8 @@ export const borrowRecords = pgTable('borrow_records', {
   // Units of this record that never came back: all of an issue, or the part
   // of a loan that was used up.
   consumedQuantity: integer('consumed_quantity').notNull().default(0),
+  // Records checked out together at the counter share one batch id.
+  batchId: uuid('batch_id'),
   checkedOutAt: timestamp('checked_out_at', { withTimezone: true }).defaultNow(),
   expectedReturnAt: timestamp('expected_return_at', { withTimezone: true }),
   returnedAt: timestamp('returned_at', { withTimezone: true }),
