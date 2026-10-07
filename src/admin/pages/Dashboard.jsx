@@ -17,6 +17,7 @@ import { StatusBadge } from '../components/ui/Badge'
 import Button from '../components/ui/Button'
 import { SkeletonPanel } from '../components/ui/Skeleton'
 import MemberFormModal from '../components/hr/MemberFormModal'
+import NeedsWidget from '../components/needs/NeedsWidget'
 import { ErrorState } from '../components/ui/EmptyState'
 
 const since = days => {
@@ -311,6 +312,12 @@ export default function Dashboard() {
               </div>
             </Panel>
           </div>
+
+          {hasPermission(role, 'needs.manage') && (
+            <div className="grid gap-5 mt-5 lg:grid-cols-3">
+              <div className="lg:col-span-2"><NeedsWidget /></div>
+            </div>
+          )}
         </>
       )}
 

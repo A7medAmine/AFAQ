@@ -564,6 +564,10 @@ export const needLists = pgTable('need_lists', {
   dueDate: date('due_date'),
   status: text().notNull().default('open'),
   notes: text(),
+  // A template is a list kept to start new ones from; it never counts as open work.
+  isTemplate: boolean('is_template').notNull().default(false),
+  // Set while a read-only share link is on; anyone with it can view the list.
+  shareToken: uuid('share_token').unique(),
   createdBy: uuid('created_by'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
@@ -583,8 +587,17 @@ export const needItems = pgTable('need_items', {
   source: text().notNull().default('buy'),
   status: text().notNull().default('needed'),
   priority: text().notNull().default('must'),
+  // `assignee` is the name shown; the ids are set when it was picked from
+  // the admins or members, so "My items" and email reminders can find them.
   assignee: text(),
+  assigneeUserId: uuid('assignee_user_id'),
+  assigneeMemberId: bigint('assignee_member_id', { mode: 'number' }).references(() => members.id, { onDelete: 'set null' }),
+  supplier: text(),
   notes: text(),
+  // When the item was added to inventory after it arrived.
+  stockedAt: timestamp('stocked_at', { withTimezone: true }),
+  // The Borrowing check-out that took it from stock (borrow_records.batch_id).
+  borrowBatchId: uuid('borrow_batch_id'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
 }, t => [index('need_items_list_id_idx').on(t.listId)])

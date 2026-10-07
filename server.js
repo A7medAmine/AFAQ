@@ -15,6 +15,7 @@ import aiKnowledgeRoutes from './server/routes/aiKnowledge.js'
 import digikeyRoutes from './server/routes/digikey.js'
 import emailRoutes from './server/routes/email.js'
 import eventsRoutes from './server/routes/events.js'
+import needsRoutes from './server/routes/needs.js'
 import { sendEmail } from './server/services/mailer.js'
 import { approveApplication, HttpError } from './server/services/membership.js'
 import reviewRoutes, { publicReviewRoutes } from './server/routes/review.js'
@@ -909,6 +910,10 @@ app.use("/api/review", reviewRoutes);
 // --- Bulk notification emails (templates, campaigns) ---
 
 app.use("/api/email", emailRoutes);
+
+// --- Needs lists (share links, reminders) ---
+
+app.use("/api/needs", needsRoutes);
 
 // --- SPA fallback (production) ---
 

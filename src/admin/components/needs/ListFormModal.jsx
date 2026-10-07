@@ -1,15 +1,15 @@
 import { useEffect, useState } from 'react'
-import { logActivity, run, supabase } from '../../lib/db'
+import { logActivity, read, run, supabase } from '../../lib/db'
 import useAdminStore from '../../store/adminStore'
-import { LIST_SCOPES } from '../../lib/needs'
+import { LIST_SCOPES, copyItems } from '../../lib/needs'
 import Modal from '../ui/Modal'
 import Button from '../ui/Button'
 import { SelectField, TextArea, TextField } from '../ui/Field'
 
-const EMPTY = { title: '', scope: 'event', event_id: '', department_id: '', due_date: '', notes: '' }
+const EMPTY = { title: '', scope: 'event', event_id: '', department_id: '', due_date: '', notes: '', template_id: '' }
 
 /** Create a needs list, or edit one's title, purpose, due date and notes. */
-export default function ListFormModal({ open, list, events, departments, onClose, onSaved }) {
+export default function ListFormModal({ open, list, events, departments, templates = [], onClose, onSaved }) {
   const userId = useAdminStore(s => s.adminProfile?.user_id)
   const [form, setForm] = useState(EMPTY)
   const [errors, setErrors] = useState({})
@@ -74,7 +74,12 @@ export default function ListFormModal({ open, list, events, departments, onClose
     setSaving(false)
     if (!ok) return
     const id = isNew ? data.id : list.id
-    logActivity(isNew ? 'created' : 'updated', 'need_lists', id, { name: values.title })
+    logActivity(isNew ? 'created' : 'updated', 'need_lists', id, { name: values.title, ...(form.template_id ? { from_template: Number(form.template_id) } : {}) })
+    if (isNew && form.template_id) {
+      const tpl = await read(supabase.from('need_items').select('*').eq('list_id', form.template_id))
+      const rows = tpl.ok ? copyItems(tpl.data || [], id) : []
+      if (rows.length) await run(supabase.from('need_items').insert(rows), { failure: 'The list was made, but the template items were not copied.' })
+    }
     onSaved(id)
   }
 
@@ -113,6 +118,13 @@ export default function ListFormModal({ open, list, events, departments, onClose
           <SelectField label="Department" required value={form.department_id} error={errors.department_id} onChange={e => set('department_id', e.target.value)}>
             <option value="">Pick a department…</option>
             {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+          </SelectField>
+        )}
+        {isNew && templates.length > 0 && (
+          <SelectField label="Start from a template" value={form.template_id} hint="Copies its items into the new list, all set to Needed."
+            onChange={e => setForm(f => ({ ...f, template_id: e.target.value }))}>
+            <option value="">Empty list</option>
+            {templates.map(t => <option key={t.id} value={t.id}>{t.title}</option>)}
           </SelectField>
         )}
         <TextField label="Name" required value={form.title} error={errors.title} placeholder="Open week 2026 needs"

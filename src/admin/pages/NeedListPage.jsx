@@ -1,14 +1,15 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
-  Archive, ArrowLeft, CalendarDays, CheckCircle2, ClipboardList, Copy, FileSpreadsheet, Layers, Pencil, Plus, Printer, RotateCcw, Search, Star, Trash2,
+  Archive, ArrowLeft, ArrowLeftRight, BookmarkPlus, CalendarDays, CheckCircle2, ClipboardList, Copy, FileSpreadsheet, History, Layers,
+  LayoutGrid, Mail, PackagePlus, Pencil, Plus, Printer, RotateCcw, Search, Share2, Star, Table2, Trash2, TrendingDown, UserRound,
 } from 'lucide-react'
-import { logActivity, read, run, supabase } from '../lib/db'
+import { api, logActivity, read, run, supabase } from '../lib/db'
 import useAdminStore from '../store/adminStore'
 import { formatDate, formatDateTime } from '../lib/format'
 import {
-  ITEM_STATUSES, KINDS, SOURCES, UNITS, duplicateList, isLate, itemStatusLabel, kindLabel, listContext,
-  loadDepartments, onShelf, priorityLabel, progressOf, scopeLabel, sourceLabel,
+  ITEM_STATUSES, KINDS, SOURCES, UNITS, canCheckOut, canStock, duplicateList, isLate, itemStatusLabel, kindLabel, listContext,
+  loadAdminDirectory, loadDepartments, onShelf, priorityLabel, progressOf, scopeLabel, sourceLabel,
 } from '../lib/needs'
 import PageHeader, { FilterTabs } from '../components/ui/PageHeader'
 import EmptyState, { ErrorState } from '../components/ui/EmptyState'
@@ -22,6 +23,12 @@ import DepartmentsModal from '../components/needs/DepartmentsModal'
 import ListFormModal from '../components/needs/ListFormModal'
 import PrintNeedsModal from '../components/needs/PrintNeedsModal'
 import ImportNeedsModal from '../components/needs/ImportNeedsModal'
+import ReceiveModal from '../components/needs/ReceiveModal'
+import CheckoutModal from '../components/needs/CheckoutModal'
+import LowStockModal from '../components/needs/LowStockModal'
+import HistoryDrawer from '../components/needs/HistoryDrawer'
+import ShareModal from '../components/needs/ShareModal'
+import NeedsBoard from '../components/needs/NeedsBoard'
 
 const NO_DEPT = 'none'
 const STATUS_COLOR = { needed: 'var(--adm-wait)', ordered: 'var(--adm-signal)', ready: 'var(--adm-ok)', cancelled: 'var(--adm-trace-strong)' }
@@ -29,10 +36,14 @@ const STATUS_COLOR = { needed: 'var(--adm-wait)', ordered: 'var(--adm-signal)', 
 /** Cells read the save function from here so the rows don't remount on every change. */
 const Edit = createContext({ patch: async () => false, departments: [], stock: new Map() })
 
+const VIEW_KEY = 'afaq.needs.view'
+const savedView = () => { try { return localStorage.getItem(VIEW_KEY) === 'board' ? 'board' : 'table' } catch { return 'table' } }
+
 export default function NeedListPage() {
   const { id } = useParams()
   const navigate = useNavigate()
   const addToast = useAdminStore(s => s.addToast)
+  const me = useAdminStore(s => s.adminProfile)
 
   const [list, setList] = useState(null)
   const [items, setItems] = useState([])
@@ -46,12 +57,22 @@ export default function NeedListPage() {
   const [kindFilter, setKindFilter] = useState('')
   const [query, setQuery] = useState('')
   const [selected, setSelected] = useState(() => new Set())
+  const [mine, setMine] = useState(false)
+  const [view, setViewState] = useState(savedView)
+  const setView = next => { setViewState(next); try { localStorage.setItem(VIEW_KEY, next) } catch { /* storage blocked */ } }
+  const [people, setPeople] = useState({ admins: [], members: [] })
 
   const [editing, setEditing] = useState(false)
   const [printing, setPrinting] = useState(false)
   const [importing, setImporting] = useState(false)
   const [deptOpen, setDeptOpen] = useState(false)
   const [confirm, setConfirm] = useState(null) // 'delete-list' | 'delete-items'
+  const [receiving, setReceiving] = useState(null) // items to put in inventory
+  const [checkingOut, setCheckingOut] = useState(false)
+  const [lowStock, setLowStock] = useState(false)
+  const [historyItem, setHistoryItem] = useState(null)
+  const [sharing, setSharing] = useState(false)
+  const [reminding, setReminding] = useState(false)
 
   const loadDepts = useCallback(async () => {
     const { ok, data } = await loadDepartments()
@@ -64,7 +85,7 @@ export default function NeedListPage() {
       read(supabase.from('need_lists').select('*, event:events(id, title_en, date), department:departments(id, name, color)').eq('id', id).maybeSingle()),
       read(supabase.from('need_items').select('*').eq('list_id', id).order('created_at')),
       read(supabase.from('events').select('id, title_en, date').order('date', { ascending: false })),
-      read(supabase.from('inventory_items').select('id, name, asset_code, quantity, on_loan, tracking_mode, status').neq('status', 'retired').order('name')),
+      read(supabase.from('inventory_items').select('id, name, asset_code, quantity, on_loan, tracking_mode, status, min_stock').neq('status', 'retired').order('name')),
     ])
     if (!listRes.ok || !itemRes.ok) { setState({ loading: false, error: (listRes.ok ? itemRes : listRes).message }); return }
     if (!listRes.data) { setState({ loading: false, error: 'This list does not exist any more.' }); return }
@@ -76,6 +97,15 @@ export default function NeedListPage() {
   }, [id])
 
   useEffect(() => { load(); loadDepts() }, [load, loadDepts])
+
+  // People to assign items to. Members are only readable by roles that
+  // manage membership; for others the list is admins only.
+  useEffect(() => {
+    Promise.all([
+      loadAdminDirectory(),
+      read(supabase.from('members').select('id, full_name, email').eq('status', 'active').order('full_name')),
+    ]).then(([admins, members]) => setPeople({ admins: admins.data || [], members: members.ok ? members.data || [] : [] }))
+  }, [])
 
   const stock = useMemo(() => new Map(inventory.map(i => [i.id, i])), [inventory])
   const deptById = useMemo(() => new Map(departments.map(d => [d.id, d])), [departments])
@@ -112,9 +142,50 @@ export default function NeedListPage() {
       { success: `Updated ${ids.length} item${ids.length === 1 ? '' : 's'}.`, failure: 'Nothing was changed.' }
     )
     if (!ok) return
-    logActivity('updated', 'need_items', null, { name: 'Bulk change', list: list.title, count: ids.length, ...changes })
+    // One entry per item, so each item's history shows the change.
+    const touched = items.filter(r => selected.has(r.id))
+    touched.forEach(r => logActivity('updated', 'need_items', r.id, { name: r.name, list: list.title, ...changes }))
     setItems(rs => rs.map(r => (selected.has(r.id) ? { ...r, ...changes } : r)))
     setSelected(new Set())
+    if (changes.status === 'ready') {
+      const arrived = touched.map(r => ({ ...r, ...changes })).filter(canStock)
+      if (arrived.length) setReceiving(arrived)
+    }
+  }
+
+  /** A status change; something bought or made that is now ready can go straight into inventory. */
+  const setStatus = useCallback(async (item, status) => {
+    const ok = await patch(item, { status })
+    if (ok && canStock({ ...item, status })) setReceiving([{ ...item, status }])
+    return ok
+  }, [patch])
+
+  const remind = async () => {
+    setReminding(true)
+    const { ok, data, message } = await api(`/api/needs/${list.id}/remind`, { method: 'POST' })
+    setReminding(false)
+    if (!ok) { addToast(message, 'error'); return }
+    const parts = [`Sent ${data.sent} reminder${data.sent === 1 ? '' : 's'}.`]
+    if (data.unreachable) parts.push(`${data.unreachable} item${data.unreachable === 1 ? ' has' : 's have'} a name typed by hand, so no email.`)
+    if (data.failed) parts.push(`${data.failed} failed.`)
+    addToast(parts.join(' '), data.failed ? 'error' : 'success')
+    logActivity('updated', 'need_lists', list.id, { name: list.title, reminders: data.sent })
+  }
+
+  const saveAsTemplate = async () => {
+    const newId = await duplicateList(list, items, `${list.title} (template)`, { isTemplate: true, createdBy: me?.user_id })
+    if (!newId) return
+    logActivity('created', 'need_lists', newId, { name: `${list.title} (template)`, template: true, copied_from: list.id })
+    addToast('Saved as a template. Start new lists from it under Templates.')
+  }
+
+  const startFromTemplate = async () => {
+    const title = list.title.replace(/\s*\(template\)$/i, '')
+    const newId = await duplicateList(list, items, title, { createdBy: me?.user_id })
+    if (!newId) return
+    logActivity('created', 'need_lists', newId, { name: title, from_template: list.id })
+    addToast('New list started from the template.')
+    navigate(`/admin/needs/${newId}`)
   }
 
   const deleteSelected = async () => {
@@ -164,6 +235,7 @@ export default function NeedListPage() {
 
   // ── Filtering and grouping ─────────────────────────────────────────────
   const matches = useCallback(item => {
+    if (mine && item.assignee_user_id !== me?.user_id) return false
     if (statusFilter && item.status !== statusFilter) return false
     if (kindFilter && item.kind !== kindFilter) return false
     if (query.trim()) {
@@ -171,7 +243,7 @@ export default function NeedListPage() {
       if (![item.name, item.notes, item.assignee].some(v => v && v.toLowerCase().includes(q))) return false
     }
     return true
-  }, [statusFilter, kindFilter, query])
+  }, [statusFilter, kindFilter, query, mine, me?.user_id])
 
   const groups = useMemo(() => {
     const keyOf = item => (item.department_id && deptById.has(item.department_id) ? item.department_id : NO_DEPT)
@@ -199,10 +271,20 @@ export default function NeedListPage() {
 
   const exportRows = items.map(i => [
     deptById.get(i.department_id)?.name || '', i.name, i.quantity, i.unit || '', kindLabel(i.kind), sourceLabel(i.source),
-    itemStatusLabel(i.status), priorityLabel(i.priority), i.assignee || '', i.notes || '',
+    itemStatusLabel(i.status), priorityLabel(i.priority), i.assignee || '', i.supplier || '', i.notes || '',
   ])
 
-  const editCtx = useMemo(() => ({ patch, departments, stock, remove: removeItem }), [patch, departments, stock]) // eslint-disable-line react-hooks/exhaustive-deps
+  const toStock = items.filter(canStock)
+  const toCheckOut = items.filter(canCheckOut)
+  const lowCount = inventory.filter(i => i.min_stock != null && onShelf(i) <= i.min_stock
+    && !items.some(n => n.inventory_item_id === i.id && n.status !== 'cancelled')).length
+  const myCount = items.filter(i => i.assignee_user_id && i.assignee_user_id === me?.user_id).length
+  const boardItems = groups.flatMap(g => g.shown)
+
+  const editCtx = useMemo(
+    () => ({ patch, setStatus, departments, stock, people, remove: removeItem, history: setHistoryItem }),
+    [patch, setStatus, departments, stock, people] // eslint-disable-line react-hooks/exhaustive-deps
+  )
 
   if (state.error) {
     return (
@@ -237,7 +319,7 @@ export default function NeedListPage() {
               filename={`needs-${list.id}-${new Date().toISOString().slice(0, 10)}`}
               title="Needs list"
               subtitle={`${list.title} · ${formatDateTime(new Date())}`}
-              headers={['Department', 'Item', 'Quantity', 'Unit', 'Type', 'Source', 'Status', 'Priority', 'Who', 'Notes']}
+              headers={['Department', 'Item', 'Quantity', 'Unit', 'Type', 'Source', 'Status', 'Priority', 'Who', 'Supplier', 'Notes']}
               rows={exportRows}
               statusColumnIndex={6}
               enumColumns={[4, 5, 6, 7]}
@@ -255,7 +337,9 @@ export default function NeedListPage() {
               <CalendarDays size={13} /> {late ? 'Late — was needed by' : 'Needed by'} {formatDate(list.due_date)}
             </span>
           )}
-          {list.status !== 'open' && <Badge tone={list.status === 'done' ? 'ok' : undefined}>{list.status === 'done' ? 'Done' : 'Archived'}</Badge>}
+          {list.is_template && <Badge tone="signal">Template</Badge>}
+          {!list.is_template && list.status !== 'open' && <Badge tone={list.status === 'done' ? 'ok' : undefined}>{list.status === 'done' ? 'Done' : 'Archived'}</Badge>}
+          {list.share_token && <Badge>Shared by link</Badge>}
         </div>
         {list.notes && <p className="text-[13px] mt-2 whitespace-pre-line" style={{ color: 'var(--adm-silk-faint)', maxWidth: 680 }}>{list.notes}</p>}
       </PageHeader>
@@ -271,17 +355,43 @@ export default function NeedListPage() {
         </div>
         <Button size="sm" icon={Pencil} onClick={() => setEditing(true)}>Edit list</Button>
         <Button size="sm" icon={Layers} onClick={() => setDeptOpen(true)}>Departments</Button>
-        <Button size="sm" icon={Copy} onClick={copyList}>Copy</Button>
-        {list.status === 'open' ? (
-          <>
-            <Button size="sm" icon={CheckCircle2} onClick={() => setListStatus('done')}>Mark done</Button>
-            <Button size="sm" icon={Archive} onClick={() => setListStatus('archived')}>Archive</Button>
-          </>
+        {list.is_template ? (
+          <Button size="sm" variant="primary" icon={Plus} onClick={startFromTemplate}>New list from this template</Button>
         ) : (
-          <Button size="sm" icon={RotateCcw} onClick={() => setListStatus('open')}>Reopen</Button>
+          <>
+            <Button size="sm" icon={Copy} onClick={copyList}>Copy</Button>
+            <Button size="sm" icon={BookmarkPlus} onClick={saveAsTemplate}>Save as template</Button>
+            <Button size="sm" icon={Share2} onClick={() => setSharing(true)}>Share</Button>
+            {list.status === 'open' ? (
+              <>
+                <Button size="sm" icon={CheckCircle2} onClick={() => setListStatus('done')}>Mark done</Button>
+                <Button size="sm" icon={Archive} onClick={() => setListStatus('archived')}>Archive</Button>
+              </>
+            ) : (
+              <Button size="sm" icon={RotateCcw} onClick={() => setListStatus('open')}>Reopen</Button>
+            )}
+          </>
         )}
         <Button size="sm" variant="danger" icon={Trash2} onClick={() => setConfirm('delete-list')}>Delete</Button>
       </div>
+
+      {!list.is_template && (toCheckOut.length > 0 || toStock.length > 0 || lowCount > 0 || items.some(i => i.assignee_user_id || i.assignee_member_id)) && (
+        <div className="flex flex-wrap items-center gap-2 mb-5 p-3 rounded-xl" style={{ background: 'var(--adm-panel-raise)' }}>
+          <span className="text-[12px] font-semibold mr-1" style={{ color: 'var(--adm-silk-dim)' }}>Next steps</span>
+          {toCheckOut.length > 0 && (
+            <Button size="sm" icon={ArrowLeftRight} onClick={() => setCheckingOut(true)}>Check out {toCheckOut.length} from stock</Button>
+          )}
+          {toStock.length > 0 && (
+            <Button size="sm" icon={PackagePlus} onClick={() => setReceiving(toStock)}>Add {toStock.length} arrived to inventory</Button>
+          )}
+          {lowCount > 0 && (
+            <Button size="sm" icon={TrendingDown} onClick={() => setLowStock(true)}>{lowCount} low in inventory</Button>
+          )}
+          {items.some(i => (i.assignee_user_id || i.assignee_member_id) && (i.status === 'needed' || i.status === 'ordered')) && (
+            <Button size="sm" icon={Mail} busy={reminding} busyLabel="Sending…" onClick={remind}>Email reminders</Button>
+          )}
+        </div>
+      )}
 
       <QuickAdd
         departments={departments}
@@ -307,11 +417,22 @@ export default function NeedListPage() {
               <option value="">Any type</option>
               {KINDS.map(k => <option key={k.value} value={k.value}>{k.label}</option>)}
             </select>
+            {myCount > 0 && (
+              <Button size="sm" variant={mine ? 'primary' : 'default'} icon={UserRound} onClick={() => setMine(m => !m)} aria-pressed={mine}>
+                My items ({myCount})
+              </Button>
+            )}
+            <span className="inline-flex rounded-lg overflow-hidden" style={{ border: '1px solid var(--adm-trace)' }} role="group" aria-label="View">
+              <IconButton icon={Table2} label="Table view" onClick={() => setView('table')} aria-pressed={view === 'table'}
+                style={{ background: view === 'table' ? 'var(--adm-panel-raise)' : undefined, borderRadius: 0 }} />
+              <IconButton icon={LayoutGrid} label="Board view" onClick={() => setView('board')} aria-pressed={view === 'board'}
+                style={{ background: view === 'board' ? 'var(--adm-panel-raise)' : undefined, borderRadius: 0 }} />
+            </span>
           </div>
         </div>
       )}
 
-      {selected.size > 0 && (
+      {selected.size > 0 && view === 'table' && (
         <div className="flex flex-wrap items-center gap-2 mb-3 p-2.5 rounded-xl"
           style={{ background: 'var(--adm-signal-wash, var(--adm-panel-raise))', border: '1px solid var(--adm-signal-edge, var(--adm-trace))' }}>
           <span className="text-[13px] font-semibold px-1">{selected.size} selected</span>
@@ -338,8 +459,11 @@ export default function NeedListPage() {
         </Panel>
       ) : groups.every(g => !g.shown.length) ? (
         <Panel><EmptyState compact icon={Search} title="No items match" description="Try another filter or search." /></Panel>
+      ) : view === 'board' ? (
+        <NeedsBoard items={boardItems} deptById={deptById} onStatus={setStatus} onOpen={setHistoryItem} />
       ) : (
         <Edit.Provider value={editCtx}>
+          <PeopleOptions />
           <div className="space-y-5">
             {groups.filter(g => g.shown.length).map(g => (
               <DeptSection
@@ -357,7 +481,7 @@ export default function NeedListPage() {
         </Edit.Provider>
       )}
 
-      {visibleIds.length > 0 && (
+      {visibleIds.length > 0 && view === 'table' && (
         <p className="text-xs mt-3" style={{ color: 'var(--adm-silk-faint)' }}>
           Click a name, quantity or person to change it. Every change saves right away.
         </p>
@@ -369,6 +493,19 @@ export default function NeedListPage() {
       <ImportNeedsModal open={importing} list={list} departments={departments} inventory={inventory}
         onClose={() => setImporting(false)} onImported={() => { load(); loadDepts() }} />
       <PrintNeedsModal open={printing} list={list} items={items} departments={departments} onClose={() => setPrinting(false)} />
+      <ReceiveModal open={!!receiving} items={receiving || []} list={list} onClose={() => setReceiving(null)}
+        onDone={({ done, failed }) => {
+          setReceiving(null)
+          if (done) addToast(`${done} item${done === 1 ? '' : 's'} added to inventory.`)
+          if (failed) addToast(`${failed} could not be added.`, 'error')
+          load()
+        }} />
+      <CheckoutModal open={checkingOut} items={toCheckOut} stock={stock} list={list} onClose={() => setCheckingOut(false)}
+        onDone={n => { setCheckingOut(false); addToast(`${n} item${n === 1 ? '' : 's'} checked out. Returns go through Borrowing.`); load() }} />
+      <LowStockModal open={lowStock} inventory={inventory} items={items} departments={departments} list={list}
+        onClose={() => setLowStock(false)} onAdded={() => { setLowStock(false); load() }} />
+      <HistoryDrawer item={historyItem} departments={departments} onClose={() => setHistoryItem(null)} />
+      <ShareModal open={sharing} list={list} onClose={() => setSharing(false)} onChanged={token => setList(l => ({ ...l, share_token: token }))} />
       <ConfirmDialog
         open={confirm === 'delete-list'}
         onClose={() => setConfirm(null)}
@@ -511,6 +648,7 @@ function DeptSection({ group, selected, onToggle }) {
               <th>Source</th>
               <th>Status</th>
               <th>Who</th>
+              <th>Supplier</th>
               <th>Department</th>
               <th />
             </tr>
@@ -530,7 +668,7 @@ const KIND_RANK = { equipment: 0, consumable: 1, other: 2 }
 const kindRank = item => KIND_RANK[item.kind] ?? 3
 
 function ItemRow({ item, checked, onCheck }) {
-  const { patch, departments, stock, remove } = useContext(Edit)
+  const { patch, setStatus, departments, stock, remove, history } = useContext(Edit)
   const linked = item.inventory_item_id ? stock.get(item.inventory_item_id) : null
   const dropped = item.status === 'cancelled'
 
@@ -546,6 +684,8 @@ function ItemRow({ item, checked, onCheck }) {
           </span>
         )}
         {item.priority === 'nice' && <span className="block text-[11px] mt-0.5" style={{ color: 'var(--adm-silk-faint)' }}>Nice to have</span>}
+        {item.stocked_at && <span className="block text-[11px] mt-0.5" style={{ color: 'var(--adm-ok)' }}>Added to inventory</span>}
+        {item.borrow_batch_id && <span className="block text-[11px] mt-0.5" style={{ color: 'var(--adm-signal)' }}>Checked out from stock</span>}
       </td>
       <td style={{ whiteSpace: 'nowrap' }}>
         <span className="inline-flex items-center gap-1">
@@ -566,12 +706,13 @@ function ItemRow({ item, checked, onCheck }) {
       <td>
         <span className="flex items-center gap-1.5">
           <span className="rounded-full shrink-0" style={{ width: 8, height: 8, background: STATUS_COLOR[item.status] }} aria-hidden="true" />
-          <CellSelect label={`Status of ${item.name}`} value={item.status} onChange={status => patch(item, { status })}>
+          <CellSelect label={`Status of ${item.name}`} value={item.status} onChange={status => setStatus(item, status)}>
             {ITEM_STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
           </CellSelect>
         </span>
       </td>
-      <td><TextCell value={item.assignee || ''} label="Who" placeholder="Someone" width={120} onSave={assignee => patch(item, { assignee: assignee || null })} /></td>
+      <td><AssigneeCell item={item} /></td>
+      <td><TextCell value={item.supplier || ''} label="Supplier" placeholder="Where" width={110} onSave={supplier => patch(item, { supplier: supplier || null })} /></td>
       <td>
         <CellSelect label={`Department of ${item.name}`} value={item.department_id ? String(item.department_id) : ''}
           onChange={v => patch(item, { department_id: v ? Number(v) : null })}>
@@ -588,6 +729,7 @@ function ItemRow({ item, checked, onCheck }) {
             onClick={() => patch(item, { priority: item.priority === 'must' ? 'nice' : 'must' })}
             style={{ color: item.priority === 'must' ? 'var(--adm-signal)' : undefined }}
           />
+          <IconButton icon={History} size={15} label={`History of ${item.name}`} onClick={() => history(item)} />
           <IconButton icon={Trash2} size={15} danger label={`Remove ${item.name}`} onClick={() => remove(item)} />
         </span>
       </td>
@@ -596,6 +738,44 @@ function ItemRow({ item, checked, onCheck }) {
 }
 
 // ── Inline cells ─────────────────────────────────────────────────────────
+
+const fold = v => (v || '').trim().toLowerCase()
+
+/**
+ * Who is getting it. Typing offers the console's admins and, where the role
+ * can see them, the club's members; picking one links the person, so "My
+ * items" and email reminders find them. Any other name is kept as text.
+ */
+function AssigneeCell({ item }) {
+  const { patch, people } = useContext(Edit)
+  const save = async name => {
+    const admin = people.admins.find(a => fold(a.full_name || a.email) === fold(name))
+    const member = !admin && people.members.find(m => fold(m.full_name) === fold(name))
+    return patch(item, {
+      assignee: name || null,
+      assignee_user_id: admin ? admin.user_id : null,
+      assignee_member_id: member ? member.id : null,
+    })
+  }
+  const linked = item.assignee_user_id || item.assignee_member_id
+  return (
+    <span className="flex items-center gap-1">
+      {linked && <UserRound size={12} style={{ color: 'var(--adm-signal)', flexShrink: 0 }} aria-label="Linked to a person" />}
+      <TextCell value={item.assignee || ''} label="Who" placeholder="Someone" width={120} list="needs-people" onSave={save} />
+    </span>
+  )
+}
+
+/** One shared suggestion list for every Who cell. */
+function PeopleOptions() {
+  const { people } = useContext(Edit)
+  return (
+    <datalist id="needs-people">
+      {people.admins.map(a => <option key={a.user_id} value={a.full_name || a.email}>Admin</option>)}
+      {people.members.map(m => <option key={`m${m.id}`} value={m.full_name}>Member</option>)}
+    </datalist>
+  )
+}
 
 function TextCell({ value, label, placeholder, required, strong, small, width, list, onSave }) {
   const [editing, setEditing] = useState(false)

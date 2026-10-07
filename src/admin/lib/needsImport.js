@@ -21,19 +21,20 @@ export const NEED_FIELDS = [
   { key: 'status', label: 'Status', aliases: ['status', 'state', 'statut', 'etat', 'الحالة'] },
   { key: 'priority', label: 'Priority', aliases: ['priority', 'priorite', 'importance', 'الأولوية', 'الاولوية'] },
   { key: 'assignee', label: 'Who', aliases: ['who', 'assignee', 'assigned to', 'responsible', 'owner', 'qui', 'responsable', 'المسؤول', 'المكلف'] },
+  { key: 'supplier', label: 'Supplier', aliases: ['supplier', 'shop', 'store', 'vendor', 'where', 'fournisseur', 'magasin', 'boutique', 'المورد', 'المتجر'] },
   { key: 'notes', label: 'Notes', aliases: ['notes', 'note', 'remarks', 'comment', 'description', 'remarques', 'commentaire', 'ملاحظات', 'الوصف'] },
 ]
 
 const FIELD_LABEL = Object.fromEntries(NEED_FIELDS.map(f => [f.key, f.label]))
 
-export const NEED_TEMPLATE_HEADERS = ['Item', 'Quantity', 'Unit', 'Department', 'Type', 'Source', 'Status', 'Priority', 'Who', 'Notes']
+export const NEED_TEMPLATE_HEADERS = ['Item', 'Quantity', 'Unit', 'Department', 'Type', 'Source', 'Status', 'Priority', 'Who', 'Supplier', 'Notes']
 
 export const NEED_TEMPLATE_EXAMPLES = [
-  ['Projector', 1, 'pcs', 'Tech', 'Equipment', 'Borrow', 'Needed', 'Must have', 'Yacine', 'Ask the faculty'],
-  ['HDMI cable 5 m', 2, 'pcs', 'Tech', 'Equipment', 'Buy', 'Needed', 'Must have', '', ''],
-  ['A4 paper', 2, 'pack', 'Logistics', 'Consumable', 'Buy', 'Needed', 'Must have', '', ''],
-  ['Camera batteries', 4, 'pcs', 'Media', 'Consumable', 'Buy', 'Ordered', 'Must have', 'Sara', ''],
-  ['Roll-up banner', 1, 'pcs', 'Media', 'Other', 'Make', 'Needed', 'Nice to have', '', 'Print shop near campus'],
+  ['Projector', 1, 'pcs', 'Tech', 'Equipment', 'Borrow', 'Needed', 'Must have', 'Yacine', '', 'Ask the faculty'],
+  ['HDMI cable 5 m', 2, 'pcs', 'Tech', 'Equipment', 'Buy', 'Needed', 'Must have', '', 'Electronics shop', ''],
+  ['A4 paper', 2, 'pack', 'Logistics', 'Consumable', 'Buy', 'Needed', 'Must have', '', 'Stationery', ''],
+  ['Camera batteries', 4, 'pcs', 'Media', 'Consumable', 'Buy', 'Ordered', 'Must have', 'Sara', 'Electronics shop', ''],
+  ['Roll-up banner', 1, 'pcs', 'Media', 'Other', 'Make', 'Needed', 'Nice to have', '', 'Print shop', ''],
 ]
 
 const KIND_ALIASES = {
@@ -147,6 +148,7 @@ export function buildNeedRows(body, mapping, { departments, inventory, fallbackD
         status,
         priority,
         assignee: text(cell(row, 'assignee')) || null,
+        supplier: text(cell(row, 'supplier')) || null,
         notes: text(cell(row, 'notes')) || null,
         inventory_item_id: linked?.id ?? null,
       },

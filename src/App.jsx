@@ -15,6 +15,7 @@ const Registration = lazy(() => import('./pages/Registration'))
 const Announcements = lazy(() => import('./pages/Announcements'))
 const Contact = lazy(() => import('./pages/Contact'))
 const VerifyMember = lazy(() => import('./pages/VerifyMember'))
+const SharedNeeds = lazy(() => import('./pages/SharedNeeds'))
 const Brand = lazy(() => import('./pages/Brand'))
 const Links = lazy(() => import('./pages/Links'))
 
@@ -101,6 +102,8 @@ export default function App() {
           </Route>
 
           <Route path="/verify/:memberCode" element={<VerifyMember />} />
+          {/* Read-only needs list behind a share link; no console account needed. */}
+          <Route path="/needs/share/:token" element={<SharedNeeds />} />
           {/* The QR on posters lands here, so it stands alone like /verify. */}
           <Route path="/links" element={<Links />} />
 

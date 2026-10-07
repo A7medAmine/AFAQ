@@ -104,6 +104,9 @@ const STRINGS = {
   status_ordered: { en: 'Ordered', fr: 'Commandé', ar: 'تم الطلب' },
   status_ready: { en: 'Ready', fr: 'Prêt', ar: 'جاهز' },
   status_cancelled: { en: 'Dropped', fr: 'Abandonné', ar: 'ملغى' },
+  noSupplier: { en: 'No supplier', fr: 'Sans fournisseur', ar: 'بدون مورّد' },
+  groupSignoff: { en: 'Received by {group} — name, signature and date', fr: 'Reçu par {group} — nom, signature et date', ar: 'استلمه {group} — الاسم والتوقيع والتاريخ' },
+  scanToOpen: { en: 'Scan to open this list in the console and tick items off.', fr: 'Scannez pour ouvrir cette liste dans la console et cocher les articles.', ar: 'امسح الرمز لفتح القائمة في لوحة التحكم وتحديث العناصر.' },
   preparedBy: { en: 'Prepared by — name, signature and date', fr: 'Préparé par — nom, signature et date', ar: 'أعدّه — الاسم والتوقيع والتاريخ' },
   receivedBy: { en: 'Checked by — name, signature and date', fr: 'Vérifié par — nom, signature et date', ar: 'تحقّق منه — الاسم والتوقيع والتاريخ' },
 }
@@ -276,6 +279,7 @@ const TERMS = [
   ['source', 'Source', 'Provenance', 'المصدر'],
   ['priority', 'Priority', 'Priorité', 'الأولوية'],
   ['who', 'Who', 'Qui', 'المسؤول'],
+  ['supplier', 'Supplier', 'Fournisseur', 'المورد'],
   ['equipment', 'Equipment', 'Matériel', 'معدات'],
   ['consumable', 'Consumable', 'Consommable', 'مستهلكات'],
   ['from stock', 'From stock', 'En stock', 'من المخزون'],

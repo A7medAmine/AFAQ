@@ -21,6 +21,9 @@ export default function PrintNeedsModal({ open, list, items, departments, onClos
   const [lang, setLang] = useState(savedExportLanguage)
   const [includeReady, setIncludeReady] = useState(true)
   const [pagePerDept, setPagePerDept] = useState(false)
+  const [bySupplier, setBySupplier] = useState(false)
+  const [deptSignoff, setDeptSignoff] = useState(false)
+  const [withQr, setWithQr] = useState(true)
   const [picked, setPicked] = useState([])
   const [busy, setBusy] = useState(false)
 
@@ -49,6 +52,9 @@ export default function PrintNeedsModal({ open, list, items, departments, onClos
         items: items.map(i => (known.has(i.department_id) ? i : { ...i, department_id: null })),
         departments: groups.filter(g => picked.includes(g.key)).map(g => ({ id: g.id, name: g.name })),
         layout, includeReady, pagePerDept, lang, win,
+        bySupplier: layout === 'shopping' && bySupplier,
+        deptSignoff,
+        qrUrl: withQr ? `${window.location.origin}/admin/needs/${list.id}` : null,
       })
       onClose()
     } catch {
@@ -108,8 +114,16 @@ export default function PrintNeedsModal({ open, list, items, departments, onClos
             <CheckField label="Include ready items" description="Leave them out to print only what is still missing."
               checked={includeReady} onChange={setIncludeReady} />
           )}
-          <CheckField label="Each department on its own page" description="To hand each team its own sheet."
-            checked={pagePerDept} onChange={setPagePerDept} />
+          {layout === 'shopping' && (
+            <CheckField label="Group by supplier" description="One section per shop, so each errand is one list."
+              checked={bySupplier} onChange={setBySupplier} />
+          )}
+          <CheckField label={layout === 'shopping' && bySupplier ? 'Each supplier on its own page' : 'Each department on its own page'}
+            description="To hand each team or errand its own sheet." checked={pagePerDept} onChange={setPagePerDept} />
+          <CheckField label="Sign-off line under each group" description="The department signs that it received its items."
+            checked={deptSignoff} onChange={setDeptSignoff} />
+          <CheckField label="QR code to this list" description="Scan the paper copy to open the list in the console and tick things off."
+            checked={withQr} onChange={setWithQr} />
         </div>
       </div>
     </Modal>

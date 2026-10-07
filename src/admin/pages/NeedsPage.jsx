@@ -49,10 +49,16 @@ export default function NeedsPage() {
 
   useEffect(() => { load(); loadDepts() }, [load, loadDepts])
 
-  const shown = useMemo(() => (status === 'all' ? lists : lists.filter(l => l.status === status)), [lists, status])
+  const work = useMemo(() => lists.filter(l => !l.is_template), [lists])
+  const templates = useMemo(() => lists.filter(l => l.is_template), [lists])
+  const shown = useMemo(
+    () => (status === 'templates' ? templates : status === 'all' ? work : work.filter(l => l.status === status)),
+    [work, templates, status]
+  )
   const filterOptions = [
-    ...LIST_STATUSES.map(s => ({ ...s, count: lists.filter(l => l.status === s.value).length })),
-    { value: 'all', label: 'All', count: lists.length },
+    ...LIST_STATUSES.map(s => ({ ...s, count: work.filter(l => l.status === s.value).length })),
+    { value: 'all', label: 'All', count: work.length },
+    { value: 'templates', label: 'Templates', count: templates.length },
   ]
 
   return (
@@ -83,8 +89,10 @@ export default function NeedsPage() {
         <Panel>
           <EmptyState
             icon={ClipboardList}
-            title={lists.length ? 'No lists here' : 'No needs lists yet'}
-            description={lists.length ? 'Try another filter.' : 'Start one for an event, a department, or anything else logistics has to gather.'}
+            title={status === 'templates' ? 'No templates yet' : lists.length ? 'No lists here' : 'No needs lists yet'}
+            description={status === 'templates'
+              ? 'Open any list and use “Save as template” to reuse it, like a standard workshop kit.'
+              : lists.length ? 'Try another filter.' : 'Start one for an event, a department, or anything else logistics has to gather.'}
             action={!lists.length && <Button variant="primary" icon={Plus} onClick={() => setCreating(true)}>New list</Button>}
           />
         </Panel>
@@ -99,6 +107,7 @@ export default function NeedsPage() {
         list={null}
         events={events}
         departments={departments}
+        templates={templates}
         onClose={() => setCreating(false)}
         onSaved={id => { setCreating(false); navigate(`/admin/needs/${id}`) }}
       />
@@ -122,17 +131,21 @@ function ListCard({ list, departments, onOpen }) {
           <p className="text-[15px] font-semibold adm-truncate">{list.title}</p>
           <p className="text-xs mt-0.5 adm-truncate" style={{ color: 'var(--adm-silk-dim)' }}>{listContext(list)}</p>
         </div>
-        {list.status !== 'open' && <Badge tone={list.status === 'done' ? 'ok' : undefined}>{list.status === 'done' ? 'Done' : 'Archived'}</Badge>}
+        {list.is_template
+          ? <Badge tone="signal">Template</Badge>
+          : list.status !== 'open' && <Badge tone={list.status === 'done' ? 'ok' : undefined}>{list.status === 'done' ? 'Done' : 'Archived'}</Badge>}
       </div>
 
       <div className="mt-4">
         <div className="flex items-center justify-between text-xs mb-1.5" style={{ color: 'var(--adm-silk-faint)' }}>
-          <span>{progress.total ? `${progress.ready} of ${progress.total} ready` : 'No items yet'}</span>
-          <span className="adm-data">{progress.pct}%</span>
+          <span>{list.is_template ? `${progress.total} item${progress.total === 1 ? '' : 's'}` : progress.total ? `${progress.ready} of ${progress.total} ready` : 'No items yet'}</span>
+          {!list.is_template && <span className="adm-data">{progress.pct}%</span>}
         </div>
-        <div className="rounded-full overflow-hidden" style={{ height: 6, background: 'var(--adm-board-sunk)' }}>
-          <div style={{ width: `${progress.pct}%`, height: '100%', background: progress.pct === 100 ? 'var(--adm-ok)' : 'var(--adm-signal)' }} />
-        </div>
+        {!list.is_template && (
+          <div className="rounded-full overflow-hidden" style={{ height: 6, background: 'var(--adm-board-sunk)' }}>
+            <div style={{ width: `${progress.pct}%`, height: '100%', background: progress.pct === 100 ? 'var(--adm-ok)' : 'var(--adm-signal)' }} />
+          </div>
+        )}
       </div>
 
       <div className="flex flex-wrap items-center gap-1.5 mt-4">
@@ -143,7 +156,7 @@ function ListCard({ list, departments, onOpen }) {
             {d.name}
           </span>
         ))}
-        {list.due_date && (
+        {list.due_date && !list.is_template && (
           <span className="inline-flex items-center gap-1 text-[11.5px] ml-auto" style={{ color: late ? 'var(--adm-fault)' : 'var(--adm-silk-faint)' }}>
             <CalendarDays size={12} /> {late ? 'Late · ' : ''}{formatDate(list.due_date)}
           </span>
