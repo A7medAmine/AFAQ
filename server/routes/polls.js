@@ -337,12 +337,19 @@ export async function pollPreviewHtml(html, slug, url) {
   if (!poll || poll.status === 'draft') return html
   const title = escapeHtml(`${poll.title} · AFAQ poll`)
   const description = escapeHtml((poll.description || 'Take part in this poll from the AFAQ Scientific Club.').slice(0, 200))
+  // index.html tags may carry extra attributes (data-static-seo), so match
+  // loosely. Function replacers keep a title starting with a digit from being
+  // read as part of a $1 backreference.
+  const setContent = (attr, value) => [
+    new RegExp(`(<meta[^>]*${attr}[^>]*content=")[^"]*`),
+    (_, head) => head + value,
+  ]
   return html
-    .replace(/<title>[^<]*<\/title>/, `<title>${title}</title>`)
-    .replace(/(<meta property="og:title" content=")[^"]*/, `$1${title}`)
-    .replace(/(<meta property="og:description" content=")[^"]*/, `$1${description}`)
-    .replace(/(<meta name="description" content=")[^"]*/, `$1${description}`)
-    .replace(/(<meta property="og:url" content=")[^"]*/, `$1${escapeHtml(url)}`)
+    .replace(/(<title[^>]*>)[^<]*(<\/title>)/, (_, open, close) => open + title + close)
+    .replace(...setContent('property="og:title"', title))
+    .replace(...setContent('property="og:description"', description))
+    .replace(...setContent('name="description"', description))
+    .replace(...setContent('property="og:url"', escapeHtml(url)))
 }
 
 export default router

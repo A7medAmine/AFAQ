@@ -20,6 +20,11 @@ window.addEventListener('vite:preloadError', (event) => {
   window.location.reload()
 })
 
+// index.html carries default title/description/OG tags for crawlers that don't
+// run JS. Once the app runs, each page sets its own through <SEO>, so drop the
+// defaults to avoid duplicate tags (React 19 hoists Helmet's tags alongside them).
+document.querySelectorAll('[data-static-seo]').forEach((el) => el.remove())
+
 ReactDOM.createRoot(document.getElementById('app')).render(
   <React.StrictMode>
     <HelmetProvider>
