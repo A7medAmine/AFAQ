@@ -306,11 +306,31 @@ app.post(
   requireAuth,
   requireRole("super_admin"),
   async (req, res) => {
-    const { email, password, full_name, role_id } = req.body;
+    let { email, password, full_name, role_id, member_id } = req.body;
     if (!password || password.length < 8)
       return res
         .status(400)
         .json({ error: "Password must be at least 8 characters" });
+    // Making a member an admin: their member record is the source of truth for
+    // name and email, and a member gets at most one console account.
+    if (member_id) {
+      const { data: member, error: memberErr } = await supabaseAdmin
+        .from("members")
+        .select("id, full_name, email")
+        .eq("id", member_id)
+        .maybeSingle();
+      if (memberErr || !member)
+        return res.status(404).json({ error: "That member no longer exists." });
+      const { data: linked } = await supabaseAdmin
+        .from("admin_users")
+        .select("id")
+        .eq("member_id", member.id)
+        .maybeSingle();
+      if (linked)
+        return res.status(409).json({ error: "This member is already an admin." });
+      email = member.email;
+      full_name = full_name || member.full_name;
+    }
     const { data: authData, error: authError } =
       await supabaseAdmin.auth.admin.createUser({
         email,
@@ -319,6 +339,10 @@ app.post(
       });
     if (authError) {
       console.error("Create admin auth error:", authError);
+      if (authError.code === "email_exists")
+        return res
+          .status(409)
+          .json({ error: "An account with this email already exists." });
       return res.status(400).json({ error: "Failed to create user" });
     }
     const { error: insertError } = await supabaseAdmin
@@ -328,6 +352,7 @@ app.post(
         email,
         full_name,
         role_id: parseInt(role_id),
+        member_id: member_id ? parseInt(member_id) : null,
         is_active: true,
       });
     if (insertError) {

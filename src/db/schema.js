@@ -21,6 +21,9 @@ export const adminUsers = pgTable('admin_users', {
   email: text().notNull(),
   fullName: text('full_name'),
   avatarUrl: text('avatar_url'),
+  // The club member this account belongs to, when an admin was made from a
+  // member. Null for admins who are not members (staff, advisors).
+  memberId: bigint('member_id', { mode: 'number' }).unique().references(() => members.id, { onDelete: 'set null' }),
   isActive: boolean('is_active').default(true),
   // Application review load balancing: an away reviewer gets no new
   // applications, and a capacity (when set) caps how many they hold open.

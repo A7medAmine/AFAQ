@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
-  BadgeCheck, CalendarX, Crown, Eye, FileSpreadsheet, Shield, IdCard, ListChecks, Loader2, Pencil, Plus, Printer, Trash2, UserCheck, UserRoundPlus, Upload, Users, X,
+  BadgeCheck, CalendarX, Crown, Eye, KeyRound, FileSpreadsheet, Shield, IdCard, ListChecks, Loader2, Pencil, Plus, Printer, Trash2, UserCheck, UserRoundPlus, Upload, Users, X,
 } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { logActivity, run, read, supabase, uploadFile } from '../lib/db'
@@ -27,6 +27,7 @@ import ImportMembersModal from '../components/hr/ImportMembersModal'
 import RolesModal from '../components/hr/RolesModal'
 import GroupsModal from '../components/hr/GroupsModal'
 import AddToGroupModal from '../components/hr/AddToGroupModal'
+import AddAdminModal from '../components/AddAdminModal'
 
 const STATUS_FILTERS = [{ value: 'all', label: 'All' }, ...MEMBER_STATUSES]
 
@@ -36,8 +37,13 @@ export default function MembersPage() {
   const navigate = useNavigate()
   const role = useAdminStore(s => s.adminProfile?.role?.name)
   const canTasks = hasPermission(role, 'tasks.manage')
+  const canAdmins = hasPermission(role, 'admin_users.manage')
+  const addToast = useAdminStore(s => s.addToast)
 
   const [rows, setRows] = useState([])
+  const [admins, setAdmins] = useState([]) // console accounts linked to members
+  const [adminRoles, setAdminRoles] = useState([])
+  const [makingAdmin, setMakingAdmin] = useState(null) // member
   const [customRoles, setCustomRoles] = useState([])
   const [groups, setGroups] = useState([])
   const [state, setState] = useState({ loading: true, error: null })
@@ -71,6 +77,18 @@ export default function MembersPage() {
     setGroups(groupRows.data || [])
     setState({ loading: false, error: null })
   }, [])
+
+  const loadAdmins = useCallback(async () => {
+    if (!canAdmins) return
+    const [accounts, roleRows] = await Promise.all([
+      read(supabase.from('admin_users').select('id, member_id, is_active, role:admin_roles(label)').not('member_id', 'is', null)),
+      read(supabase.from('admin_roles').select('*').order('id')),
+    ])
+    setAdmins(accounts.data || [])
+    setAdminRoles(roleRows.data || [])
+  }, [canAdmins])
+
+  useEffect(() => { loadAdmins() }, [loadAdmins])
 
   useEffect(() => { load() }, [load])
 
@@ -374,6 +392,13 @@ export default function MembersPage() {
               onChanged={load}
             />
 
+            {canAdmins && (
+              <AccessSection
+                account={admins.find(a => a.member_id === detail.id)}
+                onMakeAdmin={() => setMakingAdmin(detail)}
+              />
+            )}
+
             <GroupsSection
               member={detail}
               groups={groups}
@@ -443,6 +468,15 @@ export default function MembersPage() {
         groups={groups}
         onClose={() => setGrouping(null)}
         onSaved={() => { grouping?.clear?.(); load() }}
+      />
+
+      <AddAdminModal
+        open={!!makingAdmin}
+        roles={adminRoles}
+        member={makingAdmin}
+        onClose={() => setMakingAdmin(null)}
+        onAdded={loadAdmins}
+        addToast={addToast}
       />
 
       <ConfirmDialog
@@ -527,6 +561,24 @@ function PositionsSection({ member, onAdd, onEdit, onChanged }) {
             )
           })}
         </ul>
+      )}
+    </div>
+  )
+}
+
+function AccessSection({ account, onMakeAdmin }) {
+  return (
+    <div>
+      <SectionHeading icon={KeyRound} title="Console access"
+        action={!account && <Button size="sm" variant="ghost" icon={Plus} onClick={onMakeAdmin}>Make admin</Button>} />
+      {account ? (
+        <div className="flex items-center gap-2 px-3 py-2 rounded-lg" style={{ background: 'var(--adm-board-sunk)' }}>
+          <span className="flex-1 text-sm font-semibold">{account.role?.label || 'No role'}</span>
+          {!account.is_active && <Badge tone="fault">Suspended</Badge>}
+          <Link to="/admin/admins" className="text-xs" style={{ color: 'var(--adm-signal)' }}>Manage</Link>
+        </div>
+      ) : (
+        <p className="text-sm" style={{ color: 'var(--adm-silk-faint)' }}>Cannot sign in to the console.</p>
       )}
     </div>
   )
