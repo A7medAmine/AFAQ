@@ -19,7 +19,7 @@ import needsRoutes from './server/routes/needs.js'
 import pollsRoutes, { pollPreviewHtml } from './server/routes/polls.js'
 import { sendEmail } from './server/services/mailer.js'
 import { undeliverableEmailError } from './server/services/emailCheck.js'
-import { approveApplication, HttpError } from './server/services/membership.js'
+import { approveApplication, HttpError, sendApplicationReceived } from './server/services/membership.js'
 import reviewRoutes, { publicReviewRoutes } from './server/routes/review.js'
 import { routeNewApplication } from './server/services/reviewRouting.js'
 
@@ -597,27 +597,8 @@ app.post("/api/register/membership", async (req, res) => {
 
     // Vercel freezes the function once the response is sent, so an email
     // still in flight never leaves. Send first, then answer.
-    await sendEmail({
-      to: email,
-      subject: "Membership Application Received — AFAQ Scientific Club",
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 560px; margin: 0 auto;">
-          <div style="background: #0F172A; padding: 24px; text-align: center;">
-            <h1 style="color: #fff; margin: 0; font-size: 22px;">AFAQ Scientific Club</h1>
-          </div>
-          <div style="padding: 32px 24px; background: #f8fafc;">
-            <h2 style="margin: 0 0 8px;">Thank You, ${escapeHtml(fullName)}!</h2>
-            <p style="color: #475569; font-size: 15px; line-height: 1.6;">
-              We have received your membership application. Our team will review it and
-              get back to you soon.
-            </p>
-            <p style="color: #94a3b8; font-size: 13px; margin-top: 24px;">
-              Best regards,<br/>AFAQ Scientific Club Team
-            </p>
-          </div>
-        </div>
-      `,
-    }).catch((err) => console.error("Membership confirmation email error:", err.message));
+    await sendApplicationReceived({ email, full_name: fullName })
+      .catch((err) => console.error("Membership confirmation email error:", err.message));
 
     res.json({ ok: true });
   } catch (err) {

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
-  ArrowRightLeft, Check, Hand, Inbox, Moon, RefreshCw, Star, Sun, Undo2, UserPlus, X,
+  ArrowRightLeft, Check, Hand, Inbox, Mail, Moon, RefreshCw, Star, Sun, Undo2, UserPlus, X,
 } from 'lucide-react'
 import { api, logActivity } from '../lib/db'
 import useCounts from '../hooks/useCounts'
@@ -378,6 +378,12 @@ function ReviewDrawer({ app, data, labels, teamsById, reviewersById, busy, act, 
               <DetailRow label="Department">{app.department || '—'}</DetailRow>
               <DetailRow label="Reviewer">{app.reviewer_id ? personName(app.reviewer_id) : 'Unassigned'}</DetailRow>
             </div>
+            {open && (
+              <Button size="sm" icon={Mail} disabled={busy}
+                onClick={() => act(`/api/review/applications/${app.id}/resend-confirmation`, {}, `Confirmation email sent to ${app.email}.`)}>
+                Resend confirmation email
+              </Button>
+            )}
             <DetailRow label="Interests"><TagList items={(app.interests || []).map(k => labels[k] || k)} empty="None chosen" /></DetailRow>
             <DetailRow label="Skills"><TagList items={app.skills} empty="None listed" /></DetailRow>
             <DetailRow label="Why they want to join">

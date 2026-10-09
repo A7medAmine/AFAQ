@@ -28,6 +28,17 @@ export function clubEmail(heading, paragraphs) {
   `
 }
 
+/** "We got your application" email, sent on submit and on demand from the review queue. */
+export function sendApplicationReceived({ email, full_name }) {
+  return sendEmail({
+    to: email,
+    subject: 'Membership Application Received — AFAQ Scientific Club',
+    html: clubEmail(`Thank You, ${escapeHtml(full_name)}!`, [
+      'We have received your membership application. Our team will review it and get back to you soon.',
+    ]),
+  })
+}
+
 /**
  * Turn a pending application into a member and send the welcome email.
  * Shared by the Applications screen and the review queue, so both paths

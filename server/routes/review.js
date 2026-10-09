@@ -2,7 +2,7 @@ import { Router } from 'express'
 import { supabaseAdmin } from '../db/client.js'
 import { requireAuth } from '../middleware/auth.js'
 import { sendEmail } from '../services/mailer.js'
-import { approveApplication, clubEmail, escapeHtml, HttpError } from '../services/membership.js'
+import { approveApplication, clubEmail, escapeHtml, HttpError, sendApplicationReceived } from '../services/membership.js'
 import {
   isStale, loadContext, logEvent, pickReviewer, pickTeam, placeApplication, sweep, sweepThrottled,
 } from '../services/reviewRouting.js'
@@ -155,6 +155,18 @@ router.get('/applications/:id/events', async (req, res) => {
     res.json(data)
   } catch (err) {
     fail(res, err, 'Could not load the history.')
+  }
+})
+
+/** Send the "application received" email again, e.g. when the first one never left. */
+router.post('/applications/:id/resend-confirmation', async (req, res) => {
+  try {
+    const app = await loadApplication(req, req.params.id)
+    requireOpen(app)
+    await sendApplicationReceived(app)
+    res.json({ ok: true })
+  } catch (err) {
+    fail(res, err, 'The confirmation email was not sent.')
   }
 })
 
