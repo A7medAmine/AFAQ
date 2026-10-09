@@ -60,7 +60,7 @@ function buildEvent(event) {
   ]
   if (event.description_en) lines.push(`DESCRIPTION:${escapeText(event.description_en)}`)
   if (event.location_en) lines.push(`LOCATION:${escapeText(event.location_en)}`)
-  lines.push('URL:https://afaq-club.com/events')
+  lines.push('URL:https://afaq.club/events')
   lines.push('END:VEVENT')
   return lines.map(foldLine).join('\r\n')
 }

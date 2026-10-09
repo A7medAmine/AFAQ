@@ -84,7 +84,7 @@ function Usage() {
           </p>
         </div>
         <div className="relative flex items-center gap-3">
-          <span className="px-4 py-2 rounded-lg text-sm font-bold" style={{ background: 'var(--bk-blue)' }}>afaq-club.com</span>
+          <span className="px-4 py-2 rounded-lg text-sm font-bold" style={{ background: 'var(--bk-blue)' }}>afaq.club</span>
           <span className="flex gap-1">
             {['#050A30', '#12229D', '#233DFF', '#3C4C59', '#5CBCF9', '#CAE8FF', '#F4F6FC'].map(c => (
               <i key={c} className="w-3 h-3 block" style={{ background: c, boxShadow: 'inset 0 0 0 1px rgba(255,255,255,.2)' }} />

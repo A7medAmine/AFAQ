@@ -3,4 +3,4 @@ Allow: /
 Disallow: /admin
 Disallow: /register
 
-Sitemap: https://afaq-club.com/sitemap.xml
+Sitemap: https://afaq.club/sitemap.xml

@@ -19,7 +19,7 @@ export async function sendEmail({ to, subject, html }) {
     return { ok: true, skipped: true }
   }
   await transporter.sendMail({
-    from: process.env.EMAIL_FROM || '"AFAQ Scientific Club" <noreply@afaq-club.dz>',
+    from: process.env.EMAIL_FROM || '"AFAQ Scientific Club" <noreply@afaq.club>',
     to,
     subject,
     html,

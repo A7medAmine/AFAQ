@@ -331,7 +331,7 @@ export default function QrGeneratorPage() {
 function ContentFields({ type, form, set }) {
   switch (type) {
     case 'url':
-      return <TextField label="Address" value={form.url} onChange={set('url')} placeholder="afaq-club.com/events" hint="https:// is added if you leave it off." />
+      return <TextField label="Address" value={form.url} onChange={set('url')} placeholder="afaq.club/events" hint="https:// is added if you leave it off." />
     case 'text':
       return <TextArea label="Text" rows={4} value={form.text} onChange={set('text')} placeholder="Anything — it shows as plain text on the phone." />
     case 'wifi':

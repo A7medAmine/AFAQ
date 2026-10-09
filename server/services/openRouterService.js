@@ -44,7 +44,7 @@ export async function* generateORStream(userMessage, context, systemOverride) {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-          'HTTP-Referer': 'https://afaq-club.com',
+          'HTTP-Referer': 'https://afaq.club',
         },
         body: JSON.stringify({
           model,
@@ -100,7 +100,7 @@ export async function generateORResponse(userMessage, context, systemOverride) {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-          'HTTP-Referer': 'https://afaq-club.com',
+          'HTTP-Referer': 'https://afaq.club',
         },
         body: JSON.stringify({
           model,

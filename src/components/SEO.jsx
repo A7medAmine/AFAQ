@@ -2,8 +2,8 @@ import { Helmet } from 'react-helmet-async'
 import { useTranslation } from 'react-i18next'
 
 export const SITE_NAME = 'AFAQ Scientific Club'
-export const SITE_URL = 'https://afaq-club.com'
-export const DEFAULT_IMAGE = `${SITE_URL}/images/hero/robocar.webp`
+export const SITE_URL = 'https://afaq.club'
+export const DEFAULT_IMAGE = `${SITE_URL}/images/og/og-default.jpg`
 
 /**
  * Per-route <head> tags. Client-rendered only (no SSR), so this helps
