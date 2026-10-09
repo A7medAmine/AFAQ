@@ -2,25 +2,59 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/png" href="/favicon/favicon-96x96.png" sizes="96x96" />
-    <link rel="icon" type="image/x-icon" href="/favicon/favicon.ico" />
-    <link rel="apple-touch-icon" sizes="180x180" href="/favicon/apple-touch-icon.png" />
-    <link rel="manifest" href="/favicon/site.webmanifest" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="AFAQ Scientific Club — University of Akli Mohand Oulhadj, Bouira, Algeria" />
+    <meta data-rh="true" name="description" content="A student club at the University of Akli Mohand Oulhadj — Bouira, pushing the boundaries of electronics, robotics, and creative technology." />
 
-    <meta property="og:site_name" content="AFAQ Scientific Club" />
-    <meta property="og:type" content="website" />
-    <meta property="og:title" content="AFAQ Scientific Club" />
-    <meta property="og:description" content="AFAQ Scientific Club — University of Akli Mohand Oulhadj, Bouira, Algeria" />
-    <meta property="og:url" content="https://afaq.club/" />
-    <meta property="og:image" content="https://afaq.club/images/og/og-default.jpg" />
+    <meta data-rh="true" property="og:site_name" content="AFAQ Scientific Club" />
+    <meta data-rh="true" property="og:type" content="website" />
+    <meta data-rh="true" property="og:title" content="AFAQ Scientific Club" />
+    <meta data-rh="true" property="og:description" content="A student club at the University of Akli Mohand Oulhadj — Bouira, pushing the boundaries of electronics, robotics, and creative technology." />
+    <meta data-rh="true" property="og:url" content="https://afaq.club/" />
+    <meta data-rh="true" property="og:image" content="https://afaq.club/images/og/og-default.jpg" />
     <meta property="og:image:type" content="image/jpeg" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content="AFAQ Scientific Club — Where Technology and Joy Meet" />
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:image" content="https://afaq.club/images/og/og-default.jpg" />
+    <meta data-rh="true" name="twitter:card" content="summary_large_image" />
+    <meta data-rh="true" name="twitter:image" content="https://afaq.club/images/og/og-default.jpg" />
+
+    <!-- Site name and logo for search results. Static so crawlers see it without running JS. -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "WebSite",
+            "@id": "https://afaq.club/#website",
+            "url": "https://afaq.club/",
+            "name": "AFAQ Scientific Club",
+            "alternateName": ["AFAQ", "AFAQ Club", "نادي آفاق العلمي"],
+            "publisher": { "@id": "https://afaq.club/#organization" }
+          },
+          {
+            "@type": "Organization",
+            "@id": "https://afaq.club/#organization",
+            "name": "AFAQ Scientific Club",
+            "alternateName": "AFAQ",
+            "url": "https://afaq.club/",
+            "logo": "https://afaq.club/brand/logo/png/afaq-mark-navy-512.png",
+            "description": "A student club at the University of Akli Mohand Oulhadj — Bouira, pushing the boundaries of electronics, robotics, and creative technology.",
+            "parentOrganization": { "@type": "CollegeOrUniversity", "name": "University of Akli Mohand Oulhadj — Bouira" },
+            "address": { "@type": "PostalAddress", "addressLocality": "Bouira", "addressCountry": "DZ" },
+            "sameAs": [
+              "https://www.instagram.com/afaq_scientific_club/",
+              "https://www.facebook.com/profile.php?id=61568388817184",
+              "https://www.tiktok.com/@afaq.club"
+            ]
+          }
+        ]
+      }
+    </script>
 
     <link rel="preload" href="/fonts/Minecraft.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="/fonts/unixel-Regular.ttf" as="font" type="font/ttf" crossorigin />

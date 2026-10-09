@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
+import { Helmet } from 'react-helmet-async'
 import { CheckCircle2, XCircle, Loader2 } from 'lucide-react'
 
 export default function VerifyMember() {
@@ -20,6 +21,11 @@ export default function VerifyMember() {
   }, [memberCode])
 
   return (
+    <>
+      <Helmet>
+        <title>Member verification — AFAQ Scientific Club</title>
+        <meta name="robots" content="noindex, nofollow" />
+      </Helmet>
     <div style={{ minHeight: '100vh', background: '#0F172A', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
       <div style={{ width: '100%', maxWidth: 360, background: '#fff', borderRadius: 16, padding: 28, textAlign: 'center' }}>
         {state.loading && <Loader2 size={32} className="animate-spin" style={{ margin: '0 auto', color: '#64748b' }} />}
@@ -57,5 +63,6 @@ export default function VerifyMember() {
         )}
       </div>
     </div>
+    </>
   )
 }

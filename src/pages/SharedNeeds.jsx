@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
+import { Helmet } from 'react-helmet-async'
 import { CheckCircle2, Circle, Clock, Loader2, XCircle } from 'lucide-react'
 
 const STATUS = {
@@ -45,6 +46,11 @@ export default function SharedNeeds() {
   const list = state.data?.list
 
   return (
+    <>
+      <Helmet>
+        <title>Shared needs list — AFAQ Scientific Club</title>
+        <meta name="robots" content="noindex, nofollow" />
+      </Helmet>
     <div dir="ltr" lang="en" style={{ minHeight: '100vh', background: '#F1F5F9', padding: '32px 16px', color: '#0F172A', textAlign: 'left' }}>
       <div style={{ maxWidth: 820, margin: '0 auto' }}>
         {state.loading && <Loader2 size={32} className="animate-spin" style={{ margin: '80px auto', color: '#64748b' }} />}
@@ -110,5 +116,6 @@ export default function SharedNeeds() {
         )}
       </div>
     </div>
+    </>
   )
 }

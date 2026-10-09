@@ -11,7 +11,7 @@ import { ArrowRight } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import SideImage from '../components/shared/SideImage'
 import { cn } from '../lib/utils'
-import SEO, { SITE_NAME, SITE_URL } from '../components/SEO'
+import SEO from '../components/SEO'
 
 const spring = { type: 'spring', damping: 28, stiffness: 120 }
 
@@ -57,14 +57,6 @@ export default function Home() {
         title={null}
         description={t('hero.subtitle')}
         path="/"
-        jsonLd={{
-          '@context': 'https://schema.org',
-          '@type': 'Organization',
-          name: SITE_NAME,
-          url: SITE_URL,
-          description: t('hero.subtitle'),
-          logo: `${SITE_URL}/images/logo/main.webp`,
-        }}
       />
       <HeroSection />
       <div className="relative" style={{ background: 'var(--color-bg)' }}>
