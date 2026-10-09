@@ -56,11 +56,11 @@ export default function Modal({ open, onClose, title, description, size = 'md', 
               </button>
             </div>
 
-            <div className="adm-scroll overflow-y-auto px-5 py-5 flex-1">{children}</div>
+            <div className="adm-scroll overflow-y-auto px-4 sm:px-5 py-5 flex-1">{children}</div>
 
             {footer && (
               <div
-                className="shrink-0 flex items-center justify-end gap-2.5 px-5 py-3.5"
+                className="shrink-0 flex flex-wrap items-center justify-end gap-2.5 px-4 sm:px-5 py-3.5"
                 style={{ borderTop: '1px solid var(--adm-trace)' }}
               >
                 {footer}

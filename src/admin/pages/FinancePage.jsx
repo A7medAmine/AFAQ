@@ -326,7 +326,7 @@ export default function FinancePage() {
             enableSelection
             searchPlaceholder="Search descriptions, sponsors, vendors…"
             toolbar={
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2 max-w-full min-w-0">
                 <FilterTabs options={kindOptions} value={kind} onChange={setKind} label="Kind filter" />
                 <select className="adm-input" style={{ width: 'auto', height: 40 }} value={category}
                   onChange={e => setCategory(e.target.value)} aria-label="Category filter">

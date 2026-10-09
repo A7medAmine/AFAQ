@@ -247,7 +247,7 @@ export default function TasksPage() {
           searchPlaceholder="Search tasks, people, projects…"
           rowAttributes={t => (isOverdue(t) ? { 'data-tone': 'fault' } : undefined)}
           toolbar={
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2 max-w-full min-w-0">
               <FilterTabs options={filterOptions} value={filter} onChange={setFilter} label="Task filter" />
               <select className="adm-input" style={{ width: 'auto', height: 40 }} value={assignee}
                 onChange={e => setAssignee(e.target.value)} aria-label="Assignee filter">

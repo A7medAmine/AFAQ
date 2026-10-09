@@ -24,7 +24,8 @@ export function FilterTabs({ options, value, onChange, label = 'Filter' }) {
     <div
       role="tablist"
       aria-label={label}
-      className="inline-flex items-center gap-0.5 p-1 rounded-xl"
+      // Too many options for a phone width scroll sideways instead of spilling off the screen.
+      className="adm-scroll inline-flex items-center gap-0.5 p-1 rounded-xl max-w-full overflow-x-auto"
       style={{ background: 'var(--adm-board-sunk)', border: '1px solid var(--adm-trace)' }}
     >
       {options.map(option => {
@@ -36,7 +37,7 @@ export function FilterTabs({ options, value, onChange, label = 'Filter' }) {
             role="tab"
             aria-selected={active}
             onClick={() => onChange(option.value)}
-            className="flex items-center gap-1.5 px-3 h-8 rounded-lg text-[13px] font-semibold transition-colors"
+            className="flex shrink-0 items-center gap-1.5 px-3 h-8 rounded-lg text-[13px] font-semibold whitespace-nowrap transition-colors"
             style={{
               background: active ? 'var(--adm-panel)' : 'transparent',
               color: active ? 'var(--adm-silk)' : 'var(--adm-silk-faint)',

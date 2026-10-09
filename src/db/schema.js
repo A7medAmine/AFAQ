@@ -601,3 +601,83 @@ export const needItems = pgTable('need_items', {
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
 }, t => [index('need_items_list_id_idx').on(t.listId)])
+
+// A poll or short survey. Anyone holding its link (`slug`) can answer while
+// it is open; `audience` 'members' also asks for a member code and email.
+// An open poll past `closes_at` counts as closed without anyone touching it.
+export const polls = pgTable('polls', {
+  id: bigint({ mode: 'number' }).primaryKey().generatedAlwaysAsIdentity(),
+  slug: text().notNull().unique(),
+  title: text().notNull(),
+  description: text(),
+  // Language of the public page's own wording (buttons, notices).
+  language: text().notNull().default('en'),
+  audience: text().notNull().default('public'),
+  status: text().notNull().default('draft'),
+  opensAt: timestamp('opens_at', { withTimezone: true }),
+  closesAt: timestamp('closes_at', { withTimezone: true }),
+  // When people answering may see the totals: never, once they voted, or once it closes.
+  resultsVisibility: text('results_visibility').notNull().default('after_vote'),
+  // Whether a name and email are asked for: not at all, optionally, or always.
+  collectIdentity: text('collect_identity').notNull().default('none'),
+  maxResponses: integer('max_responses'),
+  thankYouMessage: text('thank_you_message'),
+  eventId: bigint('event_id', { mode: 'number' }).references(() => events.id, { onDelete: 'set null' }),
+  createdBy: uuid('created_by'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+})
+
+// One question of a poll. `type` is single choice, multiple choice, a 1–N
+// rating, or a free-text answer.
+export const pollQuestions = pgTable('poll_questions', {
+  id: bigint({ mode: 'number' }).primaryKey().generatedAlwaysAsIdentity(),
+  pollId: bigint('poll_id', { mode: 'number' }).notNull().references(() => polls.id, { onDelete: 'cascade' }),
+  position: integer().notNull().default(0),
+  type: text().notNull().default('single'),
+  prompt: text().notNull(),
+  help: text(),
+  required: boolean().notNull().default(true),
+  // Multiple choice: how many may be picked. Null means no limit.
+  minChoices: integer('min_choices'),
+  maxChoices: integer('max_choices'),
+  // Rating: the top of the scale (5 or 10).
+  scaleMax: integer('scale_max'),
+}, t => [index('poll_questions_poll_id_idx').on(t.pollId)])
+
+export const pollOptions = pgTable('poll_options', {
+  id: bigint({ mode: 'number' }).primaryKey().generatedAlwaysAsIdentity(),
+  questionId: bigint('question_id', { mode: 'number' }).notNull().references(() => pollQuestions.id, { onDelete: 'cascade' }),
+  position: integer().notNull().default(0),
+  label: text().notNull(),
+}, t => [index('poll_options_question_id_idx').on(t.questionId)])
+
+// One person's submission. `voter_key` is a hash of their device cookie, or
+// the member id on members-only polls; one response per key per poll.
+export const pollResponses = pgTable('poll_responses', {
+  id: bigint({ mode: 'number' }).primaryKey().generatedAlwaysAsIdentity(),
+  pollId: bigint('poll_id', { mode: 'number' }).notNull().references(() => polls.id, { onDelete: 'cascade' }),
+  voterKey: text('voter_key').notNull(),
+  memberId: bigint('member_id', { mode: 'number' }).references(() => members.id, { onDelete: 'set null' }),
+  name: text(),
+  email: text(),
+  ipHash: text('ip_hash'),
+  // Where the link was opened from (?src=whatsapp, qr…), for share stats.
+  source: text(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+}, t => [
+  unique('poll_responses_poll_voter_unique').on(t.pollId, t.voterKey),
+  index('poll_responses_poll_id_idx').on(t.pollId),
+])
+
+// One answer in a response: an option picked, a rating, or text. A multiple
+// choice answer is one row per option picked.
+export const pollAnswers = pgTable('poll_answers', {
+  id: bigint({ mode: 'number' }).primaryKey().generatedAlwaysAsIdentity(),
+  responseId: bigint('response_id', { mode: 'number' }).notNull().references(() => pollResponses.id, { onDelete: 'cascade' }),
+  pollId: bigint('poll_id', { mode: 'number' }).notNull().references(() => polls.id, { onDelete: 'cascade' }),
+  questionId: bigint('question_id', { mode: 'number' }).notNull().references(() => pollQuestions.id, { onDelete: 'cascade' }),
+  optionId: bigint('option_id', { mode: 'number' }).references(() => pollOptions.id, { onDelete: 'cascade' }),
+  numberValue: integer('number_value'),
+  textValue: text('text_value'),
+}, t => [index('poll_answers_poll_id_idx').on(t.pollId)])

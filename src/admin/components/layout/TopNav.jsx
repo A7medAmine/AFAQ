@@ -168,7 +168,7 @@ export default function TopNav() {
       <button
         type="button"
         onClick={() => setMobileNav(true)}
-        className="adm-icon-btn lg:hidden shrink-0"
+        className="adm-icon-btn adm-below-lg shrink-0"
         aria-label="Open navigation"
       >
         <Menu size={19} />
@@ -183,7 +183,7 @@ export default function TopNav() {
         <button
           type="button"
           onClick={() => setPalette(true)}
-          className="adm-btn adm-btn-sm hidden sm:flex"
+          className="adm-btn adm-btn-sm adm-from-sm"
           style={{ color: 'var(--adm-silk-faint)', fontWeight: 500 }}
         >
           <Search size={15} />
@@ -198,7 +198,7 @@ export default function TopNav() {
         <button
           type="button"
           onClick={() => setPalette(true)}
-          className="adm-icon-btn sm:hidden"
+          className="adm-icon-btn adm-below-sm"
           aria-label="Search the console"
         >
           <Search size={17} />

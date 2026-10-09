@@ -16,6 +16,7 @@ import digikeyRoutes from './server/routes/digikey.js'
 import emailRoutes from './server/routes/email.js'
 import eventsRoutes from './server/routes/events.js'
 import needsRoutes from './server/routes/needs.js'
+import pollsRoutes, { pollPreviewHtml } from './server/routes/polls.js'
 import { sendEmail } from './server/services/mailer.js'
 import { approveApplication, HttpError } from './server/services/membership.js'
 import reviewRoutes, { publicReviewRoutes } from './server/routes/review.js'
@@ -114,7 +115,10 @@ const apiLimiter = rateLimit({
   legacyHeaders: false,
   // A bulk email is sent as one authenticated request per batch; a big send
   // would otherwise lock the admin out of the whole API for 15 minutes.
-  skip: (req) => /^\/email\/campaigns\/\d+\/process$/.test(req.path),
+  // Public poll pages and votes have their own, roomier limits (see polls.js).
+  skip: (req) =>
+    /^\/email\/campaigns\/\d+\/process$/.test(req.path) ||
+    /^\/polls\/p\//.test(req.path),
 });
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -915,6 +919,10 @@ app.use("/api/email", emailRoutes);
 
 app.use("/api/needs", needsRoutes);
 
+// --- Polls (public page and votes; admins manage them through Supabase) ---
+
+app.use("/api/polls", pollsRoutes);
+
 // --- SPA fallback (production) ---
 
 if (fs.existsSync(distDir)) {
@@ -934,6 +942,18 @@ if (fs.existsSync(distDir)) {
       },
     })
   );
+  // A shared poll link previews with the poll's own title and description.
+  app.get("/p/:slug", async (req, res) => {
+    res.setHeader("Cache-Control", "no-cache");
+    try {
+      const html = fs.readFileSync(path.join(distDir, "index.html"), "utf8");
+      const url = `${process.env.VITE_APP_URL || `${req.protocol}://${req.get("host")}`}/p/${req.params.slug}`;
+      res.type("html").send(await pollPreviewHtml(html, req.params.slug, url));
+    } catch (err) {
+      console.error("Poll preview:", err);
+      res.sendFile(path.join(distDir, "index.html"));
+    }
+  });
   app.get("/{*path}", (req, res) => {
     res.setHeader("Cache-Control", "no-cache");
     res.sendFile(path.join(distDir, "index.html"));

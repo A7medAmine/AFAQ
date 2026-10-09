@@ -263,7 +263,7 @@ export default function MembersPage() {
           enableSelection
           searchPlaceholder="Search by name, email, number, team…"
           toolbar={
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2 max-w-full min-w-0">
               <FilterTabs options={statusOptions} value={status} onChange={setStatus} label="Status filter" />
               {teams.length > 0 && (
                 <select className="adm-input" style={{ width: 'auto', height: 40 }} value={team}

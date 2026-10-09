@@ -46,6 +46,7 @@ export default defineConfig({
       '/api/interests': 'http://localhost:3001',
       '/api/review': 'http://localhost:3001',
       '/api/needs': 'http://localhost:3001',
+      '/api/polls': 'http://localhost:3001',
       '/api/admin/check-email': 'http://localhost:3001',
     },
   },

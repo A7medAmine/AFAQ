@@ -16,6 +16,7 @@ const Announcements = lazy(() => import('./pages/Announcements'))
 const Contact = lazy(() => import('./pages/Contact'))
 const VerifyMember = lazy(() => import('./pages/VerifyMember'))
 const SharedNeeds = lazy(() => import('./pages/SharedNeeds'))
+const Poll = lazy(() => import('./pages/Poll'))
 const Brand = lazy(() => import('./pages/Brand'))
 const Links = lazy(() => import('./pages/Links'))
 
@@ -38,6 +39,8 @@ const LabelPrintPage = lazy(() => import('./admin/pages/LabelPrintPage'))
 const ShelvesPage = lazy(() => import('./admin/pages/ShelvesPage'))
 const NeedsPage = lazy(() => import('./admin/pages/NeedsPage'))
 const NeedListPage = lazy(() => import('./admin/pages/NeedListPage'))
+const PollsPage = lazy(() => import('./admin/pages/PollsPage'))
+const PollPage = lazy(() => import('./admin/pages/PollPage'))
 const BorrowingPage = lazy(() => import('./admin/pages/BorrowingPage'))
 const ProjectsPage = lazy(() => import('./admin/pages/ProjectsPage'))
 const GalleryPage = lazy(() => import('./admin/pages/GalleryPage'))
@@ -61,7 +64,7 @@ export default function App() {
   // The visitor chatbot is for the public site; it used to float over the
   // admin console too, covering the toast area. The brand kit is a design
   // reference page, so keep the mascot off it as well.
-  const hideChatbot = /^\/(admin|brand|links)(\/|$)/.test(pathname)
+  const hideChatbot = /^\/(admin|brand|links|p)(\/|$)/.test(pathname)
 
   // The chatbot (mascot avatar + framer) is ~60 KB gzip; fetch it once the
   // browser is idle so it never competes with the landing page's first paint.
@@ -104,6 +107,8 @@ export default function App() {
           <Route path="/verify/:memberCode" element={<VerifyMember />} />
           {/* Read-only needs list behind a share link; no console account needed. */}
           <Route path="/needs/share/:token" element={<SharedNeeds />} />
+          {/* A poll's public page; its link goes on social media and posters. */}
+          <Route path="/p/:slug" element={<Poll />} />
           {/* The QR on posters lands here, so it stands alone like /verify. */}
           <Route path="/links" element={<Links />} />
 
@@ -189,6 +194,12 @@ export default function App() {
             } />
             <Route path="links" element={
               <RoleGuard permission="links.manage"><LinksPage /></RoleGuard>
+            } />
+            <Route path="polls" element={
+              <RoleGuard permission="polls.manage"><PollsPage /></RoleGuard>
+            } />
+            <Route path="polls/:id" element={
+              <RoleGuard permission="polls.manage"><PollPage /></RoleGuard>
             } />
             <Route path="qr" element={<QrGeneratorPage />} />
             <Route path="email" element={

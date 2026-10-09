@@ -54,8 +54,9 @@ export default function PrintWorkspace({ backTo, backLabel, summary, paper, shee
         </div>
       </div>
 
-      <div className="adm-no-print grid gap-5 items-start" style={{ gridTemplateColumns: 'minmax(0, 330px) minmax(0, 1fr)' }}>
-        <Panel className="p-4 flex flex-col gap-5" style={{ position: 'sticky', top: 16, maxHeight: 'calc(100vh - 32px)', overflowY: 'auto' }}>
+      {/* Settings sit beside the preview on wide screens and stack above it on phones. */}
+      <div className="adm-no-print grid gap-5 items-start lg:grid-cols-[minmax(0,330px)_minmax(0,1fr)]">
+        <Panel className="p-4 flex flex-col gap-5 adm-print-settings">
           {settings}
           {onReset && (
             <Button size="sm" variant="ghost" icon={RotateCcw} onClick={onReset}>Reset to defaults</Button>
