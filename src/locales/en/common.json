@@ -36,6 +36,8 @@
     "subtitle": "Your credentials pass through our server only to sign you in at <strong>mesrs.dz</strong>, and are <red>never stored.</red>",
     "usernameLabel": "Progres Username",
     "passwordLabel": "Password",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
     "submit": "Auto-fill",
     "submitting": "Auto-filling…",
     "banner": "✓ Form filled from your Progres account — please review before submitting."

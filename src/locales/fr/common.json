@@ -29,6 +29,8 @@
     "subtitle": "Vos identifiants passent par notre serveur uniquement pour vous connecter à <strong>mesrs.dz</strong>, et ne sont <red>jamais stockés.</red>",
     "usernameLabel": "Identifiant Progres",
     "passwordLabel": "Mot de passe",
+    "showPassword": "Afficher le mot de passe",
+    "hidePassword": "Masquer le mot de passe",
     "submit": "Auto-remplir",
     "submitting": "Remplissage…",
     "banner": "✓ Formulaire rempli depuis votre compte Progres — veuillez vérifier avant d'envoyer."

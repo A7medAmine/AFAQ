@@ -1,5 +1,5 @@
 import { useId, useState } from 'react'
-import { AlertCircle, Sparkles, Languages, Loader2 } from 'lucide-react'
+import { AlertCircle, Sparkles, Languages, Loader2, Eye, EyeOff } from 'lucide-react'
 import { api } from '../../lib/db'
 import useAdminStore from '../../store/adminStore'
 
@@ -33,9 +33,42 @@ export function Field({ label, hint, error, required, children, className = '' }
 }
 
 export function TextField({ label, hint, error, required, className, ...input }) {
+  if (input.type === 'password') {
+    return <PasswordField label={label} hint={hint} error={error} required={required} className={className} {...input} />
+  }
   return (
     <Field label={label} hint={hint} error={error} required={required} className={className}>
       {a11y => <input className="adm-input" {...a11y} {...input} />}
+    </Field>
+  )
+}
+
+/** Password input with a show/hide toggle. TextField routes type="password" here. */
+export function PasswordField({ label, hint, error, required, className, type: _type, style, ...input }) {
+  const [visible, setVisible] = useState(false)
+  return (
+    <Field label={label} hint={hint} error={error} required={required} className={className}>
+      {a11y => (
+        <div className="relative">
+          <input
+            className="adm-input"
+            {...a11y}
+            {...input}
+            type={visible ? 'text' : 'password'}
+            style={{ ...style, paddingRight: 40 }}
+          />
+          <button
+            type="button"
+            onClick={() => setVisible(v => !v)}
+            className="adm-icon-btn absolute right-1 top-1/2 -translate-y-1/2"
+            style={{ width: 30, height: 30 }}
+            aria-label={visible ? 'Hide password' : 'Show password'}
+            aria-pressed={visible}
+          >
+            {visible ? <EyeOff size={15} /> : <Eye size={15} />}
+          </button>
+        </div>
+      )}
     </Field>
   )
 }

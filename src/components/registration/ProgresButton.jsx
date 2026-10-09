@@ -3,6 +3,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { useTranslation, Trans } from "react-i18next";
 import useProgresAuth from "../../hooks/useProgresAuth";
+import { Eye, EyeOff } from "lucide-react";
 
 const inputStyle = (focused) => ({
   width: "100%",
@@ -25,6 +26,7 @@ export default function ProgresButton({ onSuccess }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [focusedField, setFocusedField] = useState(null); // 'username' | 'password' | null
   const { login, loading, error, reset } = useProgresAuth();
   const modalRef = useRef(null);
@@ -226,16 +228,45 @@ export default function ProgresButton({ onSuccess }) {
                 >
                   {t("progres.passwordLabel")}
                 </label>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  autoComplete="current-password"
-                  style={inputStyle(focusedField === "password")}
-                  onFocus={() => setFocusedField("password")}
-                  onBlur={() => setFocusedField(null)}
-                />
+                <div style={{ position: "relative" }}>
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    autoComplete="current-password"
+                    style={{
+                      ...inputStyle(focusedField === "password"),
+                      paddingInlineEnd: 44,
+                    }}
+                    onFocus={() => setFocusedField("password")}
+                    onBlur={() => setFocusedField(null)}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((s) => !s)}
+                    aria-label={t(showPassword ? "progres.hidePassword" : "progres.showPassword")}
+                    aria-pressed={showPassword}
+                    style={{
+                      position: "absolute",
+                      insetInlineEnd: 6,
+                      top: "50%",
+                      transform: "translateY(-50%)",
+                      width: 32,
+                      height: 32,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      border: "none",
+                      borderRadius: 100,
+                      background: "transparent",
+                      color: "var(--color-text-muted)",
+                      cursor: "pointer",
+                    }}
+                  >
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
               </div>
 
               {error && (
