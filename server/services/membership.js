@@ -28,6 +28,14 @@ export function clubEmail(heading, paragraphs) {
   `
 }
 
+/** Whether the join form takes new applications, and the note shown while it doesn't. */
+export async function getIntake() {
+  const { data, error } = await supabaseAdmin
+    .from('review_settings').select('applications_open, applications_closed_note').eq('id', 1).maybeSingle()
+  if (error) throw error
+  return { open: data?.applications_open ?? true, note: data?.applications_closed_note || null }
+}
+
 /** "We got your application" email, sent on submit and on demand from the review queue. */
 export function sendApplicationReceived({ email, full_name }) {
   return sendEmail({

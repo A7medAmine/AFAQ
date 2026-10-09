@@ -541,6 +541,9 @@ export const applicationEvents = pgTable('application_events', {
 export const reviewSettings = pgTable('review_settings', {
   id: integer().primaryKey().default(1),
   staleDays: integer('stale_days').notNull().default(5),
+  // Closing stops new applications at the server; the join form says why.
+  applicationsOpen: boolean('applications_open').notNull().default(true),
+  applicationsClosedNote: text('applications_closed_note'),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
 })
 

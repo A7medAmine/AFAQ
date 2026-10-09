@@ -19,7 +19,7 @@ import needsRoutes from './server/routes/needs.js'
 import pollsRoutes, { pollPreviewHtml } from './server/routes/polls.js'
 import { sendEmail } from './server/services/mailer.js'
 import { undeliverableEmailError } from './server/services/emailCheck.js'
-import { approveApplication, HttpError, sendApplicationReceived } from './server/services/membership.js'
+import { approveApplication, getIntake, HttpError, sendApplicationReceived } from './server/services/membership.js'
 import reviewRoutes, { publicReviewRoutes } from './server/routes/review.js'
 import { routeNewApplication } from './server/services/reviewRouting.js'
 
@@ -550,7 +550,28 @@ app.post("/api/register/event", async (req, res) => {
   }
 });
 
+// The join form asks first so it can show the "closed" notice instead of the wizard.
+app.get("/api/register/membership/status", async (req, res) => {
+  try {
+    res.set("Cache-Control", "no-store");
+    res.json(await getIntake());
+  } catch (err) {
+    console.error("Membership intake read error:", err.message);
+    res.status(500).json({ error: "Could not check whether applications are open." });
+  }
+});
+
 app.post("/api/register/membership", async (req, res) => {
+  try {
+    const intake = await getIntake();
+    if (!intake.open) {
+      return res.status(403).json({ error: "Applications are closed right now.", code: "closed", note: intake.note });
+    }
+  } catch (err) {
+    console.error("Membership intake read error:", err.message);
+    return res.status(500).json({ error: "We could not save your application. Please try again." });
+  }
+
   const b = req.body || {};
   const email = String(b.email || "").trim().toLowerCase();
   const fullName = String(b.full_name || "").trim();

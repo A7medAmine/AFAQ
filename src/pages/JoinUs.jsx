@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
-import { Send, Check, User, BookOpen, Heart, ArrowLeft, ArrowRight } from 'lucide-react'
+import { Send, Check, User, BookOpen, Heart, ArrowLeft, ArrowRight, DoorClosed } from 'lucide-react'
 import SideImage from '../components/shared/SideImage'
 import ProgresButton from '../components/registration/ProgresButton'
 import {
@@ -39,6 +39,17 @@ export default function JoinUs() {
     fetch('/api/interests')
       .then(r => (r.ok ? r.json() : null))
       .then(rows => { if (alive && Array.isArray(rows) && rows.length) setInterestRows(rows) })
+      .catch(() => {})
+    return () => { alive = false }
+  }, [])
+  // Admins can close join requests. If the check fails, show the form: the
+  // server still refuses a submission while applications are closed.
+  const [closed, setClosed] = useState(null) // null | { note }
+  useEffect(() => {
+    let alive = true
+    fetch('/api/register/membership/status')
+      .then(r => (r.ok ? r.json() : null))
+      .then(intake => { if (alive && intake && intake.open === false) setClosed({ note: intake.note }) })
       .catch(() => {})
     return () => { alive = false }
   }, [])
@@ -158,7 +169,8 @@ export default function JoinUs() {
 
     if (!result.ok) {
       setStatus('idle')
-      const { code, error: message, reason, suggestion } = result.payload
+      const { code, error: message, reason, suggestion, note } = result.payload
+      if (code === 'closed') { setClosed({ note }); return }
       setFormError(
         code === 'duplicate' ? t('form.duplicateApplication')
           : code === 'undeliverable' ? t(`form.undeliverable.${reason}`, { suggestion, defaultValue: message })
@@ -229,7 +241,25 @@ export default function JoinUs() {
         <SideImage side="right" />
         <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="card-pro card-static p-8 md:p-10">
-            {status === 'success' ? (
+            {closed && status !== 'success' ? (
+              <div className="text-center py-6">
+                <div
+                  className="inline-flex items-center justify-center mb-6"
+                  style={{ width: 72, height: 72, borderRadius: '50%', background: 'var(--color-bg-alt)', color: 'var(--color-text-muted)' }}
+                >
+                  <DoorClosed size={34} />
+                </div>
+                <h3 className="text-2xl font-bold mb-3">{t('form.closedTitle')}</h3>
+                <p className="text-base leading-relaxed max-w-md mx-auto" style={{ color: 'var(--color-text-muted)' }}>
+                  {t('form.closedBody')}
+                </p>
+                {closed.note && (
+                  <p className="text-base leading-relaxed max-w-md mx-auto mt-4 whitespace-pre-line" dir="auto">
+                    {closed.note}
+                  </p>
+                )}
+              </div>
+            ) : status === 'success' ? (
               <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}

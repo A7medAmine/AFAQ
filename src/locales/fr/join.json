@@ -20,6 +20,8 @@
     "success": "Merci pour votre candidature ! Nous vous contacterons bientôt.",
     "error": "Une erreur s'est produite. Veuillez reessayer.",
     "duplicateApplication": "Une candidature avec cet email ou cet identifiant etudiant a dejà ete soumise.",
+    "closedTitle": "Les candidatures sont fermées",
+    "closedBody": "Nous n’acceptons pas de nouvelles candidatures pour le moment. Suivez le club pour connaître la date de la prochaine session.",
     "back": "Retour",
     "next": "Suivant",
     "step": "Etape {{current}} sur {{total}}",

@@ -2,7 +2,9 @@ import { Router } from 'express'
 import { supabaseAdmin } from '../db/client.js'
 import { requireAuth } from '../middleware/auth.js'
 import { sendEmail } from '../services/mailer.js'
-import { approveApplication, clubEmail, escapeHtml, HttpError, sendApplicationReceived } from '../services/membership.js'
+import {
+  approveApplication, clubEmail, escapeHtml, getIntake, HttpError, sendApplicationReceived,
+} from '../services/membership.js'
 import {
   isStale, loadContext, logEvent, pickReviewer, pickTeam, placeApplication, sweep, sweepThrottled,
 } from '../services/reviewRouting.js'
@@ -119,7 +121,7 @@ router.get('/queue', async (req, res) => {
       supabaseAdmin.from('review_teams').select('*').order('sort_order').order('id'),
       supabaseAdmin.from('team_reviewers').select('team_id, admin_user_id'),
       reviewerDirectory().then(data => ({ data }), error => ({ error })),
-      supabaseAdmin.from('review_settings').select('stale_days').eq('id', 1).maybeSingle(),
+      supabaseAdmin.from('review_settings').select('stale_days, applications_open, applications_closed_note').eq('id', 1).maybeSingle(),
     ])
     for (const r of [open, decided, teams, links, reviewers, settings]) if (r.error) throw r.error
 
@@ -133,6 +135,7 @@ router.get('/queue', async (req, res) => {
     res.json({
       me: { id: me.id, isManager: me.isManager, teamIds: me.teamIds, available: me.available, capacity: me.capacity },
       staleDays: settings.data?.stale_days ?? 5,
+      intake: { open: settings.data?.applications_open ?? true, note: settings.data?.applications_closed_note || null },
       teams: teams.data.map(t => ({
         ...t,
         reviewer_ids: links.data.filter(l => l.team_id === t.id).map(l => l.admin_user_id),
@@ -167,6 +170,25 @@ router.post('/applications/:id/resend-confirmation', async (req, res) => {
     res.json({ ok: true })
   } catch (err) {
     fail(res, err, 'The confirmation email was not sent.')
+  }
+})
+
+// --- Intake (managers) ---
+
+/** Open or close the join form. Applications already in the queue are untouched. */
+router.patch('/intake', requireManager, async (req, res) => {
+  try {
+    const b = req.body || {}
+    if (typeof b.open !== 'boolean') throw new HttpError(400, 'Say whether applications are open.')
+    const note = String(b.note || '').trim().slice(0, 500) || null
+    const { error } = await supabaseAdmin.from('review_settings').upsert({
+      id: 1, applications_open: b.open, applications_closed_note: b.open ? null : note,
+      updated_at: new Date().toISOString(),
+    })
+    if (error) throw error
+    res.json({ ok: true, intake: await getIntake() })
+  } catch (err) {
+    fail(res, err, 'Could not change whether applications are open.')
   }
 })
 

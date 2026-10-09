@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
-  ArrowRightLeft, Check, Hand, Inbox, Mail, Moon, RefreshCw, Star, Sun, Undo2, UserPlus, X,
+  ArrowRightLeft, Check, DoorClosed, DoorOpen, Hand, Inbox, Mail, Moon, RefreshCw, Star, Sun, Undo2, UserPlus, X,
 } from 'lucide-react'
 import { api, logActivity } from '../lib/db'
 import useCounts from '../hooks/useCounts'
@@ -12,6 +12,7 @@ import PageHeader, { FilterTabs } from '../components/ui/PageHeader'
 import DataTable from '../components/ui/DataTable'
 import Drawer, { DetailRow, TagList } from '../components/ui/Drawer'
 import ConfirmDialog from '../components/ui/ConfirmDialog'
+import Modal from '../components/ui/Modal'
 import EmptyState, { ErrorState } from '../components/ui/EmptyState'
 import Button from '../components/ui/Button'
 import Badge, { StatusBadge } from '../components/ui/Badge'
@@ -92,6 +93,17 @@ export default function ReviewPage() {
       { method: 'PATCH' })
 
   const [handoff, setHandoff] = useState(false)
+
+  const intakeOpen = data?.intake?.open ?? true
+  const [closingIntake, setClosingIntake] = useState(false)
+  const [closedNote, setClosedNote] = useState('')
+  const setIntake = async (open, note) => {
+    const result = await act('/api/review/intake', { open, note },
+      open ? 'Join requests are open again.' : 'Join requests are closed. The join form now says so.',
+      { method: 'PATCH' })
+    if (result) logActivity(open ? 'opened' : 'closed', 'review_settings', 1, { name: 'Join requests' })
+    return result
+  }
   const mineCount = data ? data.open.filter(a => a.reviewer_id === me.id).length : 0
 
   const columns = useMemo(() => [
@@ -192,6 +204,12 @@ export default function ReviewPage() {
             )}
             {mineCount > 0 && <Button icon={Undo2} onClick={() => setHandoff(true)}>Hand off mine</Button>}
             {me.isManager && (
+              <Button icon={intakeOpen ? DoorClosed : DoorOpen} disabled={busy}
+                onClick={() => (intakeOpen ? (setClosedNote(''), setClosingIntake(true)) : setIntake(true))}>
+                {intakeOpen ? 'Close join requests' : 'Open join requests'}
+              </Button>
+            )}
+            {me.isManager && (
               <Button icon={RefreshCw} disabled={busy}
                 onClick={() => act('/api/review/rebalance', { reroutePool: true },
                   r => (r.rerouted ? `Rebalanced. ${r.rerouted} pooled applications found a team.` : 'Rebalanced.'))}>
@@ -201,6 +219,12 @@ export default function ReviewPage() {
           </>
         )}
       >
+        {data && !intakeOpen && (
+          <p className="text-xs mt-2" style={{ color: 'var(--adm-wait)' }}>
+            Join requests are closed: the join form takes no new applications.
+            {data.intake.note ? ` Visitors see: “${data.intake.note}”` : ''}
+          </p>
+        )}
         {me && !me.available && (
           <p className="text-xs mt-2" style={{ color: 'var(--adm-wait)' }}>
             You are marked away: new applications go to your teammates.
@@ -240,6 +264,26 @@ export default function ReviewPage() {
         act={act}
         onClose={() => setDetailId(null)}
       />
+
+      <Modal
+        open={closingIntake}
+        onClose={busy ? () => {} : () => setClosingIntake(false)}
+        title="Close join requests?"
+        description="The join form stops taking applications until you open it again. Applications already in the queue are not affected."
+        size="sm"
+        footer={
+          <>
+            <Button onClick={() => setClosingIntake(false)} disabled={busy} data-dialog-dismiss="true">Cancel</Button>
+            <Button variant="danger" busy={busy} busyLabel="Closing…"
+              onClick={async () => { if (await setIntake(false, closedNote)) setClosingIntake(false) }}>
+              Close join requests
+            </Button>
+          </>
+        }
+      >
+        <TextArea label="Note for visitors" hint="Optional. Shown on the join form, e.g. when applications reopen."
+          rows={3} maxLength={500} value={closedNote} onChange={e => setClosedNote(e.target.value)} />
+      </Modal>
 
       <ConfirmDialog
         open={handoff}
