@@ -55,5 +55,11 @@
     "loading": "Loading links",
     "empty": "No links yet.",
     "error": "The links did not load. Try again in a moment."
+  },
+  "notFound": {
+    "title": "Page not found",
+    "description": "The page you are looking for does not exist, or it has moved.",
+    "home": "Back to home",
+    "contact": "Contact us"
   }
 }

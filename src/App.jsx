@@ -19,6 +19,7 @@ const SharedNeeds = lazy(() => import('./pages/SharedNeeds'))
 const Poll = lazy(() => import('./pages/Poll'))
 const Brand = lazy(() => import('./pages/Brand'))
 const Links = lazy(() => import('./pages/Links'))
+const NotFound = lazy(() => import('./pages/NotFound'))
 
 // Admin — none of this should ship to public visitors.
 const Login = lazy(() => import('./admin/pages/Login'))
@@ -102,6 +103,7 @@ export default function App() {
             <Route path="/announcements" element={<Announcements />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/brand" element={<Brand />} />
+            <Route path="*" element={<NotFound />} />
           </Route>
 
           <Route path="/verify/:memberCode" element={<VerifyMember />} />
