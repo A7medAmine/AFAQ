@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
-  ArrowRight, CalendarPlus, CircuitBoard, ImagePlus, Megaphone, PackagePlus, RefreshCw, UserRoundPlus,
+  ArrowRight, CalendarPlus, CircuitBoard, ImagePlus, Lock, Megaphone, PackagePlus, RefreshCw, UserRoundPlus,
 } from 'lucide-react'
 import { read, supabase } from '../lib/db'
 import useAdminStore from '../store/adminStore'
@@ -18,7 +18,7 @@ import Button from '../components/ui/Button'
 import { SkeletonPanel } from '../components/ui/Skeleton'
 import MemberFormModal from '../components/hr/MemberFormModal'
 import NeedsWidget from '../components/needs/NeedsWidget'
-import { ErrorState } from '../components/ui/EmptyState'
+import EmptyState, { ErrorState } from '../components/ui/EmptyState'
 
 const since = days => {
   const d = new Date()
@@ -26,10 +26,33 @@ const since = days => {
   return d.toISOString()
 }
 
+/** Stands in for a query the admin's role may not run. */
+const SKIPPED = Promise.resolve({ ok: true, data: [] })
+
+/**
+ * Row-level security answers a forbidden read with zero rows, not an error,
+ * so without this a locked panel would claim there is simply nothing there.
+ */
+function NoAccess({ what }) {
+  return (
+    <EmptyState
+      compact
+      icon={Lock}
+      title="Not available for your role"
+      description={`Your role does not include access to ${what}. Ask a super admin if you need it.`}
+    />
+  )
+}
+
 export default function Dashboard() {
   const role = useAdminStore(s => s.role())
   const profile = useAdminStore(s => s.adminProfile)
   const navigate = useNavigate()
+  const canSeeRegistrations = hasPermission(role, 'events.registrations.manage')
+  const canSeeApplications = hasPermission(role, 'membership.manage')
+  const canSeeIntake = canSeeRegistrations || canSeeApplications
+  const canSeeEvents = hasPermission(role, 'events.manage')
+  const canSeeMessages = hasPermission(role, 'messages.view')
   const { counts, loading: countsLoading, refresh: refreshCounts } = useCounts()
 
   const [state, setState] = useState({ loading: true, error: null })
@@ -43,23 +66,27 @@ export default function Dashboard() {
     setState({ loading: true, error: null })
 
     const [regs, apps, upcoming, msgs] = await Promise.all([
-      read(supabase.from('event_registrations').select('created_at').gte('created_at', since(30))),
-      read(supabase.from('membership_applications').select('created_at').gte('created_at', since(30))),
-      read(
+      canSeeRegistrations
+        ? read(supabase.from('event_registrations').select('created_at').gte('created_at', since(30)))
+        : SKIPPED,
+      canSeeApplications
+        ? read(supabase.from('membership_applications').select('created_at').gte('created_at', since(30)))
+        : SKIPPED,
+      canSeeEvents ? read(
         supabase
           .from('events')
           .select('id, title_en, date, time, max_participants, registration_open, is_published')
           .gte('date', new Date().toISOString().split('T')[0])
           .order('date', { ascending: true })
           .limit(5)
-      ),
-      read(
+      ) : SKIPPED,
+      canSeeMessages ? read(
         supabase
           .from('contact_messages')
           .select('id, name, subject, created_at, is_read')
           .order('created_at', { ascending: false })
           .limit(5)
-      ),
+      ) : SKIPPED,
     ])
 
     const failure = [regs, apps, upcoming, msgs].find(r => !r.ok)
@@ -89,7 +116,7 @@ export default function Dashboard() {
     }
 
     setState({ loading: false, error: null })
-  }, [])
+  }, [canSeeRegistrations, canSeeApplications, canSeeEvents, canSeeMessages])
 
   useEffect(() => { load() }, [load])
 
@@ -163,11 +190,23 @@ export default function Dashboard() {
               <PanelHead
                 eyebrow="Last 30 days"
                 title="Who signed up"
-                description="Event registrations and membership applications, by day."
+                description={
+                  canSeeRegistrations && canSeeApplications
+                    ? 'Event registrations and membership applications, by day.'
+                    : canSeeRegistrations
+                      ? 'Event registrations by day. Your role cannot see membership applications.'
+                      : canSeeApplications
+                        ? 'Membership applications by day. Your role cannot see event registrations.'
+                        : undefined
+                }
               />
-              <div className="p-5">
-                <IntakeChart data={intake} />
-              </div>
+              {canSeeIntake ? (
+                <div className="p-5">
+                  <IntakeChart data={intake} />
+                </div>
+              ) : (
+                <NoAccess what="registration and application statistics" />
+              )}
             </Panel>
 
             <Panel>
@@ -187,7 +226,9 @@ export default function Dashboard() {
                 }
               />
               <div className="p-2">
-                {events.length === 0 ? (
+                {!canSeeEvents ? (
+                  <NoAccess what="events" />
+                ) : events.length === 0 ? (
                   <p className="text-sm text-center py-10 px-4" style={{ color: 'var(--adm-silk-faint)' }}>
                     Nothing scheduled. Create an event to open registration.
                   </p>
@@ -246,16 +287,20 @@ export default function Dashboard() {
                 eyebrow="Inbox"
                 title="Latest messages"
                 action={
-                  <Link
-                    to="/admin/messages"
-                    className="text-[13px] font-semibold inline-flex items-center gap-1"
-                    style={{ color: 'var(--adm-signal)' }}
-                  >
-                    All messages <ArrowRight size={13} />
-                  </Link>
+                  canSeeMessages && (
+                    <Link
+                      to="/admin/messages"
+                      className="text-[13px] font-semibold inline-flex items-center gap-1"
+                      style={{ color: 'var(--adm-signal)' }}
+                    >
+                      All messages <ArrowRight size={13} />
+                    </Link>
+                  )
                 }
               />
-              {messages.length === 0 ? (
+              {!canSeeMessages ? (
+                <NoAccess what="contact messages" />
+              ) : messages.length === 0 ? (
                 <p className="text-sm text-center py-10 px-4" style={{ color: 'var(--adm-silk-faint)' }}>
                   No one has used the contact form yet.
                 </p>
@@ -297,6 +342,11 @@ export default function Dashboard() {
             <Panel>
               <PanelHead eyebrow="Shortcuts" title="Start something" />
               <div className="p-4 flex flex-col gap-2">
+                {quickActions.length === 0 && (
+                  <p className="text-sm text-center py-6" style={{ color: 'var(--adm-silk-faint)' }}>
+                    Your role has no shortcuts here.
+                  </p>
+                )}
                 {quickActions.map(action => (
                   <button
                     key={action.label}
