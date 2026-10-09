@@ -43,8 +43,8 @@ export default function Footer() {
   const contactInfo = [
     {
       icon: <Mail size={17} className="footer-icon" />,
-      text: "afaqclub.bouira@gmail.com",
-      href: "mailto:afaqclub.bouira@gmail.com",
+      text: "afaq.club@univ-bouira.dz",
+      href: "mailto:afaq.club@univ-bouira.dz",
     },
     {
       icon: <MapPin size={17} className="footer-icon" />,

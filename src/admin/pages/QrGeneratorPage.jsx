@@ -352,7 +352,7 @@ function ContentFields({ type, form, set }) {
     case 'email':
       return (
         <div className="space-y-4">
-          <TextField label="To" type="email" value={form.email} onChange={set('email')} placeholder="contact@afaq-club.com" />
+          <TextField label="To" type="email" value={form.email} onChange={set('email')} placeholder="afaq.club@univ-bouira.dz" />
           <TextField label="Subject" value={form.subject} onChange={set('subject')} />
           <TextArea label="Message" rows={3} value={form.body} onChange={set('body')} />
         </div>
