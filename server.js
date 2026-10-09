@@ -516,9 +516,9 @@ app.post("/api/register/event", async (req, res) => {
     }]);
     if (insertErr) throw insertErr;
 
-    res.json({ ok: true });
-
-    sendEmail({
+    // Vercel freezes the function once the response is sent, so an email
+    // still in flight never leaves. Send first, then answer.
+    await sendEmail({
       to: email,
       subject: `Registration Confirmed — ${escapeHtml(event.title_en || event.title || "")}`,
       html: `
@@ -542,6 +542,8 @@ app.post("/api/register/event", async (req, res) => {
         </div>
       `,
     }).catch((err) => console.error("Registration confirmation email error:", err.message));
+
+    res.json({ ok: true });
   } catch (err) {
     console.error("Event registration error:", err.message);
     res.status(500).json({ error: "We could not save your registration. Please try again." });
@@ -593,9 +595,9 @@ app.post("/api/register/membership", async (req, res) => {
       console.error("Application routing error:", err.message)
     );
 
-    res.json({ ok: true });
-
-    sendEmail({
+    // Vercel freezes the function once the response is sent, so an email
+    // still in flight never leaves. Send first, then answer.
+    await sendEmail({
       to: email,
       subject: "Membership Application Received — AFAQ Scientific Club",
       html: `
@@ -616,6 +618,8 @@ app.post("/api/register/membership", async (req, res) => {
         </div>
       `,
     }).catch((err) => console.error("Membership confirmation email error:", err.message));
+
+    res.json({ ok: true });
   } catch (err) {
     console.error("Membership application error:", err.message);
     res.status(500).json({ error: "We could not save your application. Please try again." });
