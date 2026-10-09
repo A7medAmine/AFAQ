@@ -41,7 +41,12 @@
     "notYou": "Not you? Clear",
     "orManual": "or fill in the form yourself",
     "joinNudge": "Not a member yet? Join AFAQ to work on projects with the team.",
-    "joinCta": "Become a member"
+    "joinCta": "Become a member",
+    "undeliverable": {
+      "typo": "Did you mean {{suggestion}}? Check the spelling of your email address.",
+      "disposable": "Temporary email addresses are not accepted. Use an address you check regularly.",
+      "no_mail": "That email domain cannot receive mail. Check the address and try again."
+    }
   },
   "departments": {
     "fsas": "Faculty of Sciences and Applied Sciences",

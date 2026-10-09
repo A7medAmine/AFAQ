@@ -244,9 +244,13 @@ export default function Registration() {
 
     if (!result.ok) {
       setStatus('idle')
-      const { code, error: message } = result.payload
-      if (code === 'duplicate') {
-        setErrors({ email: t('form.duplicate') })
+      const { code, error: message, reason, suggestion } = result.payload
+      if (code === 'duplicate' || code === 'undeliverable') {
+        setErrors({
+          email: code === 'duplicate'
+            ? t('form.duplicate')
+            : t(`form.undeliverable.${reason}`, { suggestion, defaultValue: message }),
+        })
         setShaking('email')
         setTimeout(() => setShaking(null), 500)
       } else if (code === 'full') {

@@ -29,7 +29,12 @@
     },
     "successTitle": "Candidature reçue",
     "successBody": "Merci pour votre candidature. Un administrateur examine chaque demande et vous recevrez une reponse à l'adresse indiquee.",
-    "networkError": "Impossible de joindre le serveur. Verifiez votre connexion et reessayez."
+    "networkError": "Impossible de joindre le serveur. Verifiez votre connexion et reessayez.",
+    "undeliverable": {
+      "typo": "Vouliez-vous dire {{suggestion}} ? Verifiez l'orthographe de votre adresse email.",
+      "disposable": "Les adresses email temporaires ne sont pas acceptees. Utilisez une adresse que vous consultez regulierement.",
+      "no_mail": "Ce domaine ne peut pas recevoir d'emails. Verifiez l'adresse et reessayez."
+    }
   },
   "departments": {
     "fsas": "Faculte des Sciences et Sciences Appliquees",

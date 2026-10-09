@@ -18,6 +18,7 @@ import eventsRoutes from './server/routes/events.js'
 import needsRoutes from './server/routes/needs.js'
 import pollsRoutes, { pollPreviewHtml } from './server/routes/polls.js'
 import { sendEmail } from './server/services/mailer.js'
+import { undeliverableEmailError } from './server/services/emailCheck.js'
 import { approveApplication, HttpError } from './server/services/membership.js'
 import reviewRoutes, { publicReviewRoutes } from './server/routes/review.js'
 import { routeNewApplication } from './server/services/reviewRouting.js'
@@ -434,6 +435,8 @@ app.post("/api/register/event", async (req, res) => {
   if (!b.event_id) return res.status(400).json({ error: "Choose an event." });
   if (!fullName) return res.status(400).json({ error: "Enter your full name." });
   if (!EMAIL_RE.test(email)) return res.status(400).json({ error: "Enter a valid email address." });
+  const emailProblem = await undeliverableEmailError(email);
+  if (emailProblem) return res.status(400).json(emailProblem);
   if (!b.agreed_to_policies) {
     return res.status(400).json({ error: "You must agree to the policies to register." });
   }
@@ -528,6 +531,8 @@ app.post("/api/register/membership", async (req, res) => {
 
   if (!fullName) return res.status(400).json({ error: "Enter your full name." });
   if (!EMAIL_RE.test(email)) return res.status(400).json({ error: "Enter a valid email address." });
+  const emailProblem = await undeliverableEmailError(email);
+  if (emailProblem) return res.status(400).json(emailProblem);
 
   try {
     // Either identifier already on file is a duplicate.

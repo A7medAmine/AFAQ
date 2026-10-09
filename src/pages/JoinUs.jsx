@@ -158,10 +158,11 @@ export default function JoinUs() {
 
     if (!result.ok) {
       setStatus('idle')
+      const { code, error: message, reason, suggestion } = result.payload
       setFormError(
-        result.payload.code === 'duplicate'
-          ? t('form.duplicateApplication')
-          : result.payload.error || t('form.error')
+        code === 'duplicate' ? t('form.duplicateApplication')
+          : code === 'undeliverable' ? t(`form.undeliverable.${reason}`, { suggestion, defaultValue: message })
+          : message || t('form.error')
       )
       return
     }

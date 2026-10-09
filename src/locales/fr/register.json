@@ -41,7 +41,12 @@
     "notYou": "Ce n’est pas vous ? Effacer",
     "orManual": "ou remplissez le formulaire vous-même",
     "joinNudge": "Pas encore membre ? Rejoignez AFAQ pour travailler sur des projets avec l’équipe.",
-    "joinCta": "Devenir membre"
+    "joinCta": "Devenir membre",
+    "undeliverable": {
+      "typo": "Vouliez-vous dire {{suggestion}} ? Verifiez l'orthographe de votre adresse email.",
+      "disposable": "Les adresses email temporaires ne sont pas acceptees. Utilisez une adresse que vous consultez regulierement.",
+      "no_mail": "Ce domaine ne peut pas recevoir d'emails. Verifiez l'adresse et reessayez."
+    }
   },
   "departments": {
     "fsas": "Faculte des Sciences et Sciences Appliquees",
