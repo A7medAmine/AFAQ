@@ -39,11 +39,13 @@ const markdownComponents = {
       {children}
     </code>
   ),
-  a: ({ href, children }) => (
+  // Site pages (/events, /join…) open in place; external links in a new tab.
+  a: ({ href = "", children }) => (
     <a
       href={href}
-      target="_blank"
-      rel="noopener noreferrer"
+      {...(href.startsWith("/") && !href.startsWith("//")
+        ? {}
+        : { target: "_blank", rel: "noopener noreferrer" })}
       style={{ color: "var(--color-accent)", wordBreak: "break-all" }}
       className="underline hover:opacity-80"
     >

@@ -184,7 +184,14 @@ export default function ChatbotModal({ open, onClose }) {
         const res = await fetch("/api/ai/chat/stream", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: msg }),
+          body: JSON.stringify({
+            message: msg,
+            // Earlier turns let the assistant follow up ("when is it?").
+            history: messages
+              .filter((m) => m.content && m.content !== "…")
+              .slice(-8)
+              .map(({ role, content }) => ({ role, content })),
+          }),
           signal: controller.signal,
         });
 
