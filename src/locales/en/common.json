@@ -56,7 +56,8 @@
     "subtitle": "Scientific club",
     "loading": "Loading links",
     "empty": "No links yet.",
-    "error": "The links did not load. Try again in a moment."
+    "error": "The links did not load. Try again in a moment.",
+    "join": "Join the Club"
   },
   "notFound": {
     "title": "Page not found",

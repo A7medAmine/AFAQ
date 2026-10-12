@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ArrowUpRight, Loader2 } from 'lucide-react'
+import { ArrowRight, ArrowUpRight, Loader2 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { PlatformIcon } from '../lib/socialLinks'
 import './links.css'
@@ -43,7 +43,11 @@ export default function Links() {
         ) : state.links.length === 0 ? (
           <p className="lt-note">{t('links.empty')}</p>
         ) : (
-          <ul className="lt-list">
+          <>
+            <a className="lt-join" href="/join">
+              {t('links.join')} <ArrowRight size={20} aria-hidden="true" />
+            </a>
+            <ul className="lt-list">
             {state.links.map(link => (
               <li key={link.id}>
                 <a
@@ -59,6 +63,7 @@ export default function Links() {
               </li>
             ))}
           </ul>
+          </>
         )}
 
         <p className="lt-foot">{t('footer.university')}</p>

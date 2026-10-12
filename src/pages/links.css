@@ -116,6 +116,41 @@
 
 .lt-spin { margin-top: 12px; color: #233dff; }
 
+.lt-join {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 60px;
+  margin-bottom: 28px;
+  padding: 14px 24px;
+  background: #233dff;
+  border: 3px solid #050a30;
+  box-shadow: 4px 4px 0 #050a30, 8px 8px 0 #5cbcf9;
+  color: #ffffff;
+  font-family: "Thmanyah Sans", system-ui, sans-serif;
+  font-weight: 700;
+  font-size: 20px;
+  text-decoration: none;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+.lt-join:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 #050a30, 10px 10px 0 #5cbcf9;
+}
+.lt-join:active {
+  transform: translate(4px, 4px);
+  box-shadow: 0 0 0 #050a30, 2px 2px 0 #5cbcf9;
+}
+.lt-join:focus-visible {
+  outline: 3px solid #050a30;
+  outline-offset: 4px;
+}
+[dir="rtl"] .lt-join svg {
+  transform: scaleX(-1);
+}
+
 .lt-note {
   font-family: "Thmanyah Sans", system-ui, sans-serif;
   font-size: 16px;
