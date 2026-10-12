@@ -318,6 +318,15 @@ function HeroRight() {
       </div>
 
       <Img
+        src="/images/hero/langs.webp"
+        alt="English and German"
+        loading="lazy"
+        className={`absolute top-[16%] ${
+          isRTL ? "left-[-8%]" : "right-[-8%]"
+        } w-28 sm:w-44 lg:w-48 rotate-6 float-asset z-20`}
+        style={{ filter: "drop-shadow(0 20px 40px rgba(59,130,246,0.4))" }}
+      />
+      <Img
         src="/images/hero/uno.webp"
         alt="Arduino"
         loading="lazy"

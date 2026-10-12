@@ -3,54 +3,81 @@
     "badge": "AFAQ club",
     "slogan": "Where Technology and Joy Meet",
     "slogan1": "Where Technology  and  Joy Meet",
-    "subtitle": "A student club at the University of Akli Mohand Oulhadj — Bouira, pushing the boundaries of electronics, robotics, and creative technology.",
+    "subtitle": "A student club at the University of Akli Mohand Oulhadj — Bouira, pushing the boundaries of electronics, robotics, and creative technology, with a language side for English and German.",
     "cta1": "Join Our Community",
     "cta2": "Discover Our Projects"
   },
   "intro": {
     "title": "Who We Are",
-    "description": "AFAQ is a student club where technology, electronics, creativity, innovation, and teamwork come together. We provide a space for students to learn, build, and grow through hands-on projects and collaborative events."
+    "description": "AFAQ is a student club where technology, languages, creativity, and teamwork come together. We give students a space to learn, build, and grow, whether that means wiring a robot or holding a conversation in German."
   },
   "activities": {
-    "title": "Our Activities",
-    "sub": "From electronics to software, we cover the full spectrum of modern technology.",
+    "title": "Two Sides of AFAQ",
+    "sub": "One club, two labs: we build with technology and we connect through languages.",
     "workshops": {
       "title": "Workshops",
-      "desc": "Hands-on learning sessions on Arduino, programming, electronics, and more.",
-      "details": "Our workshops cover a wide range of topics from Arduino basics to advanced programming concepts. Each session is designed to be hands-on, allowing participants to build real projects and gain practical skills that complement their academic studies."
+      "desc": "Hands-on learning sessions on Arduino, programming, electronics, and more."
     },
     "robotics": {
       "title": "Robotics",
-      "desc": "Design, build, and program robots for competitions and research.",
-      "details": "The robotics program brings together students passionate about mechanical design, electronics, and programming. Teams collaborate to build robots for local and national competitions, learning project management and engineering principles along the way."
+      "desc": "Design, build, and program robots for competitions and research."
     },
     "iot": {
       "title": "IoT & Electronics",
-      "desc": "Connected devices and embedded systems.",
-      "details": "Explore the world of connected devices through our IoT track. Members work with sensors, microcontrollers, and communication protocols to build smart systems that solve real-world problems, from home automation to environmental monitoring."
+      "desc": "Connected devices and embedded systems."
     },
     "hackathons": {
       "title": "Hackathons",
-      "desc": "Intense coding and innovation challenges to solve real problems.",
-      "details": "Our hackathons bring together students for intense coding sessions where teams build complete solutions in a limited time. These events foster creativity, rapid prototyping, and teamwork while addressing real-world challenges."
+      "desc": "Intense coding and innovation challenges to solve real problems."
     },
     "competitions": {
       "title": "Competitions",
-      "desc": "Friendly tech competitions to showcase skills and win prizes.",
-      "details": "Regular competitions give members a platform to showcase their talents, from coding challenges to robotics battles. These friendly contests encourage healthy competition and skill development."
+      "desc": "Friendly tech competitions to showcase skills and win prizes."
     },
     "software": {
       "title": "Software Dev",
-      "desc": "Web, mobile, and systems programming projects with modern tools.",
-      "details": "The software development track focuses on building real-world applications using modern frameworks and tools. Members work on web, mobile, and systems projects, learning version control, agile methodologies, and deployment practices."
+      "desc": "Web, mobile, and systems programming projects with modern tools."
     },
     "training": {
       "title": "Training",
-      "desc": "Expert-led workshops and technical training sessions for all levels.",
-      "details": "Our training program offers structured learning paths for members at all skill levels. Led by experienced mentors, these sessions cover topics like Python, web development, embedded systems, and AI."
+      "desc": "Expert-led workshops and technical training sessions for all levels."
+    }
+  },
+  "sides": {
+    "eyebrow": "Tech + Languages",
+    "tech": {
+      "label": "Tech Lab",
+      "title": "We build.",
+      "desc": "Electronics, robotics, and software, learned by making real things together."
     },
-    "core": "core",
-    "close": "Close"
+    "lang": {
+      "label": "Language Lab",
+      "title": "We speak.",
+      "desc": "Led by members with strong English and German, the language side helps students study, travel, and work across borders.",
+      "english": {
+        "title": "English",
+        "desc": "Speaking, academic writing, and the confidence to present your work."
+      },
+      "german": {
+        "title": "German",
+        "desc": "From first words to real conversations, with an eye on study in Germany."
+      },
+      "tracks": {
+        "speaking": {
+          "title": "Speaking circles",
+          "desc": "Relaxed conversation sessions where everyone gets to talk."
+        },
+        "writing": {
+          "title": "Writing & presenting",
+          "desc": "CVs, emails, reports, and talks, reviewed by experienced members."
+        },
+        "culture": {
+          "title": "Culture & exchange",
+          "desc": "Films, music, and stories that make a language stick."
+        }
+      },
+      "note": "Open to every student, from first words to fluent."
+    }
   },
   "upcomingEvents": {
     "title": "Upcoming Events",
@@ -67,10 +94,22 @@
   "stats": {
     "title": "AFAQ in Numbers",
     "subtitle": "Our growing impact in the university and beyond.",
-    "members": { "value": "50+", "label": "Active Members" },
-    "projects": { "value": "25+", "label": "Projects Completed" },
-    "events": { "value": "15+", "label": "Events Organized" },
-    "workshops": { "value": "30+", "label": "Workshops Held" }
+    "members": {
+      "value": "50+",
+      "label": "Active Members"
+    },
+    "projects": {
+      "value": "25+",
+      "label": "Projects Completed"
+    },
+    "events": {
+      "value": "15+",
+      "label": "Events Organized"
+    },
+    "workshops": {
+      "value": "30+",
+      "label": "Workshops Held"
+    }
   },
   "heroStats": {
     "members": "Active Members",

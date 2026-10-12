@@ -1269,270 +1269,242 @@ select.form-input {
 /* The admin console ships its own scoped stylesheet, src/admin/admin.css.
    The .admin-* rules that used to live here are gone with it. */
 
-/* ══ AFAQ.BRD — activities board ═══════════════════════════════════════════
-   The club drawn as a circuit board: silkscreen on paper, one accent, traces
-   routed in SVG from measured DOM positions. All color comes from tokens so
-   the board follows light/dark without a second palette. */
+/* ══ Club sides — Tech Lab / Language Lab ══════════════════════════════════
+   Home section splitting the club in two halves on a brand-midnight panel.
+   Uses the brand kit palette (src/pages/brand.css) as fixed values so it
+   matches the brand poster in both themes. */
 
-.afaq-board {
+.sides {
+  --s-midnight: #050a30;
+  --s-deep: #12229d;
+  --s-blue: #233dff;
+  --s-sky: #5cbcf9;
+  --s-ice: #cae8ff;
   position: relative;
-  padding: 40px 28px 34px;
-  border: 1.5px solid var(--color-border-light);
-  border-radius: 22px;
-  background: var(--color-bg-alt);
-  background-image: radial-gradient(
-    circle,
-    rgba(36, 96, 231, 0.13) 1px,
-    transparent 1px
-  );
-  background-size: 20px 20px;
-}
-
-/* Mounting holes, one per corner */
-.afaq-drill {
-  position: absolute;
-  width: 11px;
-  height: 11px;
-  border-radius: 50%;
-  border: 1.5px solid var(--color-border);
-  background: var(--color-bg);
-  pointer-events: none;
-}
-
-.afaq-grid {
-  position: relative;
+  overflow: hidden;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(180px, 240px) minmax(0, 1fr);
-  grid-template-areas:
-    "a  .     d"
-    "b  core  e"
-    "c  .     f"
-    ".  g     .";
-  column-gap: clamp(28px, 6vw, 76px);
-  row-gap: 18px;
-  align-items: center;
+  grid-template-columns: 1fr;
+  border-radius: 24px;
+  background: var(--s-midnight);
+  color: #fff;
+  box-shadow: 0 24px 60px rgba(5, 10, 48, 0.28);
 }
-
-/* ── Component blocks ── */
-
-.afaq-part {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 5px;
-  width: 100%;
-  padding: 14px 16px;
-  text-align: start;
-  border: 1.5px solid var(--color-border-light);
-  border-radius: 14px;
-  background: var(--color-card);
-  cursor: pointer;
-  transition: border-color 0.25s ease, box-shadow 0.25s ease,
-    transform 0.25s ease;
-}
-
-.afaq-part:hover,
-.afaq-part.is-active,
-.afaq-part.is-selected {
-  border-color: var(--color-accent);
-  box-shadow: 0 6px 22px rgba(36, 96, 231, 0.13);
-}
-
-.afaq-part:focus-visible {
-  outline: 2px solid var(--color-accent);
-  outline-offset: 3px;
-}
-
-/* Solder pad on the edge that faces the core */
-.afaq-part::after {
+.sides::before {
+  /* the brand's pixel grid, fading out from the seam */
   content: "";
   position: absolute;
-  top: calc(50% - 5px);
-  width: 9px;
-  height: 10px;
-  border-radius: 2px;
-  background: var(--color-accent);
-  opacity: 0.28;
-  transition: opacity 0.25s ease;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(92, 188, 249, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(92, 188, 249, 0.08) 1px, transparent 1px);
+  background-size: 22px 22px;
+  mask-image: radial-gradient(ellipse at 50% 30%, #000 15%, transparent 75%);
+  -webkit-mask-image: radial-gradient(ellipse at 50% 30%, #000 15%, transparent 75%);
+  pointer-events: none;
 }
-
-.afaq-part.is-active::after,
-.afaq-part.is-selected::after {
-  opacity: 1;
-}
-
-/* The pad sits on whichever edge the trace arrives at. Logical properties:
-   the grid mirrors in RTL, so the pad has to follow it inward. */
-[data-side="L"] .afaq-part::after {
-  inset-inline-end: -5px;
-}
-
-[data-side="R"] .afaq-part::after {
-  inset-inline-start: -5px;
-}
-
-[data-side="B"] .afaq-part::after {
-  top: -5px;
-  inset-inline-start: calc(50% - 5px);
-  width: 10px;
-  height: 9px;
-}
-
-.afaq-part-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  width: 100%;
-}
-
-.afaq-part-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  color: var(--color-accent);
-  background: var(--color-accent-soft);
-  transition: background 0.25s ease, color 0.25s ease;
-}
-
-.afaq-part:hover .afaq-part-icon,
-.afaq-part.is-active .afaq-part-icon,
-.afaq-part.is-selected .afaq-part-icon {
-  color: #fff;
-  background: var(--color-accent);
-}
-
-.afaq-part-label {
-  font-family: "Minecraft", system-ui, sans-serif;
-  font-size: 14px;
-  font-weight: 600;
-  line-height: 1.25;
-  color: var(--color-text);
-}
-
-.afaq-part-caption {
-  font-family: "Minecraft", system-ui, sans-serif;
-  font-size: 11.5px;
-  line-height: 1.45;
-  color: var(--color-text-muted);
-}
-
-/* Reference designator — silkscreen type. Printed on the board, not prose,
-   so it is not selectable. */
-.afaq-desig {
-  user-select: none;
-  font-family: "Minecraft", system-ui, sans-serif;
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--color-text-muted);
-  white-space: nowrap;
-  /* Silkscreen is printed on the board, so it stays LTR in Arabic too */
-  direction: ltr;
-  unicode-bidi: isolate;
-}
-
-/* Chip pins on the core package */
-.afaq-pin {
+.sides::after {
+  content: "";
   position: absolute;
-  width: 7px;
-  height: 8px;
-  border-radius: 2px;
-  background: var(--color-accent);
-  opacity: 0.55;
+  inset: auto 0 0 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--s-blue), var(--s-sky));
 }
+.sides > * { position: relative; }
 
-/* ── Board footer silkscreen ── */
-
-.afaq-silk {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  margin-top: 30px;
-  font-family: "Minecraft", system-ui, sans-serif;
-  font-size: 10px;
-  font-weight: 500;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--color-text-muted);
-  opacity: 0.65;
-  user-select: none;
-  direction: ltr;
-  unicode-bidi: isolate;
-}
-
-.afaq-silk-sep {
-  width: 16px;
-  height: 1.5px;
-  background: var(--color-border);
-}
-
-/* ── Mobile bus ── */
-
-.afaq-bus {
-  position: relative;
-  padding-inline-start: 30px;
-}
-
-.afaq-bus-line {
-  position: absolute;
-  inset-inline-start: 9px;
-  top: 30px;
-  bottom: 34px;
-  width: 1.5px;
-  background: var(--color-accent);
-  opacity: 0.4;
-}
-
-.afaq-bus-core {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 12px;
-  padding: 12px 16px;
-  border: 1.5px solid var(--color-accent);
-  border-radius: 14px;
-  background: var(--color-card);
-}
-
-.afaq-bus-part {
-  margin-bottom: 10px;
-}
-
-.afaq-bus-part::after {
-  display: none;
-}
-
-.afaq-bus-branch {
-  position: absolute;
-  inset-inline-start: -21px;
-  top: calc(50% - 10px);
-  width: 20px;
-  height: 20px;
-  line-height: 0;
+.sides-watermark {
+  position: absolute !important;
+  width: 340px;
+  bottom: -90px;
+  inset-inline-end: -80px;
+  opacity: 0.05;
   pointer-events: none;
 }
 
-.afaq-bus-branch--core {
-  top: calc(50% - 10px);
+.sides-half {
+  display: flex;
+  flex-direction: column;
+  padding: clamp(28px, 4vw, 44px);
+  min-width: 0;
 }
 
-/* Branch elbows mirror with the writing direction */
-[dir="rtl"] .afaq-bus-branch {
-  transform: scaleX(-1);
+.sides-note {
+  margin-top: auto;
+  padding-top: 18px;
+  font-family: "Minecraft", monospace;
+  font-size: 13px;
+  color: var(--s-sky);
+}
+.sides-note::before { content: "+ "; }
+
+.sides-index {
+  font-family: "Minecraft", monospace;
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--s-sky);
+  margin-bottom: 14px;
+}
+.sides-title {
+  font-size: clamp(30px, 4vw, 44px);
+  line-height: 1.05;
+  color: #fff;
+  margin-bottom: 12px;
+}
+.sides-desc {
+  color: var(--s-ice);
+  opacity: 0.8;
+  font-size: 15px;
+  line-height: 1.65;
+  max-width: 34rem;
+}
+
+/* The live line: a command on the tech side, a greeting on the other */
+.sides-ticker {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 52px;
+  margin: 22px 0;
+  padding: 0 16px;
+  border-radius: 12px;
+  background: rgba(35, 61, 255, 0.14);
+  border: 1px solid rgba(92, 188, 249, 0.22);
+  font-family: "Minecraft", monospace;
+  font-size: 17px;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.sides-prompt { color: var(--s-sky); }
+.sides-ticker-text { display: inline-block; color: #fff; }
+[dir] .sides-ar { font-family: "Unixel", sans-serif !important; font-size: 1.15em; }
+.sides-caret {
+  width: 9px;
+  height: 18px;
+  background: var(--s-sky);
+  animation: cursor-blink 1s step-end infinite;
+}
+
+.sides-list {
+  display: grid;
+  gap: 4px;
+}
+.sides-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 10px 12px;
+  margin-inline: -12px;
+  border-radius: 12px;
+  transition: background 0.2s ease;
+}
+.sides-row:hover { background: rgba(92, 188, 249, 0.07); }
+.sides-icon {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  background: var(--s-blue);
+  color: #fff;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12) inset;
+}
+.sides-row-title {
+  display: block;
+  font-family: "Minecraft", sans-serif;
+  font-size: 15px;
+  color: #fff;
+}
+.sides-row-desc {
+  display: block;
+  font-size: 13px;
+  line-height: 1.5;
+  color: rgba(202, 232, 255, 0.62);
+}
+
+/* Language cards */
+.sides-langs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.sides-lang {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 14px;
+  align-items: center;
+  padding: 16px;
+  border-radius: 16px;
+  background: linear-gradient(145deg, rgba(35, 61, 255, 0.28), rgba(18, 34, 157, 0.18));
+  border: 1px solid rgba(92, 188, 249, 0.25);
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+.sides-lang:hover {
+  transform: translateY(-2px);
+  border-color: rgba(92, 188, 249, 0.6);
+}
+.sides-lang-code {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: #fff;
+  color: var(--s-midnight);
+  font-family: "Minecraft", monospace;
+  font-size: 18px;
+}
+[dir] .sides-lang-native {
+  display: block;
+  font-family: "Minecraft", monospace !important;
+  font-size: 12px;
+  color: var(--s-sky);
+  letter-spacing: 0.06em;
+}
+.sides-lang-desc { grid-column: 1 / -1; margin-top: 6px; }
+
+/* The seam between the two halves */
+.sides-seam {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 0 clamp(28px, 4vw, 44px);
+}
+.sides-seam-line {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(92, 188, 249, 0.45), transparent);
+}
+.sides-seam-mark {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  background: var(--s-blue);
+  box-shadow: 0 0 0 6px rgba(35, 61, 255, 0.18), 0 0 40px rgba(35, 61, 255, 0.55);
+}
+
+@media (min-width: 1024px) {
+  .sides { grid-template-columns: 1fr auto 1fr; }
+  .sides-seam {
+    flex-direction: column;
+    padding: 44px 0;
+  }
+  .sides-seam-line {
+    width: 1px;
+    height: auto;
+    background: linear-gradient(180deg, transparent, rgba(92, 188, 249, 0.45), transparent);
+  }
+  .sides-half:last-child {
+    background: linear-gradient(180deg, rgba(35, 61, 255, 0.08), transparent 60%);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .afaq-part {
-    transition: none;
-  }
+  .sides-caret { animation: none; }
+  .sides-row, .sides-lang { transition: none; }
 }
 
 /* ══ Footer wordmark ═══════════════════════════════════════════════════════

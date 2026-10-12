@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion'
 import HeroSection from '../components/home/HeroSection'
 import IntroSection from '../components/home/IntroSection'
-import ActivitiesDiagram from '../components/home/ActivitiesDiagram'
+import ClubSides from '../components/home/ClubSides'
 import UpcomingEvents from '../components/home/UpcomingEvents'
 import ProjectHighlights from '../components/home/ProjectHighlights'
 {/* import StatisticsSection from '../components/home/StatisticsSection' */}
@@ -78,7 +78,7 @@ export default function Home() {
         />
         <div className="relative z-10">
           <IntroSection />
-          <ActivitiesDiagram />
+          <ClubSides />
           <UpcomingEvents />
           <ProjectHighlights />
           {/* <StatisticsSection /> */}
