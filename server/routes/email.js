@@ -37,10 +37,13 @@ const siteUrl = req => process.env.VITE_APP_URL || req.headers.origin || ''
 function normalizeAudience(raw = {}) {
   const strings = v => (Array.isArray(v) ? v.filter(x => typeof x === 'string' && x.trim()).map(x => x.trim()) : [])
   const statuses = strings(raw.statuses)
+  const ids = list => [...new Set((Array.isArray(list) ? list : []).map(Number).filter(Number.isInteger))]
   return {
+    // Picked members are emailed as-is; the filters below are then ignored.
+    memberIds: ids(raw.memberIds).slice(0, 1000),
     statuses: statuses.length ? statuses : ['active'],
     teams: strings(raw.teams),
-    groupIds: (Array.isArray(raw.groupIds) ? raw.groupIds : []).map(Number).filter(Number.isInteger),
+    groupIds: ids(raw.groupIds),
     interests: strings(raw.interests),
   }
 }
@@ -71,13 +74,17 @@ async function fetchAllMembers(columns) {
   }
 }
 
-/** Members matching the audience, deduplicated by address, opted-out ones set aside. */
+/**
+ * Members matching the audience, deduplicated by address, opted-out ones set
+ * aside. A hand-picked list (memberIds) replaces the status/team/group/interest filters.
+ */
 async function resolveRecipients(audience) {
   const members = await fetchAllMembers('id, full_name, email, member_code, status, team, interests, email_opt_out')
-  const matchesInterest = await interestMatcher(audience.interests)
+  const picking = audience.memberIds.length > 0
+  const matchesInterest = picking ? null : await interestMatcher(audience.interests)
 
   let inGroups = null
-  if (audience.groupIds.length) {
+  if (!picking && audience.groupIds.length) {
     const { data, error } = await supabaseAdmin
       .from('member_group_members').select('member_id').in('group_id', audience.groupIds)
     if (error) throw error
@@ -87,9 +94,12 @@ async function resolveRecipients(audience) {
   const seen = new Set()
   const recipients = []
   let optedOut = 0
+  const picked = audience.memberIds.length ? new Set(audience.memberIds) : null
   for (const m of members) {
-    if (!audience.statuses.includes(m.status || 'active')) continue
-    if (audience.teams.length && !audience.teams.includes(m.team)) continue
+    if (picked) {
+      if (!picked.has(m.id)) continue
+    } else if (!audience.statuses.includes(m.status || 'active')) continue
+    if (!picking && audience.teams.length && !audience.teams.includes(m.team)) continue
     if (inGroups && !inGroups.has(m.id)) continue
     if (matchesInterest && !matchesInterest(m.interests)) continue
     const email = String(m.email || '').trim().toLowerCase()
@@ -178,6 +188,22 @@ router.get('/audience-options', async (req, res) => {
       }).filter(i => i.count),
       emailConfigured: isEmailConfigured(),
     })
+  } catch (err) {
+    fail(res, err, 'Could not load the member list.')
+  }
+})
+
+/** Members with an address, for picking specific recipients by hand. */
+router.get('/members', async (req, res) => {
+  try {
+    const members = await fetchAllMembers('id, full_name, email, member_code, status, email_opt_out')
+    res.json(members
+      .filter(m => EMAIL.test(String(m.email || '').trim()))
+      .map(m => ({
+        id: m.id, name: m.full_name, email: m.email.trim(), code: m.member_code,
+        status: m.status || 'active', optedOut: !!m.email_opt_out,
+      }))
+      .sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''))))
   } catch (err) {
     fail(res, err, 'Could not load the member list.')
   }

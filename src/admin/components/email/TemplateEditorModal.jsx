@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Braces } from 'lucide-react'
-import { run, supabase } from '../../lib/db'
+import { Braces, Sparkles } from 'lucide-react'
+import { api, run, supabase } from '../../lib/db'
+import useAdminStore from '../../store/adminStore'
 import { toForm } from '../../lib/format'
 import {
   EMAIL_LANGUAGES, SAMPLE_VARIABLES, TEMPLATE_KINDS, TEMPLATE_VARIABLES, renderEmail,
@@ -34,6 +35,8 @@ export default function TemplateEditorModal({ open, template, onClose, onSaved, 
   const [previewLang, setPreviewLang] = useState('en')
   const [errors, setErrors] = useState({})
   const [saving, setSaving] = useState(false)
+  const [aiPrompt, setAiPrompt] = useState('')
+  const [generating, setGenerating] = useState(false)
   const focused = useRef({ key: 'body', el: null })
 
   useEffect(() => {
@@ -42,6 +45,7 @@ export default function TemplateEditorModal({ open, template, onClose, onSaved, 
     setForm(next)
     setMode(next.custom_html ? 'html' : 'layout')
     setErrors({})
+    setAiPrompt('')
   }, [open, template])
 
   const set = (key, value) => {
@@ -66,6 +70,28 @@ export default function TemplateEditorModal({ open, template, onClose, onSaved, 
       el.focus()
       el.setSelectionRange(start + token.length, start + token.length)
     })
+  }
+
+  /** Ask the AI for a full HTML theme; when a custom HTML template exists, it is refined instead of replaced. */
+  const generate = async () => {
+    if (!aiPrompt.trim() || generating) return
+    setGenerating(true)
+    try {
+      const { ok, data, message } = await api('/api/ai/email-template', {
+        method: 'POST',
+        body: { prompt: aiPrompt, current_html: mode === 'html' ? form.custom_html : '' },
+      })
+      if (!ok) {
+        useAdminStore.getState().addToast(message || 'The AI assistant did not respond.', 'error')
+        return
+      }
+      set('custom_html', data.html)
+      setMode('html')
+      setAiPrompt('')
+      useAdminStore.getState().addToast('Theme generated — check the preview, then save.', 'success')
+    } finally {
+      setGenerating(false)
+    }
   }
 
   const effective = mode === 'html' ? form : { ...form, custom_html: '' }
@@ -146,6 +172,37 @@ export default function TemplateEditorModal({ open, template, onClose, onSaved, 
 
           <TextField label="Subject" required value={form.subject} error={errors.subject}
             onChange={e => set('subject', e.target.value)} {...track('subject')} />
+
+          <div
+            className="rounded-xl p-3 space-y-2"
+            style={{ background: 'var(--adm-board-sunk)', border: '1px solid var(--adm-trace)' }}
+          >
+            <p className="adm-label flex items-center gap-1.5" style={{ marginBottom: 0 }}>
+              <Sparkles size={13} /> Generate a theme with AI
+            </p>
+            <textarea
+              className="adm-input"
+              rows={3}
+              maxLength={1500}
+              value={aiPrompt}
+              disabled={generating}
+              onChange={e => setAiPrompt(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) generate() }}
+              placeholder={mode === 'html' && form.custom_html.trim()
+                ? 'Describe a change — e.g. “make the header dark blue and add a circuit-board pattern”'
+                : 'Describe the look — e.g. “futuristic robotics theme, dark navy with neon cyan accents, big call-to-action button”'}
+            />
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-[11px]" style={{ color: 'var(--adm-silk-dim)' }}>
+                {mode === 'html' && form.custom_html.trim()
+                  ? 'Edits the current HTML. Ctrl+Enter to send.'
+                  : 'Creates a custom HTML template. Ctrl+Enter to send.'}
+              </p>
+              <Button size="sm" icon={Sparkles} onClick={generate} busy={generating} busyLabel="Generating…" disabled={!aiPrompt.trim()}>
+                Generate
+              </Button>
+            </div>
+          </div>
 
           <FilterTabs options={MODES} value={mode} onChange={setMode} label="Template mode" />
 

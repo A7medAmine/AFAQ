@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { AlertTriangle, CheckCircle2, FlaskConical, Send, Users } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, FlaskConical, Search, Send, Users, X } from 'lucide-react'
 import { api, read, supabase } from '../../lib/db'
 import { runCampaign } from '../../lib/email'
 import { MEMBER_STATUSES } from '../../lib/hr'
@@ -38,6 +38,13 @@ function Chip({ active, onClick, children }) {
 
 const toggleIn = (list, value) => (list.includes(value) ? list.filter(v => v !== value) : [...list, value])
 
+const EMPTY_AUDIENCE = { statuses: ['active'], teams: [], groupIds: [], interests: [], memberIds: [] }
+
+const AUDIENCE_MODES = [
+  { value: 'filters', label: 'By filters' },
+  { value: 'members', label: 'Specific members' },
+]
+
 /**
  * Email members about an announcement, an event, or a free-form message
  * (`source` null). Picks the kind's default template, filters the audience,
@@ -58,7 +65,9 @@ export default function ComposeEmailModal({ open, onClose, source, onSent }) {
   const [language, setLanguage] = useState('en')
   const [subject, setSubject] = useState('')
   const [message, setMessage] = useState({ title: '', content: '' })
-  const [audience, setAudience] = useState({ statuses: ['active'], teams: [], groupIds: [], interests: [] })
+  const [audience, setAudience] = useState(EMPTY_AUDIENCE)
+  const [audienceMode, setAudienceMode] = useState('filters')
+  const [members, setMembers] = useState(null)       // loaded the first time "Specific members" opens
   const [count, setCount] = useState(null)
   const [errors, setErrors] = useState({})
 
@@ -71,7 +80,7 @@ export default function ComposeEmailModal({ open, onClose, source, onSent }) {
   useEffect(() => {
     if (!open) return
     setLanguage('en'); setSubject(''); setMessage({ title: '', content: '' })
-    setAudience({ statuses: ['active'], teams: [], groupIds: [], interests: [] })
+    setAudience(EMPTY_AUDIENCE); setAudienceMode('filters')
     setErrors({}); setConfirming(false); setProgress(null); setLoadError(null)
 
     let cancelled = false
@@ -91,16 +100,31 @@ export default function ComposeEmailModal({ open, onClose, source, onSent }) {
     return () => { cancelled = true }
   }, [open, kind])
 
+  // The server sends to hand-picked members only when memberIds is non-empty.
+  const sentAudience = useMemo(
+    () => (audienceMode === 'members' ? { ...EMPTY_AUDIENCE, memberIds: audience.memberIds } : { ...audience, memberIds: [] }),
+    [audience, audienceMode]
+  )
+
+  useEffect(() => {
+    if (!open || audienceMode !== 'members' || members) return
+    api('/api/email/members').then(({ ok, data, message: error }) => {
+      if (ok) setMembers(data)
+      else addToast(error, 'error')
+    })
+  }, [open, audienceMode, members, addToast])
+
   // Recount recipients whenever the audience changes (debounced).
   useEffect(() => {
     if (!open) return
+    if (audienceMode === 'members' && !sentAudience.memberIds.length) { setCount({ count: 0, optedOut: 0 }); return }
     setCount(null)
     const id = setTimeout(async () => {
-      const { ok, data } = await api('/api/email/audience/count', { method: 'POST', body: { audience } })
+      const { ok, data } = await api('/api/email/audience/count', { method: 'POST', body: { audience: sentAudience } })
       if (ok) setCount(data)
     }, 300)
     return () => clearTimeout(id)
-  }, [open, audience])
+  }, [open, sentAudience, audienceMode])
 
   const template = templates.find(t => String(t.id) === templateId)
   // Templates for this kind first, then the rest.
@@ -127,7 +151,7 @@ export default function ComposeEmailModal({ open, onClose, source, onSent }) {
     message: source ? undefined : message,
     language,
     subject: subject.trim() || undefined,
-    audience,
+    audience: sentAudience,
   })
 
   const validate = () => {
@@ -291,9 +315,19 @@ export default function ComposeEmailModal({ open, onClose, source, onSent }) {
             />
 
             <div className="space-y-3 pt-4" style={{ borderTop: '1px solid var(--adm-trace)' }}>
-              <p className="adm-label flex items-center gap-1.5" style={{ marginBottom: 0 }}>
-                <Users size={13} /> Audience
-              </p>
+              <div className="flex items-center justify-between gap-3">
+                <p className="adm-label flex items-center gap-1.5" style={{ marginBottom: 0 }}>
+                  <Users size={13} /> Audience
+                </p>
+                <FilterTabs options={AUDIENCE_MODES} value={audienceMode} onChange={setAudienceMode} label="Audience mode" />
+              </div>
+              {audienceMode === 'members' ? (
+                <MemberPicker
+                  members={members}
+                  selected={audience.memberIds}
+                  onChange={memberIds => setAudience(a => ({ ...a, memberIds }))}
+                />
+              ) : (<>
               <AudienceRow label="Status">
                 {(options?.statuses?.length ? options.statuses : MEMBER_STATUSES.map(s => ({ value: s.value }))).map(s => (
                   <Chip key={s.value} active={audience.statuses.includes(s.value)}
@@ -332,6 +366,7 @@ export default function ComposeEmailModal({ open, onClose, source, onSent }) {
                   ))}
                 </AudienceRow>
               )}
+              </>)}
               <p className="adm-data text-[12px]" style={{ color: 'var(--adm-silk-dim)' }}>
                 {count === null
                   ? 'Counting…'
@@ -360,6 +395,91 @@ function AudienceRow({ label, hint, children }) {
         {label}{hint && <span> — {hint}</span>}
       </p>
       <div className="flex flex-wrap gap-1.5">{children}</div>
+    </div>
+  )
+}
+
+/** Search members by name, email or code and pick exactly who gets the email. */
+function MemberPicker({ members, selected, onChange }) {
+  const [query, setQuery] = useState('')
+  const byId = useMemo(() => new Map((members || []).map(m => [m.id, m])), [members])
+
+  const matches = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    if (!members || !q) return []
+    return members
+      .filter(m => !selected.includes(m.id))
+      .filter(m => [m.name, m.email, m.code].some(v => String(v || '').toLowerCase().includes(q)))
+      .slice(0, 8)
+  }, [members, query, selected])
+
+  if (!members) return <p className="text-xs" style={{ color: 'var(--adm-silk-faint)' }}>Loading members…</p>
+
+  const add = id => { onChange([...selected, id]); setQuery('') }
+
+  return (
+    <div className="space-y-2">
+      <div className="relative">
+        <Search size={14} className="absolute top-1/2 -translate-y-1/2" style={{ insetInlineStart: 10, color: 'var(--adm-silk-faint)' }} />
+        <input
+          className="adm-input"
+          style={{ paddingInlineStart: 30 }}
+          value={query}
+          placeholder="Search by name, email or member code"
+          onChange={e => setQuery(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter' && matches[0]) { e.preventDefault(); add(matches[0].id) } }}
+        />
+        {!!matches.length && (
+          <ul
+            className="absolute z-10 mt-1 w-full rounded-lg overflow-hidden text-sm"
+            style={{ background: 'var(--adm-board)', border: '1px solid var(--adm-trace)', boxShadow: '0 8px 24px rgba(0,0,0,.18)' }}
+          >
+            {matches.map(m => (
+              <li key={m.id}>
+                <button
+                  type="button"
+                  onClick={() => add(m.id)}
+                  className="w-full text-start px-3 py-2 flex items-center justify-between gap-3 hover:bg-[var(--adm-board-sunk)]"
+                >
+                  <span className="min-w-0 truncate" style={{ color: 'var(--adm-silk)' }}>
+                    {m.name || m.email}
+                    <span className="ms-2 text-xs" style={{ color: 'var(--adm-silk-faint)' }}>{m.email}</span>
+                  </span>
+                  <span className="adm-data text-[11px] shrink-0" style={{ color: m.optedOut ? 'var(--adm-wait)' : 'var(--adm-silk-faint)' }}>
+                    {m.optedOut ? 'opted out' : m.code || statusLabel(m.status)}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+      {selected.length ? (
+        <div className="flex flex-wrap gap-1.5">
+          {selected.map(id => {
+            const m = byId.get(id)
+            return (
+              <span
+                key={id}
+                title={m?.email}
+                className="inline-flex items-center gap-1 text-[12px] font-semibold ps-2.5 pe-1 py-1 rounded-lg"
+                style={{ border: '1px solid var(--adm-signal-edge)', background: 'var(--adm-signal-wash)', color: 'var(--adm-signal)' }}
+              >
+                {m?.name || m?.email || `#${id}`}
+                <button type="button" aria-label={`Remove ${m?.name || 'member'}`} onClick={() => onChange(selected.filter(x => x !== id))}
+                  className="rounded p-0.5 hover:opacity-70">
+                  <X size={12} />
+                </button>
+              </span>
+            )
+          })}
+          <button type="button" onClick={() => onChange([])} className="text-[12px] px-2 py-1" style={{ color: 'var(--adm-silk-faint)' }}>
+            Clear all
+          </button>
+        </div>
+      ) : (
+        <p className="text-xs" style={{ color: 'var(--adm-silk-faint)' }}>No one picked yet. Members who opted out of email are skipped.</p>
+      )}
     </div>
   )
 }
