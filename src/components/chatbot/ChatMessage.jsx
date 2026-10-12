@@ -4,12 +4,55 @@ import { User, Copy, Check } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import AfaqMascot from "./AfaqMascot";
 
+// Profile URL for a bare @handle, keyed by the platform named on the same line.
+const HANDLE_URLS = {
+  instagram: (h) => `https://www.instagram.com/${h}/`,
+  tiktok: (h) => `https://www.tiktok.com/@${h}`,
+  youtube: (h) => `https://www.youtube.com/@${h}`,
+  github: (h) => `https://github.com/${h}`,
+  twitter: (h) => `https://x.com/${h}`,
+};
+
+// Existing Markdown links, <autolinks> and `code` are left as they are.
+const PROTECTED = /(\[[^\]]*\]\([^)]*\)|<[^>\s]+>|`[^`]*`)/;
+const URL_RE = /\bhttps?:\/\/[^\s<>()]+[^\s<>().,;:!?]/g;
+const EMAIL_RE = /\b[\w.+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}\b/g;
+const HANDLE_RE = /(^|[\s(:])@([A-Za-z0-9_.]*[A-Za-z0-9_])/g;
+// Public site pages the assistant points to, written bare like "/join".
+const PAGE_RE = /(^|[\s(:«"'])(\/(?:events|projects|join|contact|about|gallery|announcements|links|register)(?:\/[\w-]+)*)(?=$|[\s).,;:!?»"'])/g;
+const PLATFORM_RE = {
+  instagram: /instagram/i,
+  tiktok: /tik\s?tok/i,
+  youtube: /youtube/i,
+  github: /github/i,
+  twitter: /twitter|\bx\b/i,
+};
+
+function linkHandles(line) {
+  const platforms = Object.keys(HANDLE_URLS).filter((p) => PLATFORM_RE[p].test(line));
+  // Only link when the line names exactly one platform, so a handle is never
+  // pointed at the wrong site.
+  if (platforms.length !== 1) return line;
+  const toUrl = HANDLE_URLS[platforms[0]];
+  return line.replace(HANDLE_RE, (_, lead, h) => `${lead}[@${h}](${toUrl(h)})`);
+}
+
+// The assistant is told to send Markdown links, but some replies still carry a
+// bare URL, email, @handle or site path; make those clickable too.
 function autoLink(text) {
-  return text.replace(/\b(https?:\/\/[^\s<)>]+)/g, (match, offset, str) => {
-    const before = str[offset - 1];
-    if (before === "<" || before === "(" || before === "[") return match;
-    return `<${match}>`;
-  });
+  return text
+    .split(PROTECTED)
+    .map((part, i) => {
+      if (i % 2) return part;
+      return part
+        .replace(URL_RE, (url) => `<${url}>`)
+        .replace(EMAIL_RE, (email) => `[${email}](mailto:${email})`)
+        .replace(PAGE_RE, (_, lead, path) => `${lead}[${path}](${path})`)
+        .split("\n")
+        .map(linkHandles)
+        .join("\n");
+    })
+    .join("");
 }
 
 function formatTime() {
@@ -23,10 +66,10 @@ function formatTime() {
 const markdownComponents = {
   p: ({ children }) => <p className="mb-1 last:mb-0">{children}</p>,
   ul: ({ children }) => (
-    <ul className="list-disc list-inside space-y-0.5 my-1">{children}</ul>
+    <ul className="list-disc ps-4 space-y-0.5 my-1">{children}</ul>
   ),
   ol: ({ children }) => (
-    <ol className="list-decimal list-inside space-y-0.5 my-1">{children}</ol>
+    <ol className="list-decimal ps-4 space-y-0.5 my-1">{children}</ol>
   ),
   li: ({ children }) => <li>{children}</li>,
   strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
@@ -46,7 +89,7 @@ const markdownComponents = {
       {...(href.startsWith("/") && !href.startsWith("//")
         ? {}
         : { target: "_blank", rel: "noopener noreferrer" })}
-      style={{ color: "var(--color-accent)", wordBreak: "break-all" }}
+      style={{ color: "var(--color-accent)", overflowWrap: "anywhere" }}
       className="underline hover:opacity-80"
     >
       {children}
@@ -88,7 +131,7 @@ function ChatMessage({ role, content, streaming }) {
     <motion.div
       initial={streaming ? {} : { opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`flex gap-3 ${isUser ? "flex-row-reverse" : ""}`}
+      className={`flex gap-2 md:gap-3 ${isUser ? "flex-row-reverse" : ""}`}
     >
       <div
         className="flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center cursor-pointer"
@@ -103,19 +146,17 @@ function ChatMessage({ role, content, streaming }) {
       </div>
 
       <div
-        className={`flex flex-col max-w-[85%] md:max-w-[80%] group ${
+        className={`flex flex-col min-w-0 max-w-[calc(100%-2.75rem)] md:max-w-[80%] group ${
           isUser ? "items-end" : "items-start"
         }`}
       >
         <div
-          className="px-4 py-2.5 rounded-2xl text-sm leading-relaxed prose prose-sm max-w-none"
+          className="px-3 md:px-4 py-2.5 rounded-2xl text-sm leading-relaxed prose prose-sm max-w-none"
           style={{
             background: isUser ? "var(--color-accent)" : "var(--color-bg-alt)",
             color: isUser ? "#fff" : "var(--color-text)",
             borderRadius: isUser ? "16px 16px 4px 16px" : "16px 16px 16px 4px",
-            wordBreak: "break-word",
-            overflowWrap: "break-word",
-            hyphens: "auto",
+            overflowWrap: "anywhere",
           }}
         >
           {isUser ? (

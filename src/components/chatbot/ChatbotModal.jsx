@@ -309,7 +309,7 @@ export default function ChatbotModal({ open, onClose }) {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.93, y: 16 }}
             transition={{ type: "spring", stiffness: 380, damping: 30 }}
-            className="fixed z-[101] bottom-0 right-0 md:bottom-24 md:right-6 w-full md:w-96 max-h-[92dvh] md:max-h-[600px] md:h-[600px] flex flex-col rounded-t-2xl md:rounded-2xl overflow-hidden shadow-2xl border"
+            className="fixed z-[101] bottom-0 right-0 md:bottom-24 md:right-6 w-full md:w-96 h-[85dvh] max-h-[92dvh] md:max-h-[calc(100dvh-8rem)] md:h-[600px] flex flex-col rounded-t-2xl md:rounded-2xl overflow-hidden shadow-2xl border"
             style={{
               background: "var(--color-card)",
               borderColor: "var(--color-border-light)",
@@ -563,10 +563,12 @@ export default function ChatbotModal({ open, onClose }) {
 
             {/* ── Input ── */}
             <div
-              className="px-3 md:px-4 py-3 border-t flex-shrink-0"
+              className="px-3 md:px-4 pt-3 border-t flex-shrink-0"
               style={{
                 borderColor: "var(--color-border-light)",
                 background: "var(--color-card)",
+                // Clear the iPhone home indicator on the bottom sheet.
+                paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))",
               }}
             >
               <div className="flex items-end gap-2">
@@ -588,7 +590,7 @@ export default function ChatbotModal({ open, onClose }) {
                       ? "Tapez votre message…"
                       : "Type your message…"
                   }
-                  className="flex-1 resize-none px-3 md:px-4 py-2.5 rounded-xl border text-sm outline-none transition-colors"
+                  className="flex-1 min-w-0 resize-none px-3 md:px-4 py-2 md:py-2.5 rounded-xl border text-base md:text-sm outline-none transition-colors"
                   style={{
                     background: "var(--color-bg)",
                     borderColor: inputFocused
