@@ -15,7 +15,22 @@
   "card": {
     "technologies": "Technologies",
     "team": "Team",
-    "members": "members"
+    "members": "members",
+    "viewDetails": "View project",
+    "github": "Code on GitHub"
   },
-  "noProjects": "No projects found in this category."
+  "noProjects": "No projects found in this category.",
+  "detail": {
+    "back": "All projects",
+    "notFound": "Project not found",
+    "notFoundBody": "This project does not exist or is no longer published.",
+    "about": "About the project",
+    "builtWith": "Built with",
+    "category": "Category",
+    "added": "Added",
+    "links": "Links",
+    "viewCode": "View the code on GitHub",
+    "liveDemo": "Live demo",
+    "more": "More projects"
+  }
 }

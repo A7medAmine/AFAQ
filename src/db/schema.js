@@ -146,6 +146,10 @@ export const projects = pgTable('projects', {
   descriptionEn: text('description_en'),
   descriptionAr: text('description_ar'),
   descriptionFr: text('description_fr'),
+  // Long write-up for the project page, in Markdown.
+  contentEn: text('content_en'),
+  contentAr: text('content_ar'),
+  contentFr: text('content_fr'),
   category: text(),
   technologies: text().array(),
   githubUrl: text('github_url'),

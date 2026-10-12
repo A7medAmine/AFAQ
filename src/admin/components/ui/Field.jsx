@@ -119,7 +119,7 @@ export function CheckField({ label, description, checked, onChange, disabled }) 
  */
 export function LocalizedField({
   label, prefix, values, onChange, lang, onLangChange,
-  multiline = false, rows = 4, error, required, dir, ai = true,
+  multiline = false, rows = 4, error, hint, required, dir, ai = true,
 }) {
   const langs = ['en', 'ar', 'fr']
   const key = `${prefix}_${lang}`
@@ -227,6 +227,9 @@ export function LocalizedField({
         <p className="flex items-center gap-1.5 mt-1.5 text-xs" style={{ color: 'var(--adm-fault)' }}>
           <AlertCircle size={13} /> {error}
         </p>
+      )}
+      {!error && hint && (
+        <p className="mt-1.5 text-xs" style={{ color: 'var(--adm-silk-faint)' }}>{hint}</p>
       )}
     </div>
   )

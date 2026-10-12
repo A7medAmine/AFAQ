@@ -22,6 +22,7 @@ const CATEGORIES = ['Arduino', 'Robotics', 'IoT', 'Electronics', 'Embedded Syste
 const BLANK = {
   title_en: '', title_ar: '', title_fr: '',
   description_en: '', description_ar: '', description_fr: '',
+  content_en: '', content_ar: '', content_fr: '',
   category: '', technologies: [], github_url: '', demo_url: '', thumbnail_url: '', is_published: false,
 }
 
@@ -354,6 +355,7 @@ function ProjectEditor({ open, project, onClose, onSaved, addToast, createdBy })
     const payload = {
       title_en: form.title_en.trim(), title_ar: form.title_ar.trim() || null, title_fr: form.title_fr.trim() || null,
       description_en: form.description_en || null, description_ar: form.description_ar || null, description_fr: form.description_fr || null,
+      content_en: form.content_en || null, content_ar: form.content_ar || null, content_fr: form.content_fr || null,
       category: form.category || null,
       technologies: form.technologies,
       github_url: form.github_url.trim() || null,
@@ -398,6 +400,11 @@ function ProjectEditor({ open, project, onClose, onSaved, addToast, createdBy })
         />
         <LocalizedField
           label="Description" prefix="description" multiline rows={4}
+          values={form} onChange={set} lang={lang} onLangChange={setLang}
+        />
+        <LocalizedField
+          label="Project page" prefix="content" multiline rows={10}
+          hint="The full write-up on the project's own page. Markdown works: ## for a heading, - for a bullet, **bold**. Left empty, the page shows the description."
           values={form} onChange={set} lang={lang} onLangChange={setLang}
         />
 

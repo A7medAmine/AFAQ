@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
-import { FolderGit2, Search } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { ArrowRight, ArrowUpRight, FolderGit2 } from 'lucide-react'
 import Card from '../components/shared/Card'
 import SideImage from '../components/shared/SideImage'
+import { GitHubIcon } from '../components/shared/SocialIcons'
 import { supabase } from '../lib/supabase'
 import SEO from '../components/SEO'
 
@@ -103,45 +105,64 @@ export default function Projects() {
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.8 }}
                     transition={{ duration: 0.3, delay: i * 0.05 }}
+                    className="h-full"
                   >
-                    <Card>
-                      <div className="card-image-overlay relative group overflow-hidden" style={{ height: 200, background: 'var(--color-bg-alt)' }}>
+                    <Card className="group relative h-full flex flex-col">
+                      {/* Stretched link: the whole card opens the project, while the
+                          GitHub button sits above it and keeps its own target. */}
+                      <Link to={`/projects/${p.id}`} className="absolute inset-0 z-[1]" aria-label={`${t('card.viewDetails')}: ${tField(p, 'title')}`} />
+                      <div className="card-image-overlay relative overflow-hidden" style={{ height: 200, background: 'var(--color-bg-alt)' }}>
                         {p.thumbnail_url ? (
-                          <motion.img
+                          <img
                             src={p.thumbnail_url}
                             alt=""
-                            className="w-full h-full object-cover"
+                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
                             loading="lazy"
-                            whileHover={{ scale: 1.1 }}
-                            transition={{ duration: 0.3 }}
                           />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center text-xs" style={{ color: 'var(--color-text-muted)' }}>
                             <FolderGit2 size={32} />
                           </div>
                         )}
-                        <motion.div
-                          initial={{ opacity: 0 }}
-                          whileHover={{ opacity: 1 }}
-                          transition={{ duration: 0.2 }}
-                          className="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm"
-                        >
-                          <div className="text-center">
-                            <Search className="mx-auto mb-2 h-6 w-6 text-white/80" />
-                            <p className="text-sm font-medium text-white/90">{tField(p, 'title')}</p>
-                          </div>
-                        </motion.div>
-                        <div className="category-tag">{p.category}</div>
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                          <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-white">
+                            {t('card.viewDetails')}
+                            <ArrowUpRight size={16} className="rtl:-scale-x-100" />
+                          </span>
+                        </div>
+                        {p.category && <div className="category-tag">{p.category}</div>}
                       </div>
-                      <div className="p-7">
+                      <div className="p-7 flex flex-col flex-1">
                         <h3 className="font-bold text-lg mb-2 leading-snug">{tField(p, 'title')}</h3>
-                        <p className="text-sm mb-4 line-clamp-2 leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
+                        <p className="text-sm mb-4 line-clamp-3 leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
                           {tField(p, 'description')}
                         </p>
-                        <div className="flex flex-wrap gap-1.5">
-                          {(p.technologies || []).map(tch => (
+                        <div className="flex flex-wrap gap-1.5 mb-5">
+                          {(p.technologies || []).slice(0, 5).map(tch => (
                             <span key={tch} className="tech-tag">{tch}</span>
                           ))}
+                          {(p.technologies || []).length > 5 && (
+                            <span className="tech-tag">+{p.technologies.length - 5}</span>
+                          )}
+                        </div>
+                        <div className="mt-auto flex items-center justify-between gap-3">
+                          <span className="inline-flex items-center gap-1 text-sm font-semibold" style={{ color: 'var(--color-accent)' }}>
+                            {t('card.viewDetails')}
+                            <ArrowRight size={15} className="transition-transform group-hover:translate-x-1 rtl:-scale-x-100 rtl:group-hover:-translate-x-1" />
+                          </span>
+                          {p.github_url && (
+                            <a
+                              href={p.github_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="relative z-[2] inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold transition-opacity hover:opacity-85"
+                              style={{ background: 'var(--color-text)', color: 'var(--color-bg)' }}
+                              title={t('card.github')}
+                            >
+                              <GitHubIcon size={14} />
+                              GitHub
+                            </a>
+                          )}
                         </div>
                       </div>
                     </Card>
