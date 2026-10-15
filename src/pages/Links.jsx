@@ -13,6 +13,7 @@ import './links.css'
 export default function Links() {
   const { t, i18n } = useTranslation()
   const [state, setState] = useState({ loading: true, links: [], error: false })
+  const [joinOpen, setJoinOpen] = useState(false)
 
   useEffect(() => {
     document.title = 'AFAQ · Links'
@@ -26,6 +27,10 @@ export default function Links() {
       .then(({ data, error }) => {
         if (!cancelled) setState({ loading: false, links: data || [], error: !!error })
       })
+    fetch('/api/register/membership/status')
+      .then(r => (r.ok ? r.json() : null))
+      .then(intake => { if (!cancelled && intake && intake.open !== false) setJoinOpen(true) })
+      .catch(() => {})
     return () => { cancelled = true }
   }, [])
 
@@ -44,9 +49,11 @@ export default function Links() {
           <p className="lt-note">{t('links.empty')}</p>
         ) : (
           <>
-            <a className="lt-join" href="/join">
-              {t('links.join')} <ArrowRight size={20} aria-hidden="true" />
-            </a>
+            {joinOpen && (
+              <a className="lt-join" href="/join">
+                {t('links.join')} <ArrowRight size={20} aria-hidden="true" />
+              </a>
+            )}
             <ul className="lt-list">
             {state.links.map(link => (
               <li key={link.id}>

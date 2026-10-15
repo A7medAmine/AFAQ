@@ -31,6 +31,7 @@
     "eventClosed": "Les inscriptions à cet evenement sont fermees.",
     "eventNotFound": "Ce lien d'evenement n'est plus valide. Choisissez un evenement ci-dessous.",
     "noOpenEvents": "Aucun evenement n'est ouvert aux inscriptions pour le moment. Consultez la page des evenements.",
+    "followSocial": "Suivez-nous sur les reseaux sociaux",
     "duplicate": "Vous êtes dejà inscrit à cet evenement avec cette adresse email.",
     "successTitle": "Votre inscription est enregistree",
     "successBody": "Nous avons votre inscription à {{event}}. Dès qu'un administrateur la valide, votre pass arrive à {{email}}.",

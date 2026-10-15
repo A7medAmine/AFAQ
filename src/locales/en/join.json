@@ -22,6 +22,7 @@
     "duplicateApplication": "An application with this email or student ID has already been submitted.",
     "closedTitle": "Applications are closed",
     "closedBody": "We are not taking new membership applications right now. Follow the club for news about the next round.",
+    "followSocial": "Follow us on social media",
     "back": "Back",
     "next": "Next",
     "step": "Step {{current}} of {{total}}",

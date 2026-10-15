@@ -31,6 +31,7 @@
     "eventClosed": "Registration for this event has closed.",
     "eventNotFound": "That event link is no longer valid. Choose an event below.",
     "noOpenEvents": "No events are open for registration right now. Check the events page for what is coming up.",
+    "followSocial": "Follow us on social media",
     "duplicate": "You have already registered for this event with that email address.",
     "successTitle": "You are on the list",
     "successBody": "We have your registration for {{event}}. Once a club admin approves it, your entry pass arrives at {{email}}.",

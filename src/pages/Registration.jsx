@@ -383,13 +383,22 @@ export default function Registration() {
                     <p className="text-sm mb-4" style={{ color: 'var(--color-text-muted)' }}>
                       {t('form.noOpenEvents')}
                     </p>
-                    <Link
-                      to="/events"
-                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-[100px] font-semibold text-sm"
-                      style={{ border: '1.5px solid var(--color-border)', color: 'var(--color-text)' }}
-                    >
-                      <CalendarDays size={15} /> {t('hero.title')}
-                    </Link>
+                    <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                      <Link
+                        to="/events"
+                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-[100px] font-semibold text-sm"
+                        style={{ border: '1.5px solid var(--color-border)', color: 'var(--color-text)' }}
+                      >
+                        <CalendarDays size={15} /> {t('hero.title')}
+                      </Link>
+                      <Link
+                        to="/links"
+                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-[100px] font-semibold text-sm"
+                        style={{ background: 'var(--color-accent)', color: '#fff' }}
+                      >
+                        {t('form.followSocial')} <ArrowRight size={14} className="rtl:rotate-180" />
+                      </Link>
+                    </div>
                   </div>
                 ) : (
                   <SelectField

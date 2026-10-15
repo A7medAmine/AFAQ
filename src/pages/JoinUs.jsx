@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
+import { Link } from 'react-router-dom'
 import { Send, Check, User, BookOpen, Heart, ArrowLeft, ArrowRight, DoorClosed } from 'lucide-react'
 import SideImage from '../components/shared/SideImage'
 import ProgresButton from '../components/registration/ProgresButton'
@@ -45,12 +46,14 @@ export default function JoinUs() {
   // Admins can close join requests. If the check fails, show the form: the
   // server still refuses a submission while applications are closed.
   const [closed, setClosed] = useState(null) // null | { note }
+  const [checkingStatus, setCheckingStatus] = useState(true)
   useEffect(() => {
     let alive = true
     fetch('/api/register/membership/status')
       .then(r => (r.ok ? r.json() : null))
       .then(intake => { if (alive && intake && intake.open === false) setClosed({ note: intake.note }) })
       .catch(() => {})
+      .finally(() => { if (alive) setCheckingStatus(false) })
     return () => { alive = false }
   }, [])
   const [step, setStep] = useState(0)
@@ -241,7 +244,14 @@ export default function JoinUs() {
         <SideImage side="right" />
         <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="card-pro card-static p-8 md:p-10">
-            {closed && status !== 'success' ? (
+            {checkingStatus ? (
+              <div className="space-y-5 animate-pulse">
+                <div className="rounded-[100px] mx-auto" style={{ height: 54, maxWidth: 280, background: 'var(--color-bg-alt)' }} />
+                <div className="rounded-[100px]" style={{ height: 48, background: 'var(--color-bg-alt)' }} />
+                <div className="rounded-[100px]" style={{ height: 48, background: 'var(--color-bg-alt)' }} />
+                <div className="rounded-[100px]" style={{ height: 48, background: 'var(--color-bg-alt)' }} />
+              </div>
+            ) : closed && status !== 'success' ? (
               <div className="text-center py-6">
                 <div
                   className="inline-flex items-center justify-center mb-6"
@@ -258,6 +268,13 @@ export default function JoinUs() {
                     {closed.note}
                   </p>
                 )}
+                <Link
+                  to="/links"
+                  className="inline-flex items-center gap-2 mt-6 px-5 py-2.5 rounded-[100px] font-semibold text-sm"
+                  style={{ background: 'var(--color-accent)', color: '#fff' }}
+                >
+                  {t('form.followSocial')} <ArrowRight size={14} className="rtl:rotate-180" />
+                </Link>
               </div>
             ) : status === 'success' ? (
               <motion.div
