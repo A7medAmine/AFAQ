@@ -1,7 +1,7 @@
 import { Navigate } from 'react-router-dom'
 import { Lock } from 'lucide-react'
 import useAdminStore from '../../store/adminStore'
-import { hasPermission } from '../../lib/permissions'
+import { extraPermissions, hasPermission, isTopRole } from '../../lib/permissions'
 import Panel from '../ui/Panel'
 import EmptyState from '../ui/EmptyState'
 
@@ -14,11 +14,12 @@ import EmptyState from '../ui/EmptyState'
  */
 export default function RoleGuard({ permission, role, children }) {
   const currentRole = useAdminStore(s => s.role())
+  const headsDepartment = useAdminStore(s => s.headsDepartment())
 
   // `role` is the older API — a bare role name — kept working here.
   const allowed = permission
-    ? hasPermission(currentRole, permission)
-    : currentRole === role || currentRole === 'super_admin'
+    ? hasPermission(currentRole, permission) || extraPermissions({ headsDepartment }).includes(permission)
+    : currentRole === role || isTopRole(currentRole)
 
   if (!currentRole) return <Navigate to="/admin/login" replace />
 

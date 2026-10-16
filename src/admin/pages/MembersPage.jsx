@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
-  BadgeCheck, CalendarX, Crown, Eye, KeyRound, FileSpreadsheet, Shield, IdCard, ListChecks, Loader2, Pencil, Plus, Printer, Trash2, UserCheck, UserRoundPlus, Upload, Users, X,
+  BadgeCheck, Building2, CalendarX, Crown, Sparkles, Eye, KeyRound, FileSpreadsheet, Shield, IdCard, ListChecks, Loader2, Pencil, Plus, Printer, Trash2, UserCheck, UserRoundPlus, Upload, Users, X,
 } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { logActivity, run, read, supabase, uploadFile } from '../lib/db'
@@ -27,11 +27,12 @@ import ImportMembersModal from '../components/hr/ImportMembersModal'
 import RolesModal from '../components/hr/RolesModal'
 import GroupsModal from '../components/hr/GroupsModal'
 import AddToGroupModal from '../components/hr/AddToGroupModal'
+import AddToDepartmentModal from '../components/hr/AddToDepartmentModal'
 import AddAdminModal from '../components/AddAdminModal'
 
 const STATUS_FILTERS = [{ value: 'all', label: 'All' }, ...MEMBER_STATUSES]
 
-const MEMBER_SELECT = '*, member_positions(id, member_id, title, team, term_start, term_end, notes), member_group_members(group_id)'
+const MEMBER_SELECT = '*, member_positions(id, member_id, title, team, term_start, term_end, notes), member_group_members(group_id), member_departments(department_id, source)'
 
 export default function MembersPage() {
   const navigate = useNavigate()
@@ -46,12 +47,14 @@ export default function MembersPage() {
   const [makingAdmin, setMakingAdmin] = useState(null) // member
   const [customRoles, setCustomRoles] = useState([])
   const [groups, setGroups] = useState([])
+  const [departments, setDepartments] = useState([])
   const [state, setState] = useState({ loading: true, error: null })
   const [search] = useQueryParam('q')
   const [status, setStatus] = useQueryParam('status', 'all')
   const [team, setTeam] = useQueryParam('team', '')
   const [roleFilter, setRoleFilter] = useQueryParam('role', '')
   const [groupFilter, setGroupFilter] = useQueryParam('group', '')
+  const [departmentFilter, setDepartmentFilter] = useQueryParam('department', '')
 
   const [detailId, setDetailId] = useState(null)
   const [form, setForm] = useState(null) // { member } | { member: null } for add
@@ -62,19 +65,22 @@ export default function MembersPage() {
   const [rolesOpen, setRolesOpen] = useState(false)
   const [groupsOpen, setGroupsOpen] = useState(false)
   const [grouping, setGrouping] = useState(null) // { members, clear? }
+  const [placing, setPlacing] = useState(null) // { members, clear? } for a department
 
   const load = useCallback(async () => {
     setState(s => ({ ...s, error: null }))
-    const [{ ok, data, message }, roles, groupRows] = await Promise.all([
+    const [{ ok, data, message }, roles, groupRows, departmentRows] = await Promise.all([
       read(supabase.from('members').select(MEMBER_SELECT).order('created_at', { ascending: false })),
       read(supabase.from('member_roles').select('id, name, builtin_key').order('name')),
       read(supabase.from('member_groups').select('id, name').order('name')),
+      read(supabase.from('departments').select('id, name, color').order('sort_order')),
     ])
     if (!ok) { setState({ loading: false, error: message }); return }
     setRows(data || [])
     rememberRoleNames(roles.data || [])
     setCustomRoles(roles.data || [])
     setGroups(groupRows.data || [])
+    setDepartments(departmentRows.data || [])
     setState({ loading: false, error: null })
   }, [])
 
@@ -109,13 +115,26 @@ export default function MembersPage() {
     return counts
   }, [rows])
 
+  const departmentCounts = useMemo(() => {
+    const counts = { none: 0 }
+    rows.forEach(r => {
+      const ids = departmentIds(r)
+      if (!ids.length) counts.none += 1
+      ids.forEach(id => { counts[id] = (counts[id] || 0) + 1 })
+    })
+    return counts
+  }, [rows])
+
   const filtered = useMemo(() => rows.filter(r =>
     (!groupFilter || groupIds(r).includes(Number(groupFilter))) &&
+    (!departmentFilter || (departmentFilter === 'none'
+      ? departmentIds(r).length === 0
+      : departmentIds(r).includes(Number(departmentFilter)))) &&
     (status === 'all' || (r.status || 'active') === status) && (!team || r.team === team) &&
     (!roleFilter || (roleFilter === 'none'
       ? currentPositions(r).length === 0
       : currentPositions(r).some(p => p.title === roleFilter)))
-  ), [rows, status, team, roleFilter, groupFilter])
+  ), [rows, status, team, roleFilter, groupFilter, departmentFilter])
 
   const statusOptions = STATUS_FILTERS.map(f => ({
     ...f,
@@ -165,11 +184,12 @@ export default function MembersPage() {
   }
 
   const exportHeaders = [
-    'Member code', 'Name', 'Email', 'Phone', 'Student ID', 'Department', 'Study year', 'Team',
+    'Member code', 'Name', 'Email', 'Phone', 'Student ID', 'Field of study', 'Study year', 'Club departments',
     'Roles', 'Status', 'Card', 'Joined', 'Left',
   ]
   const exportRows = filtered.map(r => [
-    r.member_code, r.full_name, r.email, r.phone, r.student_id, r.department, r.study_year, r.team,
+    r.member_code, r.full_name, r.email, r.phone, r.student_id, r.department, r.study_year,
+    departmentIds(r).map(id => departments.find(d => d.id === id)?.name).filter(Boolean).join(', '),
     currentPositions(r).map(p => positionLabel(p.title)).join(', '),
     r.status, r.card_status, formatDate(r.joined_at), r.left_at ? formatDate(r.left_at) : '',
   ])
@@ -209,10 +229,17 @@ export default function MembersPage() {
         )
       },
     },
-    { header: 'Team', accessorKey: 'team', cell: ({ row }) => (
-      <span className="text-[13px]" style={{ color: 'var(--adm-silk-dim)' }}>{row.original.team || '—'}</span>
-    )},
-    { header: 'Department', accessorKey: 'department', cell: ({ row }) => (
+    {
+      header: 'Club departments',
+      id: 'departments',
+      accessorFn: r => departmentIds(r).map(id => departments.find(d => d.id === id)?.name).filter(Boolean).join(', '),
+      cell: ({ row }) => {
+        const list = departmentIds(row.original).map(id => departments.find(d => d.id === id)).filter(Boolean)
+        if (!list.length) return <span className="text-[13px]" style={{ color: 'var(--adm-silk-faint)' }}>—</span>
+        return <span className="flex flex-wrap gap-1">{list.map(d => <Badge key={d.id}>{d.name}</Badge>)}</span>
+      },
+    },
+    { header: 'Field of study', accessorKey: 'department', cell: ({ row }) => (
       <span className="text-[13px]" style={{ color: 'var(--adm-silk-dim)' }}>{row.original.department || '—'}</span>
     )},
     { header: 'Status', accessorKey: 'status', cell: ({ row }) => <StatusBadge status={row.original.status || 'active'} /> },
@@ -232,12 +259,13 @@ export default function MembersPage() {
             <IconButton icon={Eye} label="View details" onClick={() => setDetailId(m.id)} />
             <IconButton icon={Pencil} label="Edit" onClick={() => setForm({ member: m })} />
             <IconButton icon={Users} label="Add to group" onClick={() => setGrouping({ members: [m] })} />
+            <IconButton icon={Building2} label="Add to department" onClick={() => setPlacing({ members: [m] })} />
             <IconButton icon={Trash2} label="Remove member" danger onClick={() => setPendingDelete(m)} />
           </div>
         )
       },
     },
-  ], [])
+  ], [departments])
 
   return (
     <div>
@@ -296,6 +324,14 @@ export default function MembersPage() {
                 <option value="none">No role</option>
                 {roles.map(r => <option key={r.value} value={r.value}>{r.label}{holders[r.value] ? ` (${holders[r.value]})` : ''}</option>)}
               </select>
+              {departments.length > 0 && (
+                <select className="adm-input" style={{ width: 'auto', height: 40 }} value={departmentFilter}
+                  onChange={e => setDepartmentFilter(e.target.value)} aria-label="Department filter">
+                  <option value="">All departments</option>
+                  {departments.map(d => <option key={d.id} value={d.id}>{d.name} ({departmentCounts[d.id] || 0})</option>)}
+                  <option value="none">No department ({departmentCounts.none})</option>
+                </select>
+              )}
               {groups.length > 0 && (
                 <select className="adm-input" style={{ width: 'auto', height: 40 }} value={groupFilter}
                   onChange={e => setGroupFilter(e.target.value)} aria-label="Group filter">
@@ -324,6 +360,7 @@ export default function MembersPage() {
                 <Button size="sm" icon={UserCheck} onClick={() => setBulkStatus(true)}>Change status</Button>
               )}
               <Button size="sm" icon={Users} onClick={() => setGrouping({ members: selected, clear })}>Add to group</Button>
+              <Button size="sm" icon={Building2} onClick={() => setPlacing({ members: selected, clear })}>Add to department</Button>
             </>
           )}
           emptyState={
@@ -376,8 +413,8 @@ export default function MembersPage() {
               <DetailRow label="Phone" mono>{detail.phone || '—'}</DetailRow>
               <DetailRow label="Student ID" mono>{detail.student_id || '—'}</DetailRow>
               <DetailRow label="Study year">{detail.study_year || '—'}</DetailRow>
-              <DetailRow label="Department">{detail.department || '—'}</DetailRow>
-              <DetailRow label="Team">{detail.team || '—'}</DetailRow>
+              <DetailRow label="Field of study">{detail.department || '—'}</DetailRow>
+              {detail.team && <DetailRow label="Team">{detail.team}</DetailRow>}
               <DetailRow label="Joined">{formatDate(detail.joined_at || detail.created_at)}</DetailRow>
               {detail.left_at && <DetailRow label="Left">{formatDate(detail.left_at)}</DetailRow>}
               {detail.birth_date && <DetailRow label="Date of birth">{formatDate(detail.birth_date)}</DetailRow>}
@@ -398,6 +435,13 @@ export default function MembersPage() {
                 onMakeAdmin={() => setMakingAdmin(detail)}
               />
             )}
+
+            <DepartmentsSection
+              member={detail}
+              departments={departments}
+              onAdd={() => setPlacing({ members: [detail] })}
+              onChanged={load}
+            />
 
             <GroupsSection
               member={detail}
@@ -470,6 +514,14 @@ export default function MembersPage() {
         onSaved={() => { grouping?.clear?.(); load() }}
       />
 
+      <AddToDepartmentModal
+        open={!!placing}
+        members={placing?.members || []}
+        departments={departments}
+        onClose={() => setPlacing(null)}
+        onSaved={() => { placing?.clear?.(); load() }}
+      />
+
       <AddAdminModal
         open={!!makingAdmin}
         roles={adminRoles}
@@ -498,6 +550,10 @@ function currentPositions(member) {
 
 function groupIds(member) {
   return (member.member_group_members || []).map(g => g.group_id)
+}
+
+function departmentIds(member) {
+  return (member.member_departments || []).map(d => d.department_id)
 }
 
 function Avatar({ member, size }) {
@@ -579,6 +635,49 @@ function AccessSection({ account, onMakeAdmin }) {
         </div>
       ) : (
         <p className="text-sm" style={{ color: 'var(--adm-silk-faint)' }}>Cannot sign in to the console.</p>
+      )}
+    </div>
+  )
+}
+
+function DepartmentsSection({ member, departments, onAdd, onChanged }) {
+  const mine = (member.member_departments || [])
+    .map(link => ({ ...departments.find(d => d.id === link.department_id), source: link.source }))
+    .filter(d => d.id)
+
+  const leave = async d => {
+    const { ok } = await run(
+      supabase.from('member_departments').delete().eq('department_id', d.id).eq('member_id', member.id),
+      { success: `${member.full_name} removed from ${d.name}.`, failure: 'They were not removed from the department.' }
+    )
+    if (!ok) return
+    logActivity('updated', 'departments', d.id, { name: d.name, removed: member.full_name })
+    onChanged()
+  }
+
+  return (
+    <div>
+      <SectionHeading icon={Building2} title="Club departments"
+        action={<Button size="sm" variant="ghost" icon={Plus} onClick={onAdd}>Add to department</Button>} />
+      {mine.length === 0 ? (
+        <p className="text-sm" style={{ color: 'var(--adm-silk-faint)' }}>Not in any department.</p>
+      ) : (
+        <ul className="flex flex-wrap gap-1.5">
+          {mine.map(d => (
+            <li key={d.id} className="flex items-center gap-1 pl-3 pr-1 py-1 rounded-lg text-sm font-semibold"
+              style={{ background: 'var(--adm-board-sunk)' }}
+              title={d.source === 'interest' ? 'Joined through their interests' : 'Added by hand'}>
+              {d.name}
+              {d.source === 'interest' && <Sparkles size={11} style={{ color: 'var(--adm-silk-faint)' }} aria-hidden="true" />}
+              <IconButton icon={X} label={`Remove from ${d.name}`} size={13} onClick={() => leave(d)} />
+            </li>
+          ))}
+        </ul>
+      )}
+      {mine.some(d => d.source === 'interest') && (
+        <p className="text-[11px] mt-1.5" style={{ color: 'var(--adm-silk-faint)' }}>
+          Sparked departments come from their interests. Removing one sticks until their interests change.
+        </p>
       )}
     </div>
   )

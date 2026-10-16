@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { api } from '../lib/db'
+import useAdminStore from '../store/adminStore'
 import Modal from './ui/Modal'
 import Button from './ui/Button'
 import { SelectField, TextField } from './ui/Field'
@@ -12,7 +13,10 @@ import { SelectField, TextField } from './ui/Field'
  * @param roles   rows of admin_roles to pick from
  * @param member  { id, full_name, email } or null for a standalone admin
  */
-export default function AddAdminModal({ open, roles, member = null, onClose, onAdded, addToast }) {
+export default function AddAdminModal({ open, roles: allRoles, member = null, onClose, onAdded, addToast }) {
+  // Only the owner can make another owner.
+  const iAmOwner = useAdminStore(s => s.adminProfile?.role?.name === 'owner')
+  const roles = useMemo(() => allRoles.filter(r => r.name !== 'owner' || iAmOwner), [allRoles, iAmOwner])
   const [form, setForm] = useState({ full_name: '', email: '', password: '', role_id: '' })
   const [errors, setErrors] = useState({})
   const [saving, setSaving] = useState(false)

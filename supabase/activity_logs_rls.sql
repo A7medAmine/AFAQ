@@ -35,7 +35,7 @@ create policy "super admins read activity"
       join public.admin_roles on admin_roles.id = admin_users.role_id
       where admin_users.user_id = auth.uid()
         and admin_users.is_active
-        and admin_roles.name = 'super_admin'
+        and admin_roles.name in ('super_admin', 'owner')
     )
   );
 

@@ -259,6 +259,15 @@
   background: var(--adm-panel-hover);
 }
 
+/* A plain row link (shortcut lists) that lights up like the nav. */
+.adm-hover {
+  transition: background 0.15s ease;
+}
+
+.adm-hover:hover {
+  background: var(--adm-panel-hover);
+}
+
 .adm-channel:focus-visible {
   outline: 2px solid var(--adm-signal);
   outline-offset: -2px;

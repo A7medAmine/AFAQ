@@ -1,4 +1,5 @@
 export const ROLES = {
+  OWNER: 'owner',
   SUPER_ADMIN: 'super_admin',
   EVENT_MANAGER: 'event_manager',
   MEDIA_MANAGER: 'media_manager',
@@ -27,6 +28,9 @@ export const PERMISSIONS = {
     'tasks.manage',
     'finance.manage',
     'applications.review',
+    'hr.manage',
+    'points.manage',
+    'department.view',
   ],
   [ROLES.EVENT_MANAGER]: [
     'events.manage',
@@ -72,6 +76,9 @@ export const PERMISSION_OPTIONS = [
   { value: 'events.registrations.manage', label: 'Registrations', description: 'Event sign-ups and badges' },
   { value: 'applications.review', label: 'Review queue', description: 'Review membership applications' },
   { value: 'membership.manage', label: 'Members', description: 'Applications, members, cards and review teams' },
+  { value: 'hr.manage', label: 'HR', description: 'Departments, their heads and the HR overview' },
+  { value: 'points.manage', label: 'Points', description: 'Give, take away and reset member points' },
+  { value: 'department.view', label: 'My department', description: 'Members and points of the departments they head' },
   { value: 'messages.view', label: 'Messages', description: 'Read contact messages' },
   { value: 'tasks.manage', label: 'Tasks', description: 'Assign tasks to members' },
   { value: 'inventory.manage', label: 'Inventory', description: 'Inventory, shelves and borrowing' },
@@ -110,9 +117,12 @@ export function permissionsOf(role) {
   return stored.get(name) || PERMISSIONS[name] || []
 }
 
+/** The owner and super admins pass every permission check. */
+export const isTopRole = role => role === ROLES.OWNER || role === ROLES.SUPER_ADMIN
+
 export function hasPermission(userRole, permission) {
   if (!userRole) return false
-  if (userRole === ROLES.SUPER_ADMIN) return true
+  if (isTopRole(userRole)) return true
   return permissionsOf(userRole).includes(permission)
 }
 
@@ -130,6 +140,9 @@ export const NAV_ITEMS = [
   { label: 'Events', path: '/admin/events', icon: 'Calendar', group: 'events', permission: 'events.manage' },
   { label: 'Registrations', path: '/admin/registrations', icon: 'ClipboardCheck', group: 'events', permission: 'events.registrations.manage' },
 
+  { label: 'My department', path: '/admin/department', icon: 'Building2', group: 'people', permission: 'department.view' },
+  { label: 'HR', path: '/admin/hr', icon: 'HeartHandshake', group: 'people', permission: 'hr.manage' },
+  { label: 'Points', path: '/admin/points', icon: 'Trophy', group: 'people', permission: 'points.manage' },
   { label: 'Review queue', path: '/admin/review', icon: 'Inbox', group: 'people', permission: 'applications.review' },
   { label: 'Applications', path: '/admin/applications', icon: 'UserCheck', group: 'people', permission: 'membership.manage' },
   { label: 'Members', path: '/admin/members', icon: 'IdCard', group: 'people', permission: 'membership.manage' },
@@ -168,8 +181,13 @@ export const NAV_GROUPS = [
   { id: 'console', label: 'Console' },
 ]
 
-export function navItemsFor(role) {
-  return NAV_ITEMS.filter(item => !item.permission || hasPermission(role, item.permission))
+/** Permissions an admin holds through what they do rather than their role. */
+export function extraPermissions({ headsDepartment } = {}) {
+  return headsDepartment ? ['department.view'] : []
+}
+
+export function navItemsFor(role, extra = []) {
+  return NAV_ITEMS.filter(item => !item.permission || hasPermission(role, item.permission) || extra.includes(item.permission))
 }
 
 /** Longest matching nav path wins, so /admin never shadows /admin/events. */

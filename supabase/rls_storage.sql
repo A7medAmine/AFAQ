@@ -40,7 +40,7 @@ BEGIN
     JOIN admin_roles r ON r.id = au.role_id
     WHERE au.user_id = auth.uid()
       AND au.is_active = true
-      AND (r.name = required_role OR r.name = 'super_admin')
+      AND (r.name = required_role OR r.name IN ('super_admin', 'owner'))
   );
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
@@ -53,7 +53,7 @@ BEGIN
     JOIN admin_roles r ON r.id = au.role_id
     WHERE au.user_id = auth.uid()
       AND au.is_active = true
-      AND r.name = 'super_admin'
+      AND r.name IN ('super_admin', 'owner')
   );
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
@@ -218,14 +218,7 @@ ON storage.objects FOR SELECT USING (bucket_id = 'gallery');
 DROP POLICY IF EXISTS "admin_all_gallery_storage" ON storage.objects;
 CREATE POLICY "admin_all_gallery_storage"
 ON storage.objects FOR ALL USING (
-  bucket_id = 'gallery'
-  AND EXISTS (
-    SELECT 1 FROM admin_users
-    JOIN admin_roles ON admin_roles.id = admin_users.role_id
-    WHERE admin_users.user_id = auth.uid()
-      AND admin_users.is_active = true
-      AND (admin_roles.name = 'media_manager' OR admin_roles.name = 'super_admin')
-  )
+  bucket_id = 'gallery' AND public.has_role('media_manager')
 );
 
 DROP POLICY IF EXISTS "admin_all_events_storage" ON storage.objects;

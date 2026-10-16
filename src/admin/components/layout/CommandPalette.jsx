@@ -2,15 +2,15 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
-  ArrowLeftRight, Boxes, Crown, ListChecks, Brain, Calendar, CircuitBoard, ClipboardCheck, ClipboardList, CornerDownLeft, Gauge, IdCard, Images, Inbox,
+  ArrowLeftRight, Boxes, Building2, HeartHandshake, Trophy, Crown, ListChecks, Brain, Calendar, CircuitBoard, ClipboardCheck, ClipboardList, CornerDownLeft, Gauge, IdCard, Images, Inbox,
   Link2, Loader2, Mail, Megaphone, Network, QrCode, ScrollText, Search, Send, Shield, SlidersHorizontal, UserCheck, Vote, Wallet,
 } from 'lucide-react'
 import useAdminStore from '../../store/adminStore'
-import { hasPermission, navItemsFor } from '../../lib/permissions'
+import { hasPermission, navItemsFor, extraPermissions } from '../../lib/permissions'
 import { supabase } from '../../lib/db'
 
 const ICONS = {
-  Gauge, Calendar, ClipboardCheck, UserCheck, IdCard, Mail,
+  Gauge, Calendar, ClipboardCheck, UserCheck, IdCard, Mail, Building2, HeartHandshake, Trophy,
   CircuitBoard, Images, Megaphone, Boxes, ArrowLeftRight, Crown, ListChecks, Shield, Brain, ScrollText, SlidersHorizontal, Wallet, Send, Inbox, Network, Link2, QrCode, ClipboardList, Vote,
 }
 
@@ -72,6 +72,7 @@ export default function CommandPalette() {
   const open = useAdminStore(s => s.paletteOpen)
   const setOpen = useAdminStore(s => s.setPalette)
   const role = useAdminStore(s => s.role())
+  const headsDepartment = useAdminStore(s => s.headsDepartment())
   const navigate = useNavigate()
 
   const [query, setQuery] = useState('')
@@ -82,7 +83,7 @@ export default function CommandPalette() {
 
   const destinations = useMemo(() => {
     const term = query.trim().toLowerCase()
-    return navItemsFor(role)
+    return navItemsFor(role, extraPermissions({ headsDepartment }))
       .filter(item => !term || item.label.toLowerCase().includes(term))
       .map(item => ({
         key: `nav:${item.path}`,
@@ -93,7 +94,7 @@ export default function CommandPalette() {
         subtitle: null,
         to: item.path,
       }))
-  }, [query, role])
+  }, [query, role, headsDepartment])
 
   // Global shortcut. Registered once, works from anywhere in the console.
   useEffect(() => {

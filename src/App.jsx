@@ -26,6 +26,9 @@ const NotFound = lazy(() => import('./pages/NotFound'))
 const Login = lazy(() => import('./admin/pages/Login'))
 const ResetPassword = lazy(() => import('./admin/pages/ResetPassword'))
 const Dashboard = lazy(() => import('./admin/pages/Dashboard'))
+const HRPage = lazy(() => import('./admin/pages/HRPage'))
+const PointsPage = lazy(() => import('./admin/pages/PointsPage'))
+const DepartmentPage = lazy(() => import('./admin/pages/DepartmentPage'))
 const EventsPage = lazy(() => import('./admin/pages/EventsPage'))
 const RegistrationsPage = lazy(() => import('./admin/pages/RegistrationsPage'))
 const ApplicationsPage = lazy(() => import('./admin/pages/ApplicationsPage'))
@@ -131,6 +134,15 @@ export default function App() {
             } />
             <Route path="registrations/badges" element={
               <RoleGuard permission="events.registrations.manage"><BadgePrintPage source="registrations" /></RoleGuard>
+            } />
+            <Route path="hr" element={
+              <RoleGuard permission="hr.manage"><HRPage /></RoleGuard>
+            } />
+            <Route path="points" element={
+              <RoleGuard permission="points.manage"><PointsPage /></RoleGuard>
+            } />
+            <Route path="department" element={
+              <RoleGuard permission="department.view"><DepartmentPage /></RoleGuard>
             } />
             <Route path="review" element={
               <RoleGuard permission="applications.review"><ReviewPage /></RoleGuard>

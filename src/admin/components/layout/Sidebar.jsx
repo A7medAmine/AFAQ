@@ -1,14 +1,14 @@
 import { NavLink, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
-  ArrowLeftRight, Boxes, ChevronDown, Crown, ListChecks, Brain, Calendar, CircuitBoard, ClipboardCheck, ClipboardList, Gauge, IdCard, Images, Inbox, Link2, Mail, Megaphone, Network, QrCode,
+  ArrowLeftRight, Boxes, Building2, HeartHandshake, Trophy, ChevronDown, Crown, ListChecks, Brain, Calendar, CircuitBoard, ClipboardCheck, ClipboardList, Gauge, IdCard, Images, Inbox, Link2, Mail, Megaphone, Network, QrCode,
   PanelLeftClose, PanelLeftOpen, ScrollText, Send, Shield, SlidersHorizontal, UserCheck, Vote, Wallet, X,
 } from 'lucide-react'
 import useAdminStore from '../../store/adminStore'
-import { NAV_GROUPS, navItemForPath, navItemsFor } from '../../lib/permissions'
+import { NAV_GROUPS, navItemForPath, navItemsFor, extraPermissions } from '../../lib/permissions'
 
 const ICONS = {
-  Gauge, Calendar, ClipboardCheck, UserCheck, IdCard, Mail,
+  Gauge, Calendar, ClipboardCheck, UserCheck, IdCard, Mail, Building2, HeartHandshake, Trophy,
   CircuitBoard, Images, Megaphone, Boxes, ArrowLeftRight, Crown, ListChecks,
   Shield, Brain, ScrollText, SlidersHorizontal, Wallet, Send, Inbox, Network, Link2, QrCode, ClipboardList, Vote,
 }
@@ -69,11 +69,12 @@ function Badge({ count }) {
 
 function NavList({ expanded, onNavigate }) {
   const role = useAdminStore(s => s.role())
+  const headsDepartment = useAdminStore(s => s.headsDepartment())
   const counts = useAdminStore(s => s.counts)
   const closedGroups = useAdminStore(s => s.closedNavGroups)
   const toggleGroup = useAdminStore(s => s.toggleNavGroup)
   const { pathname } = useLocation()
-  const items = navItemsFor(role)
+  const items = navItemsFor(role, extraPermissions({ headsDepartment }))
   // The band holding the current screen never folds away under you.
   const activeGroup = navItemForPath(pathname)?.group
   const badgeFor = item => counts[BADGE_KEY[item.path]] || 0

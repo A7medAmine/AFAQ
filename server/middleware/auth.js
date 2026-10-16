@@ -23,7 +23,10 @@ export const requireAuth = async (req, res, next) => {
   next()
 }
 
-/** Must run after requireAuth. A super admin passes every role check. */
+/** Roles that pass every role and permission check. */
+export const TOP_ROLES = ['owner', 'super_admin']
+
+/** Must run after requireAuth. The owner and super admins pass every role check. */
 export const requireRole =
   (...roles) =>
   async (req, res, next) => {
@@ -36,7 +39,7 @@ export const requireRole =
     if (!admin?.is_active) return res.status(403).json({ error: 'Forbidden' })
 
     const userRole = admin.role?.name
-    if (userRole !== 'super_admin' && !roles.includes(userRole)) {
+    if (!TOP_ROLES.includes(userRole) && !roles.includes(userRole)) {
       return res.status(403).json({ error: 'Forbidden' })
     }
 
@@ -62,7 +65,7 @@ export const requirePermission =
 
     const role = admin.role
     const saved = Array.isArray(role?.permissions) ? role.permissions : null
-    const allowed = role?.name === 'super_admin' || (saved ? saved.includes(permission) : roles.includes(role?.name))
+    const allowed = TOP_ROLES.includes(role?.name) || (saved ? saved.includes(permission) : roles.includes(role?.name))
     if (!allowed) return res.status(403).json({ error: 'Forbidden' })
 
     req.adminProfile = admin

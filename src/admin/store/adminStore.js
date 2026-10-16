@@ -1,8 +1,9 @@
 import { create } from 'zustand'
 import { supabase } from '../../lib/supabase'
-import { registerRolePermissions } from '../lib/permissions'
+import { isTopRole, registerRolePermissions } from '../lib/permissions'
 
-const PROFILE_SELECT = '*, role:admin_roles(name, label, description, permissions)'
+// heads: the departments this admin heads, which opens their department dashboard whatever their role.
+const PROFILE_SELECT = '*, role:admin_roles(name, label, description, permissions), heads:department_managers(department_id)'
 
 const readStored = (key, fallback) => {
   try {
@@ -137,10 +138,12 @@ const store = (set, get) => ({
 
   // ── Roles ───────────────────────────────────────────────────────────────
   role: () => get().adminProfile?.role?.name || null,
-  isSuperAdmin: () => get().adminProfile?.role?.name === 'super_admin',
+  isSuperAdmin: () => isTopRole(get().adminProfile?.role?.name),
+  isOwner: () => get().adminProfile?.role?.name === 'owner',
+  headsDepartment: () => (get().adminProfile?.heads?.length || 0) > 0,
   hasRole: role => {
     const current = get().adminProfile?.role?.name
-    return current === role || current === 'super_admin'
+    return current === role || isTopRole(current)
   },
 
   // ── UI ──────────────────────────────────────────────────────────────────

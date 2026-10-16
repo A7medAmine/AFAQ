@@ -551,14 +551,16 @@ export const reviewSettings = pgTable('review_settings', {
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
 })
 
-// Club departments (Tech, Media, Logistics…) that needs are grouped under.
-// Edited in the console; not the same thing as members.department, which is
-// the member's field of study.
+// Club departments (Tech, Media, Logistics…) that members work in and needs
+// are grouped under. Edited in the console; not the same thing as
+// members.department, which is the member's field of study.
 export const departments = pgTable('departments', {
   id: bigint({ mode: 'number' }).primaryKey().generatedAlwaysAsIdentity(),
   name: text().notNull().unique(),
   color: text(),
   description: text(),
+  // Interest keys (interests.key) that put a member in this department.
+  interests: text().array().notNull().default([]),
   sortOrder: integer('sort_order').notNull().default(0),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
 })
@@ -691,3 +693,49 @@ export const pollAnswers = pgTable('poll_answers', {
   numberValue: integer('number_value'),
   textValue: text('text_value'),
 }, t => [index('poll_answers_poll_id_idx').on(t.pollId)])
+
+// Which club departments a member works in. A member can be in several.
+// `source` 'interest' rows come from departments.interests matching the
+// member's interests (the members_assign_departments trigger); 'manual' rows
+// were added in the console and are never touched by the trigger.
+export const memberDepartments = pgTable('member_departments', {
+  memberId: bigint('member_id', { mode: 'number' }).notNull().references(() => members.id, { onDelete: 'cascade' }),
+  departmentId: bigint('department_id', { mode: 'number' }).notNull().references(() => departments.id, { onDelete: 'cascade' }),
+  source: text().notNull().default('manual'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+}, t => [
+  primaryKey({ columns: [t.memberId, t.departmentId] }),
+  index('member_departments_department_idx').on(t.departmentId),
+])
+
+// The admins responsible for a department. They see its members and their
+// points on the department dashboard. An admin can head several departments.
+export const departmentManagers = pgTable('department_managers', {
+  departmentId: bigint('department_id', { mode: 'number' }).notNull().references(() => departments.id, { onDelete: 'cascade' }),
+  adminUserId: bigint('admin_user_id', { mode: 'number' }).notNull().references(() => adminUsers.id, { onDelete: 'cascade' }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+}, t => [primaryKey({ columns: [t.departmentId, t.adminUserId] })])
+
+// Append-only points ledger. A member's balance is the sum of their rows, so
+// every point keeps who gave it and why. Penalties are negative rows; a reset
+// writes one row per member cancelling their balance (category 'reset').
+export const pointEntries = pgTable('point_entries', {
+  id: bigint({ mode: 'number' }).primaryKey().generatedAlwaysAsIdentity(),
+  memberId: bigint('member_id', { mode: 'number' }).notNull().references(() => members.id, { onDelete: 'cascade' }),
+  points: integer().notNull(),
+  reason: text().notNull(),
+  category: text().notNull().default('other'),
+  taskId: bigint('task_id', { mode: 'number' }).references(() => memberTasks.id, { onDelete: 'set null' }),
+  eventId: bigint('event_id', { mode: 'number' }).references(() => events.id, { onDelete: 'set null' }),
+  // Null when a rule gave the points automatically.
+  awardedBy: uuid('awarded_by'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+}, t => [index('point_entries_member_idx').on(t.memberId)])
+
+// Single-row settings for automatic points.
+export const pointSettings = pgTable('point_settings', {
+  id: integer().primaryKey().default(1),
+  autoEnabled: boolean('auto_enabled').notNull().default(true),
+  taskDonePoints: integer('task_done_points').notNull().default(10),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+})

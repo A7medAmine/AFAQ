@@ -36,7 +36,7 @@ publicReviewRoutes.get('/', async (req, res) => {
 
 const router = Router()
 
-const MANAGER_ROLES = ['super_admin', 'event_manager']
+const MANAGER_ROLES = ['owner', 'super_admin', 'event_manager']
 
 const fail = (res, err, fallback) => {
   if (err instanceof HttpError) return res.status(err.status).json({ error: err.message })
@@ -48,7 +48,7 @@ const fail = (res, err, fallback) => {
 router.use(requireAuth, async (req, res, next) => {
   try {
     const { data: admin, error } = await supabaseAdmin
-      .from('admin_users').select('*, role:admin_roles(name)').eq('user_id', req.user.id).maybeSingle()
+      .from('admin_users').select('*, role:admin_roles(name, permissions)').eq('user_id', req.user.id).maybeSingle()
     if (error) throw error
     if (!admin?.is_active) return res.status(403).json({ error: 'Forbidden' })
     const { data: teams, error: teamErr } = await supabaseAdmin
@@ -58,7 +58,8 @@ router.use(requireAuth, async (req, res, next) => {
       id: admin.id,
       userId: admin.user_id,
       name: admin.full_name || admin.email,
-      isManager: MANAGER_ROLES.includes(admin.role?.name),
+      // Built-in managers, or a console-made role (HR) that manages membership.
+      isManager: MANAGER_ROLES.includes(admin.role?.name) || !!admin.role?.permissions?.includes('membership.manage'),
       teamIds: teams.map(t => t.team_id),
       available: admin.review_available,
       capacity: admin.review_capacity,

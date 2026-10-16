@@ -18,6 +18,7 @@ import eventsRoutes from './server/routes/events.js'
 import needsRoutes from './server/routes/needs.js'
 import pollsRoutes, { pollPreviewHtml } from './server/routes/polls.js'
 import { sendEmail } from './server/services/mailer.js'
+import { TOP_ROLES } from './server/middleware/auth.js'
 import { undeliverableEmailError } from './server/services/emailCheck.js'
 import { approveApplication, getIntake, HttpError, sendApplicationReceived } from './server/services/membership.js'
 import reviewRoutes, { publicReviewRoutes } from './server/routes/review.js'
@@ -88,7 +89,7 @@ const requireRole =
       .single();
     if (!admin?.is_active) return res.status(403).json({ error: "Forbidden" });
     const userRole = admin.role?.name;
-    if (!roles.includes(userRole) && userRole !== "super_admin")
+    if (!roles.includes(userRole) && !TOP_ROLES.includes(userRole))
       return res.status(403).json({ error: "Forbidden" });
     req.adminProfile = admin;
     next();
@@ -311,6 +312,15 @@ app.post(
       return res
         .status(400)
         .json({ error: "Password must be at least 8 characters" });
+    // Only the owner can make another owner.
+    const { data: newRole } = await supabaseAdmin
+      .from("admin_roles")
+      .select("name")
+      .eq("id", role_id)
+      .maybeSingle();
+    if (!newRole) return res.status(400).json({ error: "Pick a role." });
+    if (newRole.name === "owner" && req.adminProfile.role?.name !== "owner")
+      return res.status(403).json({ error: "Only the owner can add an owner." });
     // Making a member an admin: their member record is the source of truth for
     // name and email, and a member gets at most one console account.
     if (member_id) {
@@ -372,9 +382,12 @@ app.delete(
     const { id } = req.params;
     const { data: admin } = await supabaseAdmin
       .from("admin_users")
-      .select("user_id")
+      .select("user_id, role:admin_roles(name)")
       .eq("id", id)
       .single();
+    // The owner account is removed only by the owner.
+    if (admin?.role?.name === "owner" && req.adminProfile.role?.name !== "owner")
+      return res.status(403).json({ error: "Only the owner can remove the owner account." });
     if (admin) {
       await supabaseAdmin.auth.admin.deleteUser(admin.user_id);
       await supabaseAdmin.from("admin_users").delete().eq("id", id);

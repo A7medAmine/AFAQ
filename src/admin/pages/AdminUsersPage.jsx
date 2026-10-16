@@ -14,11 +14,12 @@ import Badge, { StatusBadge } from '../components/ui/Badge'
 import Panel from '../components/ui/Panel'
 import AddAdminModal from '../components/AddAdminModal'
 import { CheckField, TextField } from '../components/ui/Field'
-import { PERMISSIONS, PERMISSION_OPTIONS, permissionsOf } from '../lib/permissions'
+import { PERMISSIONS, PERMISSION_OPTIONS, isTopRole, permissionsOf } from '../lib/permissions'
 
 export default function AdminUsersPage() {
   const addToast = useAdminStore(s => s.addToast)
   const me = useAdminStore(s => s.adminProfile)
+  const iAmOwner = me?.role?.name === 'owner'
 
   const [admins, setAdmins] = useState([])
   const [roles, setRoles] = useState([])
@@ -136,8 +137,11 @@ export default function AdminUsersPage() {
       accessorFn: row => row.role?.label || '',
       cell: ({ row }) => {
         const a = row.original
-        // Changing your own role could lock you out of this screen.
-        if (a.user_id === me?.user_id) return <Badge tone="signal">{a.role?.label || 'No role'}</Badge>
+        // Changing your own role could lock you out of this screen, and only
+        // the owner changes the owner account.
+        if (a.user_id === me?.user_id || (a.role?.name === 'owner' && !iAmOwner)) {
+          return <Badge tone="signal">{a.role?.label || 'No role'}</Badge>
+        }
         return (
           <select
             className="adm-input adm-cell-select"
@@ -148,7 +152,7 @@ export default function AdminUsersPage() {
             onChange={e => changeRole(a, e.target.value)}
           >
             {!a.role_id && <option value="">No role</option>}
-            {roles.map(r => <option key={r.id} value={r.id}>{r.label}</option>)}
+            {roles.filter(r => r.name !== 'owner' || iAmOwner).map(r => <option key={r.id} value={r.id}>{r.label}</option>)}
           </select>
         )
       },
@@ -170,28 +174,29 @@ export default function AdminUsersPage() {
       cell: ({ row }) => {
         const a = row.original
         const isMe = a.user_id === me?.user_id
+        const locked = isMe || (a.role?.name === 'owner' && !iAmOwner)
         return (
           <div className="flex items-center justify-end gap-0.5">
             {working[a.id] && <Loader2 size={14} className="adm-spin mr-1" style={{ color: 'var(--adm-silk-faint)' }} />}
             {/* Locking yourself out of the console is not a recoverable mistake. */}
             <IconButton
               icon={a.is_active ? ShieldOff : Shield}
-              label={isMe ? 'You cannot change your own access' : a.is_active ? 'Suspend access' : 'Restore access'}
-              disabled={isMe || working[a.id]}
+              label={isMe ? 'You cannot change your own access' : locked ? 'Only the owner can change this account' : a.is_active ? 'Suspend access' : 'Restore access'}
+              disabled={locked || working[a.id]}
               onClick={() => toggleActive(a)}
             />
             <IconButton
               icon={Trash2}
-              label={isMe ? 'You cannot delete your own account' : 'Delete admin'}
+              label={isMe ? 'You cannot delete your own account' : locked ? 'Only the owner can remove this account' : 'Delete admin'}
               danger
-              disabled={isMe}
+              disabled={locked}
               onClick={() => setPendingDelete(a)}
             />
           </div>
         )
       },
     },
-  ], [me, working, roles]) // eslint-disable-line react-hooks/exhaustive-deps
+  ], [me, iAmOwner, working, roles]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div>
@@ -248,7 +253,7 @@ export default function AdminUsersPage() {
         </div>
         <ul>
           {roles.map(role => {
-            const isSuper = role.name === 'super_admin'
+            const isSuper = isTopRole(role.name)
             const granted = PERMISSION_OPTIONS.filter(p => permissionsOf(role).includes(p.value))
             const inUse = admins.filter(a => a.role_id === role.id).length
             return (
