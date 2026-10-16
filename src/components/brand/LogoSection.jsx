@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Copy, Download as DownloadIcon } from 'lucide-react'
 import { COLORS, LOGO_EXTRAS, LOGO_PNG, LOGO_SVG, LOGO_VARIANTS, PNG_SIZES } from '../../data/brand'
 import { Download, useCopy } from './copy'
+import ColorPicker from './ColorPicker'
 
 // One fetch of the mark; every recolour is a string swap on its fill.
 let svgPromise
@@ -64,6 +65,35 @@ function LogoCard({ variant }) {
 
 const SWATCHES = [...COLORS.map(c => c.hex), '#FFFFFF', '#000000']
 
+// Brand swatches plus a custom chip that opens the full picker underneath.
+function Chips({ value, onChange, allowNone }) {
+  const { t } = useTranslation('brand')
+  const [open, setOpen] = useState(false)
+  const custom = value && !SWATCHES.includes(value)
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex flex-wrap gap-2 items-center">
+        {allowNone && (
+          <button type="button" aria-pressed={value === null} onClick={() => onChange(null)} className="bk-chip bk-checker" title={t('logo.transparent')} />
+        )}
+        {SWATCHES.map(h => (
+          <button key={h} type="button" aria-pressed={value === h} onClick={() => onChange(h)} className="bk-chip" style={{ background: h }} title={h} />
+        ))}
+        <button
+          type="button"
+          className="bk-chip"
+          aria-pressed={custom || open}
+          aria-expanded={open}
+          title={t('logo.picker.custom')}
+          onClick={() => setOpen(o => !o)}
+          style={{ background: custom ? value : 'conic-gradient(red, yellow, lime, cyan, blue, magenta, red)' }}
+        />
+      </div>
+      {open && <ColorPicker value={value} onChange={onChange} />}
+    </div>
+  )
+}
+
 function CustomExport() {
   const { t } = useTranslation('brand')
   const copy = useCopy()
@@ -93,20 +123,6 @@ function CustomExport() {
     }
     img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(coloured)
   }
-
-  const Chips = ({ value, onChange, allowNone }) => (
-    <div className="flex flex-wrap gap-2 items-center">
-      {allowNone && (
-        <button type="button" aria-pressed={value === null} onClick={() => onChange(null)} className="bk-chip bk-checker" title={t('logo.transparent')} />
-      )}
-      {SWATCHES.map(h => (
-        <button key={h} type="button" aria-pressed={value === h} onClick={() => onChange(h)} className="bk-chip" style={{ background: h }} title={h} />
-      ))}
-      <label className="bk-chip overflow-hidden relative" title="Custom" style={{ background: 'conic-gradient(red, yellow, lime, cyan, blue, magenta, red)' }}>
-        <input type="color" value={value || '#ffffff'} onChange={e => onChange(e.target.value.toUpperCase())} className="absolute inset-0 opacity-0 cursor-pointer" />
-      </label>
-    </div>
-  )
 
   return (
     <div className="bk-card p-5 md:p-7 grid md:grid-cols-[1fr_1.1fr] gap-7 items-center">

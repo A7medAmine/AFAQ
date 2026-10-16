@@ -53,6 +53,15 @@
       "dont1": "Don't stretch, rotate or skew the mark.",
       "dont2": "Don't add shadows, outlines or gradients.",
       "dont3": "Don't recolour it outside the brand palette."
+    },
+    "picker": {
+      "custom": "Custom colour",
+      "sv": "Saturation and brightness",
+      "hue": "Hue",
+      "input": "Colour value",
+      "paste": "Paste colour from clipboard",
+      "eyedropper": "Pick a colour from anywhere on screen",
+      "invalid": "Not a colour. Try #233DFF, rgb(35 61 255), hsl(…) or a colour name."
     }
   },
   "colors": {
