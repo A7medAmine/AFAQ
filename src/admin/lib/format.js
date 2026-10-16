@@ -62,7 +62,16 @@ function csvCell(value) {
 export function downloadCSV(filename, headers, rows) {
   const csv = [headers.map(csvCell).join(','), ...rows.map(r => r.map(csvCell).join(','))].join('\r\n')
   // BOM so Excel opens Arabic and French names in the right encoding.
-  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' })
+  downloadBlob(filename, new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' }))
+}
+
+/** One object per row, keyed by header, so the export keeps its column names. */
+export function downloadJSON(filename, headers, rows) {
+  const records = rows.map(r => Object.fromEntries(headers.map((h, i) => [h, r[i] ?? null])))
+  downloadBlob(filename, new Blob([JSON.stringify(records, null, 2)], { type: 'application/json;charset=utf-8;' }))
+}
+
+function downloadBlob(filename, blob) {
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url

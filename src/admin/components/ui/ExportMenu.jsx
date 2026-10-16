@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { Download, FileText, RectangleHorizontal, RectangleVertical, Sheet } from 'lucide-react'
-import { downloadCSV, exportPDF } from '../../lib/format'
+import { Braces, Download, FileText, RectangleHorizontal, RectangleVertical, Sheet } from 'lucide-react'
+import { downloadCSV, downloadJSON, exportPDF } from '../../lib/format'
 import {
   EXPORT_LANGUAGES, localizeLabel, relocalizeDate, rememberExportLanguage, savedExportLanguage, term,
 } from '../../lib/exportI18n'
@@ -82,6 +82,12 @@ export default function ExportMenu({ filename, title, subtitle, headers, rows, s
       return
     }
 
+    if (format === 'json') {
+      downloadJSON(`${filename}.json`, subHeaders, subRows)
+      setOpen(false)
+      return
+    }
+
     setBusy(true)
     try {
       await exportPDF({
@@ -133,6 +139,14 @@ export default function ExportMenu({ filename, title, subtitle, headers, rows, s
                 onClick={() => setFormat('pdf')}
               >
                 <FileText size={16} /> PDF
+              </button>
+              <button
+                type="button"
+                className="adm-export-choice"
+                data-active={format === 'json' || undefined}
+                onClick={() => setFormat('json')}
+              >
+                <Braces size={16} /> JSON
               </button>
             </div>
           </div>

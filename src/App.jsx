@@ -50,6 +50,8 @@ const PollPage = lazy(() => import('./admin/pages/PollPage'))
 const BorrowingPage = lazy(() => import('./admin/pages/BorrowingPage'))
 const ProjectsPage = lazy(() => import('./admin/pages/ProjectsPage'))
 const GalleryPage = lazy(() => import('./admin/pages/GalleryPage'))
+const MediaPlannerPage = lazy(() => import('./admin/pages/MediaPlannerPage'))
+const FrameStudioPage = lazy(() => import('./admin/pages/FrameStudioPage'))
 const MessagesPage = lazy(() => import('./admin/pages/MessagesPage'))
 const AnnouncementsPage = lazy(() => import('./admin/pages/AnnouncementsPage'))
 const LinksPage = lazy(() => import('./admin/pages/LinksPage'))
@@ -202,6 +204,12 @@ export default function App() {
             } />
             <Route path="projects" element={
               <RoleGuard permission="projects.manage"><ProjectsPage /></RoleGuard>
+            } />
+            <Route path="media" element={
+              <RoleGuard permission="media.manage"><MediaPlannerPage /></RoleGuard>
+            } />
+            <Route path="media/studio" element={
+              <RoleGuard permission="media.manage"><FrameStudioPage /></RoleGuard>
             } />
             <Route path="gallery" element={
               <RoleGuard permission="gallery.manage"><GalleryPage /></RoleGuard>

@@ -31,6 +31,7 @@ export const PERMISSIONS = {
     'hr.manage',
     'points.manage',
     'department.view',
+    'media.manage',
   ],
   [ROLES.EVENT_MANAGER]: [
     'events.manage',
@@ -47,6 +48,7 @@ export const PERMISSIONS = {
     'applications.review',
   ],
   [ROLES.MEDIA_MANAGER]: [
+    'media.manage',
     'gallery.manage',
     'announcements.manage',
     'links.manage',
@@ -84,6 +86,7 @@ export const PERMISSION_OPTIONS = [
   { value: 'inventory.manage', label: 'Inventory', description: 'Inventory, shelves and borrowing' },
   { value: 'needs.manage', label: 'Needs lists', description: 'Needs lists and departments' },
   { value: 'finance.manage', label: 'Finance', description: 'Income, expenses and budgets' },
+  { value: 'media.manage', label: 'Media planner', description: 'Social media plan, captions and the frame studio' },
   { value: 'projects.manage', label: 'Projects', description: 'Publish projects' },
   { value: 'gallery.manage', label: 'Gallery', description: 'Albums and photos' },
   { value: 'announcements.manage', label: 'Announcements', description: 'Publish announcements' },
@@ -156,6 +159,8 @@ export const NAV_ITEMS = [
   { label: 'Needs lists', path: '/admin/needs', icon: 'ClipboardList', group: 'resources', permission: 'needs.manage' },
   { label: 'Finance', path: '/admin/finance', icon: 'Wallet', group: 'resources', permission: 'finance.manage' },
 
+  { label: 'Media planner', path: '/admin/media', icon: 'Clapperboard', group: 'publish', end: true, permission: 'media.manage' },
+  { label: 'Frame studio', path: '/admin/media/studio', icon: 'Frame', group: 'publish', permission: 'media.manage' },
   { label: 'Projects', path: '/admin/projects', icon: 'CircuitBoard', group: 'publish', permission: 'projects.manage' },
   { label: 'Gallery', path: '/admin/gallery', icon: 'Images', group: 'publish', permission: 'gallery.manage' },
   { label: 'Announcements', path: '/admin/announcements', icon: 'Megaphone', group: 'publish', permission: 'announcements.manage' },

@@ -16,6 +16,7 @@ import digikeyRoutes from './server/routes/digikey.js'
 import emailRoutes from './server/routes/email.js'
 import eventsRoutes from './server/routes/events.js'
 import needsRoutes from './server/routes/needs.js'
+import mediaRoutes from './server/routes/media.js'
 import pollsRoutes, { pollPreviewHtml } from './server/routes/polls.js'
 import { sendEmail } from './server/services/mailer.js'
 import { TOP_ROLES } from './server/middleware/auth.js'
@@ -946,6 +947,10 @@ app.put("/api/admin/password", authLimiter, requireAuth, async (req, res) => {
 
 app.use("/api/ai", aiRoutes);
 app.use("/api/ai", aiContentRoutes);
+
+// --- Media planner AI (post ideas, captions) ---
+
+app.use("/api/media", mediaRoutes);
 
 // --- AI Knowledge ---
 

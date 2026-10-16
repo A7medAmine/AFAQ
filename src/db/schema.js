@@ -751,3 +751,83 @@ export const pointPresets = pgTable('point_presets', {
   sortOrder: integer('sort_order').notNull().default(0),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
 })
+
+// ---------- Media planner ----------
+// One piece of content on its way to the club's social accounts. It moves
+// through the stages in src/admin/lib/media.js (idea → caption → shooting →
+// editing → review → scheduled → posted); each stage has its own owner so the
+// writer, photographer, editor and publisher each see what is waiting on them.
+// People are admin_users ids; the console reads names through media_people().
+export const mediaPosts = pgTable('media_posts', {
+  id: bigint({ mode: 'number' }).primaryKey().generatedAlwaysAsIdentity(),
+  title: text().notNull(),
+  brief: text(),
+  format: text().notNull().default('post'),
+  platforms: text().array().notNull().default([]),
+  status: text().notNull().default('idea'),
+  eventId: bigint('event_id', { mode: 'number' }).references(() => events.id, { onDelete: 'set null' }),
+  publishAt: timestamp('publish_at', { withTimezone: true }),
+  captionAr: text('caption_ar'),
+  captionFr: text('caption_fr'),
+  captionEn: text('caption_en'),
+  hashtags: text(),
+  // Shoot brief for the photographer: what to capture, where, when.
+  shotList: text('shot_list'),
+  needsShoot: boolean('needs_shoot').notNull().default(true),
+  writerId: bigint('writer_id', { mode: 'number' }).references(() => adminUsers.id, { onDelete: 'set null' }),
+  photographerId: bigint('photographer_id', { mode: 'number' }).references(() => adminUsers.id, { onDelete: 'set null' }),
+  editorId: bigint('editor_id', { mode: 'number' }).references(() => adminUsers.id, { onDelete: 'set null' }),
+  publisherId: bigint('publisher_id', { mode: 'number' }).references(() => adminUsers.id, { onDelete: 'set null' }),
+  // Where it went live, one URL per line.
+  postedLinks: text('posted_links'),
+  postedAt: timestamp('posted_at', { withTimezone: true }),
+  createdBy: uuid('created_by'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+}, t => [
+  index('media_posts_status_idx').on(t.status),
+  index('media_posts_publish_at_idx').on(t.publishAt),
+])
+
+// Files attached to a post: the photographer's raw shots, the editor's
+// finished versions, and references (mood boards, examples).
+export const mediaAssets = pgTable('media_assets', {
+  id: bigint({ mode: 'number' }).primaryKey().generatedAlwaysAsIdentity(),
+  postId: bigint('post_id', { mode: 'number' }).notNull().references(() => mediaPosts.id, { onDelete: 'cascade' }),
+  kind: text().notNull().default('raw'),
+  url: text().notNull(),
+  fileName: text('file_name'),
+  uploadedBy: bigint('uploaded_by', { mode: 'number' }).references(() => adminUsers.id, { onDelete: 'set null' }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+}, t => [index('media_assets_post_idx').on(t.postId)])
+
+// The conversation on a post, including review notes when it is sent back.
+export const mediaComments = pgTable('media_comments', {
+  id: bigint({ mode: 'number' }).primaryKey().generatedAlwaysAsIdentity(),
+  postId: bigint('post_id', { mode: 'number' }).notNull().references(() => mediaPosts.id, { onDelete: 'cascade' }),
+  authorId: bigint('author_id', { mode: 'number' }).references(() => adminUsers.id, { onDelete: 'set null' }),
+  body: text().notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+}, t => [index('media_comments_post_idx').on(t.postId)])
+
+// Club photo frames (transparent PNG overlays) for the frame studio, one row
+// per frame per canvas size.
+export const mediaFrames = pgTable('media_frames', {
+  id: bigint({ mode: 'number' }).primaryKey().generatedAlwaysAsIdentity(),
+  name: text().notNull(),
+  size: text().notNull().default('post'),
+  url: text().notNull(),
+  sortOrder: integer('sort_order').notNull().default(0),
+  isActive: boolean('is_active').notNull().default(true),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+})
+
+// Reusable pieces of copy: hashtag sets, caption templates, calls to action.
+export const mediaSnippets = pgTable('media_snippets', {
+  id: bigint({ mode: 'number' }).primaryKey().generatedAlwaysAsIdentity(),
+  kind: text().notNull().default('hashtags'),
+  label: text().notNull(),
+  body: text().notNull(),
+  sortOrder: integer('sort_order').notNull().default(0),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+})

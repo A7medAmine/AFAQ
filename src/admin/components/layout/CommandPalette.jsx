@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
-  ArrowLeftRight, Boxes, Building2, HeartHandshake, Trophy, Crown, ListChecks, Brain, Calendar, CircuitBoard, ClipboardCheck, ClipboardList, CornerDownLeft, Gauge, IdCard, Images, Inbox,
+  ArrowLeftRight, Boxes, Clapperboard, Frame, Building2, HeartHandshake, Trophy, Crown, ListChecks, Brain, Calendar, CircuitBoard, ClipboardCheck, ClipboardList, CornerDownLeft, Gauge, IdCard, Images, Inbox,
   Link2, Loader2, Mail, Megaphone, Network, QrCode, ScrollText, Search, Send, Shield, SlidersHorizontal, UserCheck, Vote, Wallet,
 } from 'lucide-react'
 import useAdminStore from '../../store/adminStore'
@@ -11,7 +11,7 @@ import { supabase } from '../../lib/db'
 
 const ICONS = {
   Gauge, Calendar, ClipboardCheck, UserCheck, IdCard, Mail, Building2, HeartHandshake, Trophy,
-  CircuitBoard, Images, Megaphone, Boxes, ArrowLeftRight, Crown, ListChecks, Shield, Brain, ScrollText, SlidersHorizontal, Wallet, Send, Inbox, Network, Link2, QrCode, ClipboardList, Vote,
+  CircuitBoard, Clapperboard, Frame, Images, Megaphone, Boxes, ArrowLeftRight, Crown, ListChecks, Shield, Brain, ScrollText, SlidersHorizontal, Wallet, Send, Inbox, Network, Link2, QrCode, ClipboardList, Vote,
 }
 
 /**
