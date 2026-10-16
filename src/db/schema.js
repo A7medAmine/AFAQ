@@ -739,3 +739,15 @@ export const pointSettings = pgTable('point_settings', {
   taskDonePoints: integer('task_done_points').notNull().default(10),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
 })
+
+// One-tap reasons for giving points ("Attended a workshop", +5). Picking one
+// fills the amount, category and reason, so giving points at an event is a
+// scan or a name per member.
+export const pointPresets = pgTable('point_presets', {
+  id: bigint({ mode: 'number' }).primaryKey().generatedAlwaysAsIdentity(),
+  label: text().notNull(),
+  points: integer().notNull(),
+  category: text().notNull().default('other'),
+  sortOrder: integer('sort_order').notNull().default(0),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+})

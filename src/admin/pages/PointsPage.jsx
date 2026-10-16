@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { History, Minus, Plus, RotateCcw, Settings2, Trophy } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { History, ListPlus, Minus, Plus, RotateCcw, ScanLine, Settings2, Trophy, Users } from 'lucide-react'
 import { logActivity, read, run, supabase } from '../lib/db'
 import useAdminStore from '../store/adminStore'
 import useQueryParam from '../hooks/useQueryParam'
@@ -14,9 +15,10 @@ import Badge from '../components/ui/Badge'
 import Panel from '../components/ui/Panel'
 import Modal from '../components/ui/Modal'
 import ConfirmDialog from '../components/ui/ConfirmDialog'
-import { CheckField, TextField } from '../components/ui/Field'
+import { CheckField, SelectField, TextField } from '../components/ui/Field'
 import PointsModal from '../components/hr/PointsModal'
 import PointsHistoryModal from '../components/hr/PointsHistoryModal'
+import PresetsModal from '../components/hr/PresetsModal'
 
 const VIEWS = [{ value: 'ranking', label: 'Ranking' }, { value: 'history', label: 'History' }]
 
@@ -29,6 +31,8 @@ export default function PointsPage() {
   const userId = useAdminStore(s => s.adminProfile?.user_id)
   const [members, setMembers] = useState([])
   const [departments, setDepartments] = useState([])
+  const [groups, setGroups] = useState([])
+  const [presets, setPresets] = useState([])
   const [entries, setEntries] = useState([])
   const [admins, setAdmins] = useState({})
   const [state, setState] = useState({ loading: true, error: null })
@@ -38,14 +42,18 @@ export default function PointsPage() {
   const [resetting, setResetting] = useState(null) // { members, clear? }
   const [historyOf, setHistoryOf] = useState(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [presetsOpen, setPresetsOpen] = useState(false)
+  const [groupOpen, setGroupOpen] = useState(false)
 
   const load = useCallback(async () => {
     setState(s => ({ ...s, error: null }))
-    const [memberRes, deptRes, entryRes, adminRes] = await Promise.all([
-      read(supabase.from('members').select('id, full_name, email, member_code, status, member_departments(department_id)').order('full_name')),
+    const [memberRes, deptRes, entryRes, adminRes, groupRes, presetRes] = await Promise.all([
+      read(supabase.from('members').select('id, full_name, email, member_code, status, member_departments(department_id), member_group_members(group_id)').order('full_name')),
       read(supabase.from('departments').select('id, name, color').order('sort_order')),
       read(supabase.from('point_entries').select('*').order('created_at', { ascending: false })),
       read(supabase.from('admin_users').select('user_id, full_name, email')),
+      read(supabase.from('member_groups').select('id, name').order('name')),
+      read(supabase.from('point_presets').select('*').order('sort_order')),
     ])
     const failed = [memberRes, deptRes, entryRes].find(r => !r.ok)
     if (failed) { setState({ loading: false, error: failed.message }); return }
@@ -53,6 +61,8 @@ export default function PointsPage() {
     setDepartments(deptRes.data || [])
     setEntries(entryRes.data || [])
     setAdmins(Object.fromEntries((adminRes.data || []).map(a => [a.user_id, a.full_name || a.email])))
+    setGroups(groupRes.data || [])
+    setPresets(presetRes.data || [])
     setState({ loading: false, error: null })
   }, [])
 
@@ -179,6 +189,9 @@ export default function PointsPage() {
               />
             )}
             <Button icon={Settings2} onClick={() => setSettingsOpen(true)}>Automatic points</Button>
+            <Button icon={ListPlus} onClick={() => setPresetsOpen(true)}>Presets</Button>
+            <Button icon={Users} onClick={() => setGroupOpen(true)}>Give to a group</Button>
+            <Link to="/admin/points/quick" className="adm-btn adm-btn-primary"><ScanLine size={15} /> Quick give</Link>
             <Button icon={RotateCcw} disabled={!ranking.some(m => m.points !== 0)} onClick={() => setResetting({ members: ranking })}>
               Reset {department ? 'department' : 'all'}
             </Button>
@@ -246,7 +259,67 @@ export default function PointsPage() {
       />
 
       <AutoPointsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />
+
+      <PresetsModal open={presetsOpen} presets={presets} onClose={() => setPresetsOpen(false)} onChanged={load} />
+
+      <GroupPickModal
+        open={groupOpen}
+        members={members}
+        departments={departments}
+        groups={groups}
+        onClose={() => setGroupOpen(false)}
+        onPick={picked => { setGroupOpen(false); setGiving({ members: picked }) }}
+      />
     </div>
+  )
+}
+
+/** Everyone in a department or member group, for giving them all the same points. */
+function GroupPickModal({ open, members, departments, groups, onClose, onPick }) {
+  const [choice, setChoice] = useState('')
+  const [activeOnly, setActiveOnly] = useState(true)
+
+  useEffect(() => { if (open) setChoice(departments[0] ? `d${departments[0].id}` : groups[0] ? `g${groups[0].id}` : '') }, [open]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const picked = useMemo(() => {
+    const id = Number(choice.slice(1))
+    return members.filter(m => (!activeOnly || (m.status || 'active') === 'active') && (choice[0] === 'd'
+      ? (m.member_departments || []).some(d => d.department_id === id)
+      : (m.member_group_members || []).some(g => g.group_id === id)))
+  }, [choice, activeOnly, members])
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="Give to a group"
+      description="Everyone in a department or a member group gets the same points, in one go."
+      footer={
+        <>
+          <Button onClick={onClose} data-dialog-dismiss="true">Cancel</Button>
+          <Button variant="primary" disabled={!picked.length} onClick={() => onPick(picked)}>
+            Next: {picked.length} member{picked.length === 1 ? '' : 's'}
+          </Button>
+        </>
+      }
+    >
+      <div className="space-y-4">
+        <SelectField label="Who" value={choice} onChange={e => setChoice(e.target.value)}>
+          {departments.length > 0 && (
+            <optgroup label="Departments">
+              {departments.map(d => <option key={d.id} value={`d${d.id}`}>{d.name}</option>)}
+            </optgroup>
+          )}
+          {groups.length > 0 && (
+            <optgroup label="Member groups">
+              {groups.map(g => <option key={g.id} value={`g${g.id}`}>{g.name}</option>)}
+            </optgroup>
+          )}
+        </SelectField>
+        <CheckField label="Active members only" description="Leave out alumni, inactive and suspended members."
+          checked={activeOnly} onChange={setActiveOnly} />
+      </div>
+    </Modal>
   )
 }
 

@@ -28,6 +28,7 @@ const ResetPassword = lazy(() => import('./admin/pages/ResetPassword'))
 const Dashboard = lazy(() => import('./admin/pages/Dashboard'))
 const HRPage = lazy(() => import('./admin/pages/HRPage'))
 const PointsPage = lazy(() => import('./admin/pages/PointsPage'))
+const QuickPointsPage = lazy(() => import('./admin/pages/QuickPointsPage'))
 const DepartmentPage = lazy(() => import('./admin/pages/DepartmentPage'))
 const EventsPage = lazy(() => import('./admin/pages/EventsPage'))
 const RegistrationsPage = lazy(() => import('./admin/pages/RegistrationsPage'))
@@ -140,6 +141,9 @@ export default function App() {
             } />
             <Route path="points" element={
               <RoleGuard permission="points.manage"><PointsPage /></RoleGuard>
+            } />
+            <Route path="points/quick" element={
+              <RoleGuard permission="points.manage"><QuickPointsPage /></RoleGuard>
             } />
             <Route path="department" element={
               <RoleGuard permission="department.view"><DepartmentPage /></RoleGuard>

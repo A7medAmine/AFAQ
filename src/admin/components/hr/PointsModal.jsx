@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
-import { logActivity, run, supabase } from '../../lib/db'
+import { logActivity, read, run, supabase } from '../../lib/db'
 import useAdminStore from '../../store/adminStore'
-import { MANUAL_CATEGORIES } from '../../lib/points'
+import { MANUAL_CATEGORIES, formatPoints } from '../../lib/points'
 import Modal from '../ui/Modal'
 import Button from '../ui/Button'
 import { SelectField, TextField } from '../ui/Field'
@@ -15,9 +15,11 @@ export default function PointsModal({ open, members = [], take = false, onClose,
   const [form, setForm] = useState({ direction: 'give', amount: '10', category: 'contribution', reason: '' })
   const [errors, setErrors] = useState({})
   const [saving, setSaving] = useState(false)
+  const [presets, setPresets] = useState([])
 
   useEffect(() => {
     if (!open) return
+    read(supabase.from('point_presets').select('*').order('sort_order')).then(r => setPresets(r.data || []))
     setForm({ direction: take ? 'take' : 'give', amount: take ? '5' : '10', category: take ? 'penalty' : 'contribution', reason: '' })
     setErrors({})
   }, [open, take])
@@ -30,6 +32,11 @@ export default function PointsModal({ open, members = [], take = false, onClose,
       return next
     })
     setErrors(e => ({ ...e, [key]: null }))
+  }
+
+  const applyPreset = p => {
+    setForm({ direction: p.points < 0 ? 'take' : 'give', amount: String(Math.abs(p.points)), category: p.category, reason: p.label })
+    setErrors({})
   }
 
   const save = async e => {
@@ -78,6 +85,16 @@ export default function PointsModal({ open, members = [], take = false, onClose,
       }
     >
       <form onSubmit={save} className="space-y-4">
+        {presets.length > 0 && (
+          <div className="flex flex-wrap gap-1.5" aria-label="Presets">
+            {presets.map(p => (
+              <button key={p.id} type="button" className="adm-btn adm-btn-sm" onClick={() => applyPreset(p)}
+                aria-pressed={form.reason === p.label}>
+                {p.label} <span className="adm-data">{formatPoints(p.points)}</span>
+              </button>
+            ))}
+          </div>
+        )}
         <div className="grid grid-cols-2 gap-4">
           <SelectField label="Action" value={form.direction} onChange={e => set('direction', e.target.value)}>
             <option value="give">Give points</option>

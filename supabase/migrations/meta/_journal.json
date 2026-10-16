@@ -225,6 +225,13 @@
       "when": 1792170384156,
       "tag": "0031_departments_points_owner",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1792173886980,
+      "tag": "0032_point_presets",
+      "breakpoints": true
     }
   ]
 }
