@@ -782,6 +782,44 @@ h5,
   border-color: #ef4444;
 }
 
+/* Instagram handle: fixed "@" prefix inside the pill, optional check link at the end. */
+.pf-ig {
+  position: relative;
+}
+
+.pf-ig-prefix {
+  position: absolute;
+  left: 18px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-text-muted);
+  pointer-events: none;
+  font-weight: 600;
+}
+
+.form-input.pf-ig-input {
+  padding-left: 58px;
+  padding-right: 48px;
+}
+
+.pf-ig-check {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  padding: 6px;
+  border-radius: 50%;
+  color: var(--color-accent);
+}
+
+.pf-ig-check:hover {
+  background: var(--color-bg-alt);
+}
+
 textarea.form-input {
   border-radius: 20px;
   resize: vertical;

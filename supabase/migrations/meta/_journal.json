@@ -239,6 +239,20 @@
       "when": 1792175854849,
       "tag": "0033_media_planner",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1792184253589,
+      "tag": "0034_event_registrations_instagram",
+      "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1792186719505,
+      "tag": "0035_instagram_to_membership_applications",
+      "breakpoints": true
     }
   ]
 }

@@ -1,6 +1,8 @@
 import { useId } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { AlertCircle } from 'lucide-react'
+import { AlertCircle, ExternalLink } from 'lucide-react'
+import { InstagramIcon } from '../shared/SocialIcons'
+import { instagramUrl, isValidInstagram, normalizeInstagram } from '../../lib/instagram'
 
 /*
   Shared fields for the public forms.
@@ -75,6 +77,55 @@ export function TextField({ label, required, error, hint, shake, inputRef, ...in
         aria-describedby={describedBy}
         {...input}
       />
+    </Field>
+  )
+}
+
+/**
+ * Instagram handle with a fixed "@" in front. Typing, "@name" and pasted
+ * profile links all collapse to the bare handle, so `value` is always clean.
+ * Once it looks valid, a link lets the person check it is really their profile.
+ */
+export function InstagramField({ label, required, error, hint, shake, inputRef, value, onChange, checkLabel, ...input }) {
+  const { id, describedBy } = useFieldA11y(error, hint)
+  const valid = isValidInstagram(value || '')
+  return (
+    <Field label={label} htmlFor={id} required={required} error={error} hint={hint} shake={shake}>
+      <div className="pf-ig" dir="ltr">
+        <span className="pf-ig-prefix" aria-hidden="true">
+          <InstagramIcon size={16} /> @
+        </span>
+        <input
+          id={id}
+          ref={inputRef}
+          className={`form-input pf-ig-input ${error ? 'error' : ''}`}
+          aria-invalid={error ? 'true' : undefined}
+          aria-describedby={describedBy}
+          type="text"
+          inputMode="url"
+          autoComplete="off"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
+          enterKeyHint="next"
+          maxLength={120}
+          value={value}
+          onChange={e => onChange(normalizeInstagram(e.target.value))}
+          {...input}
+        />
+        {valid && checkLabel && (
+          <a
+            href={instagramUrl(value)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="pf-ig-check"
+            title={checkLabel}
+            aria-label={checkLabel}
+          >
+            <ExternalLink size={14} />
+          </a>
+        )}
+      </div>
     </Field>
   )
 }

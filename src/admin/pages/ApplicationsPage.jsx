@@ -7,6 +7,7 @@ import { formatDate, formatDateTime } from '../lib/format'
 import PageHeader, { FilterTabs } from '../components/ui/PageHeader'
 import DataTable from '../components/ui/DataTable'
 import Drawer, { DetailRow, TagList } from '../components/ui/Drawer'
+import { instagramUrl } from '../../lib/instagram'
 import ConfirmDialog from '../components/ui/ConfirmDialog'
 import EmptyState, { ErrorState } from '../components/ui/EmptyState'
 import Button, { IconButton } from '../components/ui/Button'
@@ -110,9 +111,9 @@ export default function ApplicationsPage() {
     refreshCounts()
   }
 
-  const exportHeaders = ['Name', 'Email', 'Phone', 'Student ID', 'Department', 'Study year', 'Skills', 'Interests', 'Motivation', 'Status', 'Applied']
+  const exportHeaders = ['Name', 'Email', 'Phone', 'Instagram', 'Student ID', 'Department', 'Study year', 'Skills', 'Interests', 'Motivation', 'Status', 'Applied']
   const exportRows = filtered.map(r => [
-    r.full_name, r.email, r.phone, r.student_id, r.department, r.study_year,
+    r.full_name, r.email, r.phone, r.instagram ? `@${r.instagram}` : '', r.student_id, r.department, r.study_year,
     r.skills, r.interests, r.motivation, r.status, formatDateTime(r.created_at),
   ])
 
@@ -262,6 +263,13 @@ export default function ApplicationsPage() {
             <div className="grid grid-cols-2 gap-4">
               <DetailRow label="Email" mono>{detail.email}</DetailRow>
               <DetailRow label="Phone" mono>{detail.phone || '—'}</DetailRow>
+              <DetailRow label="Instagram" mono>
+                {detail.instagram ? (
+                  <a href={instagramUrl(detail.instagram)} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--adm-signal)' }}>
+                    @{detail.instagram}
+                  </a>
+                ) : '—'}
+              </DetailRow>
               <DetailRow label="Student ID" mono>{detail.student_id || '—'}</DetailRow>
               <DetailRow label="Study year">{detail.study_year || '—'}</DetailRow>
               <DetailRow label="Department">{detail.department || '—'}</DetailRow>

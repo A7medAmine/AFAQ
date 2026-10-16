@@ -6,10 +6,11 @@ import { Send, Check, User, BookOpen, Heart, ArrowLeft, ArrowRight, DoorClosed }
 import SideImage from '../components/shared/SideImage'
 import ProgresButton from '../components/registration/ProgresButton'
 import {
-  FormError, SelectField, TextAreaField, TextField,
+  FormError, InstagramField, SelectField, TextAreaField, TextField,
 } from '../components/forms/Field'
 import SEO from '../components/SEO'
 import { loadProfile, saveProfile } from '../lib/savedProfile'
+import { isValidInstagram } from '../lib/instagram'
 
 const spring = { type: 'spring', damping: 22, stiffness: 200 }
 const fastSpring = { type: 'spring', damping: 16, stiffness: 300 }
@@ -22,6 +23,7 @@ const initialForm = {
   full_name: '',
   email: '',
   phone: '',
+  instagram: '',
   department: '',
   study_year: '',
   interests: [],
@@ -77,6 +79,8 @@ export default function JoinUs() {
       if (!form.student_id.trim()) errs.student_id = t('form.validation.required')
       if (!form.email.trim()) errs.email = t('form.validation.required')
       else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) errs.email = t('form.validation.email')
+      if (!form.instagram) errs.instagram = t('form.validation.required')
+      else if (!isValidInstagram(form.instagram)) errs.instagram = t('form.validation.instagram')
     } else if (step === 1) {
       if (!form.department) errs.department = t('form.validation.required')
       if (!form.study_year) errs.study_year = t('form.validation.required')
@@ -93,7 +97,7 @@ export default function JoinUs() {
     return !first
   }
 
-  const autoFillFields = ['full_name', 'student_id', 'email', 'phone', 'department', 'study_year']
+  const autoFillFields = ['full_name', 'student_id', 'email', 'phone', 'instagram', 'department', 'study_year']
 
   const updateForm = patch => {
     setForm(prev => ({ ...prev, ...patch }))
@@ -156,6 +160,7 @@ export default function JoinUs() {
           student_id: studentId || null,
           email,
           phone: form.phone.trim() || null,
+          instagram: form.instagram,
           department: form.department || null,
           study_year: form.study_year || null,
           interests: form.interests,
@@ -174,6 +179,12 @@ export default function JoinUs() {
       setStatus('idle')
       const { code, error: message, reason, suggestion, note } = result.payload
       if (code === 'closed') { setClosed({ note }); return }
+      if (code === 'instagram') {
+        // Only the server's copy of the rules disagreed; send them back to that field.
+        setStep(0)
+        setErrors({ instagram: t('form.validation.instagram') })
+        return
+      }
       setFormError(
         code === 'duplicate' ? t('form.duplicateApplication')
           : code === 'undeliverable' ? t(`form.undeliverable.${reason}`, { suggestion, defaultValue: message })
@@ -383,6 +394,14 @@ export default function JoinUs() {
                           value={form.phone}
                           onChange={e => updateForm({ phone: e.target.value })}
                           placeholder="+213 6XX XXX XXX"
+                        />
+                        <InstagramField
+                          label={t('form.instagram')} required
+                          value={form.instagram} error={errors.instagram} shake={shaking === 'instagram'}
+                          onChange={instagram => updateForm({ instagram })}
+                          placeholder="afaq_scientific_club"
+                          hint={t('form.instagramHint')}
+                          checkLabel={t('form.instagramCheck')}
                         />
                       </div>
                     )}

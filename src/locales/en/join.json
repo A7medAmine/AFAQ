@@ -9,6 +9,9 @@
     "fullName": "Full Name",
     "email": "Email Address",
     "phone": "Phone Number",
+    "instagram": "Instagram username",
+    "instagramHint": "Type your username or paste your profile link.",
+    "instagramCheck": "Open profile to check",
     "department": "Department",
     "studyYear": "Study Year",
     "interests": "Areas of Interest",
@@ -28,7 +31,8 @@
     "step": "Step {{current}} of {{total}}",
     "validation": {
       "required": "This field is required",
-      "email": "Please enter a valid email address"
+      "email": "Please enter a valid email address",
+      "instagram": "Enter a valid Instagram username (letters, numbers, dots and underscores)."
     },
     "successTitle": "Application received",
     "successBody": "Thanks for applying. A club admin reviews every application, and you will hear back at the email you gave us.",

@@ -9,6 +9,9 @@
     "fullName": "Nom Complet",
     "email": "Adresse Email",
     "phone": "Numero de Telephone",
+    "instagram": "Nom d'utilisateur Instagram",
+    "instagramHint": "Tapez votre nom d'utilisateur ou collez le lien de votre profil.",
+    "instagramCheck": "Ouvrir le profil pour vérifier",
     "department": "Departement",
     "studyYear": "Annee d'Etude",
     "interests": "Centres d'Interêt",
@@ -28,7 +31,8 @@
     "step": "Etape {{current}} sur {{total}}",
     "validation": {
       "required": "Ce champ est requis",
-      "email": "Veuillez entrer une adresse email valide"
+      "email": "Veuillez entrer une adresse email valide",
+      "instagram": "Entrez un nom d'utilisateur Instagram valide (lettres, chiffres, points et tirets bas)."
     },
     "successTitle": "Candidature reçue",
     "successBody": "Merci pour votre candidature. Un administrateur examine chaque demande et vous recevrez une reponse à l'adresse indiquee.",

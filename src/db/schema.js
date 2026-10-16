@@ -79,6 +79,8 @@ export const membershipApplications = pgTable('membership_applications', {
   fullName: text('full_name').notNull(),
   email: text().notNull(),
   phone: text(),
+  // Handle only, no @ or URL.
+  instagram: text(),
   department: text(),
   studyYear: text('study_year'),
   skills: text().array(),

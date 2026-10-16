@@ -4,7 +4,7 @@
 // guarded and a failure just means an empty form.
 
 const KEY = 'afaq.profile'
-const FIELDS = ['full_name', 'student_id', 'email', 'phone', 'department']
+const FIELDS = ['full_name', 'student_id', 'email', 'phone', 'instagram', 'department']
 
 export function loadProfile() {
   try {
@@ -21,8 +21,10 @@ export function loadProfile() {
 
 export function saveProfile(form) {
   try {
-    const profile = {}
-    for (const f of FIELDS) profile[f] = (form[f] || '').trim()
+    // A form without one of the fields (the event form has no Instagram)
+    // keeps what was saved before instead of blanking it.
+    const profile = loadProfile() || {}
+    for (const f of FIELDS) if (f in form) profile[f] = (form[f] || '').trim()
     localStorage.setItem(KEY, JSON.stringify(profile))
   } catch {
     // Not remembering is fine.

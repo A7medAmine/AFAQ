@@ -21,6 +21,7 @@ import pollsRoutes, { pollPreviewHtml } from './server/routes/polls.js'
 import { sendEmail } from './server/services/mailer.js'
 import { TOP_ROLES } from './server/middleware/auth.js'
 import { undeliverableEmailError } from './server/services/emailCheck.js'
+import { isValidInstagram, normalizeInstagram } from './src/lib/instagram.js'
 import { approveApplication, getIntake, HttpError, sendApplicationReceived } from './server/services/membership.js'
 import reviewRoutes, { publicReviewRoutes } from './server/routes/review.js'
 import { routeNewApplication } from './server/services/reviewRouting.js'
@@ -590,9 +591,13 @@ app.post("/api/register/membership", async (req, res) => {
   const email = String(b.email || "").trim().toLowerCase();
   const fullName = String(b.full_name || "").trim();
   const studentId = b.student_id ? String(b.student_id).trim() : "";
+  const instagram = normalizeInstagram(b.instagram);
 
   if (!fullName) return res.status(400).json({ error: "Enter your full name." });
   if (!EMAIL_RE.test(email)) return res.status(400).json({ error: "Enter a valid email address." });
+  if (!isValidInstagram(instagram)) {
+    return res.status(400).json({ error: "Enter a valid Instagram username.", code: "instagram" });
+  }
   const emailProblem = await undeliverableEmailError(email);
   if (emailProblem) return res.status(400).json(emailProblem);
 
@@ -616,6 +621,7 @@ app.post("/api/register/membership", async (req, res) => {
       student_id: studentId || null,
       email,
       phone: b.phone ? String(b.phone).trim() : null,
+      instagram,
       department: b.department || null,
       study_year: b.study_year || null,
       interests: Array.isArray(b.interests) ? b.interests : [],

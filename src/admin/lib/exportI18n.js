@@ -127,6 +127,7 @@ const TERMS = [
   ['name', 'Name', 'Nom', 'الاسم'],
   ['email', 'Email', 'E-mail', 'البريد الإلكتروني'],
   ['phone', 'Phone', 'Téléphone', 'الهاتف'],
+  ['instagram', 'Instagram', 'Instagram', 'إنستغرام'],
   ['role', 'Role', 'Rôle', 'الدور'],
   ['roles', 'Roles', 'Rôles', 'المهام'],
   ['access', 'Access', 'Accès', 'الوصول'],

@@ -19,6 +19,7 @@ import Badge, { StatusBadge } from '../components/ui/Badge'
 import Panel, { PanelHead } from '../components/ui/Panel'
 import { CheckField, SelectField, TextArea, TextField } from '../components/ui/Field'
 import useAdminStore from '../store/adminStore'
+import { instagramUrl } from '../../lib/instagram'
 
 /**
  * Membership interviews, spread across review teams. Each application lands
@@ -417,6 +418,13 @@ function ReviewDrawer({ app, data, labels, teamsById, reviewersById, busy, act, 
             <div className="grid grid-cols-2 gap-4">
               <DetailRow label="Email" mono>{app.email}</DetailRow>
               <DetailRow label="Phone" mono>{app.phone || '—'}</DetailRow>
+              <DetailRow label="Instagram" mono>
+                {app.instagram ? (
+                  <a href={instagramUrl(app.instagram)} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--adm-signal)' }}>
+                    @{app.instagram}
+                  </a>
+                ) : '—'}
+              </DetailRow>
               <DetailRow label="Student ID" mono>{app.student_id || '—'}</DetailRow>
               <DetailRow label="Study year">{app.study_year || '—'}</DetailRow>
               <DetailRow label="Department">{app.department || '—'}</DetailRow>
