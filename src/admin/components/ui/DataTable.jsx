@@ -13,6 +13,17 @@ import Skeleton from './Skeleton'
 
 const PAGE_SIZES = [10, 25, 50, 100]
 
+// Contact details often sit inside another column's cell (email under the
+// name), so search them even when no column is keyed on them.
+const SEARCH_FIELDS = ['email', 'phone', 'student_id', 'member_code', 'instagram']
+
+function matchesSearch(row, columnId, filterValue) {
+  const term = String(filterValue ?? '').trim().toLowerCase()
+  if (!term) return true
+  const has = v => v != null && String(v).toLowerCase().includes(term)
+  return has(row.getValue(columnId)) || SEARCH_FIELDS.some(key => has(row.original?.[key]))
+}
+
 /**
  * The list surface for every record type in the console. Adds what the old
  * table was missing: row selection with bulk actions, a sticky header, real
@@ -85,6 +96,7 @@ export default function DataTable({
     getRowId,
     onSortingChange: setSorting,
     onGlobalFilterChange: setGlobalFilter,
+    globalFilterFn: matchesSearch,
     onRowSelectionChange: setRowSelection,
     enableRowSelection: enableSelection,
     getCoreRowModel: getCoreRowModel(),

@@ -53,7 +53,7 @@ export default function BorrowingPage() {
           .neq('status', 'retired')
           .order('name')
       ),
-      read(supabase.from('members').select('id, full_name, member_code, department').order('full_name')),
+      read(supabase.from('members').select('id, full_name, member_code, email, department').order('full_name')),
     ])
     const failed = [records, itemList, memberList].find(r => !r.ok)
     if (failed) { setState({ loading: false, error: failed.message }); return }
@@ -162,7 +162,7 @@ const itemCode = i => i.asset_code
 const itemText = i => [i.name, i.asset_code, i.category, i.location].join(' ')
 const memberKey = m => m.id
 const memberCode = m => m.member_code
-const memberText = m => [m.full_name, m.member_code, m.department].join(' ')
+const memberText = m => [m.full_name, m.member_code, m.email, m.department].join(' ')
 
 // One basket line per item. The item itself comes from the latest list, so
 // counts stay right after a reload.
@@ -331,7 +331,7 @@ function CheckOutForm({ items, members, loading, onDone }) {
       <Panel className="p-5 sm:p-6 space-y-4">
         <SearchPicker
           label="Borrower (optional)"
-          placeholder="Scan a card, or search by name or code…"
+          placeholder="Scan a card, or search by name, email or code…"
           options={members}
           value={borrower}
           onChange={setBorrower}
