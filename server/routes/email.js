@@ -373,6 +373,81 @@ router.post('/campaigns/:id/process', async (req, res) => {
 })
 
 /**
+ * Members a send has not reached yet — mostly people who joined after it went
+ * out. A filtered send re-applies its filters, so they come back pre-selected;
+ * a hand-picked send has no filter to re-apply, so every active member it
+ * skipped is offered and none is pre-selected.
+ */
+async function missingRecipients(campaign) {
+  const stored = normalizeAudience(campaign.audience)
+  const handPicked = stored.memberIds.length > 0
+  const { recipients } = await resolveRecipients(handPicked ? normalizeAudience({}) : stored)
+
+  const emailed = new Set()
+  for (let from = 0; ; from += 1000) {
+    const { data, error } = await supabaseAdmin
+      .from('email_deliveries').select('email').eq('campaign_id', campaign.id).order('id').range(from, from + 999)
+    if (error) throw error
+    for (const d of data) emailed.add(d.email)
+    if (data.length < 1000) break
+  }
+  return { handPicked, members: recipients.filter(m => !emailed.has(m.email)) }
+}
+
+async function loadCampaign(id) {
+  const { data, error } = await supabaseAdmin.from('email_campaigns').select('*').eq('id', id).maybeSingle()
+  if (error) throw error
+  if (!data) throw new HttpError(404, 'That send no longer exists.')
+  return data
+}
+
+router.get('/campaigns/:id/missing', async (req, res) => {
+  try {
+    const { handPicked, members } = await missingRecipients(await loadCampaign(Number(req.params.id)))
+    res.json({
+      handPicked,
+      members: members.map(m => ({ id: m.id, name: m.full_name, email: m.email, code: m.member_code })),
+    })
+  } catch (err) {
+    fail(res, err, 'Could not work out who was missed.')
+  }
+})
+
+/** Queue the send for members it missed. The console then drives it like any send. */
+router.post('/campaigns/:id/add-recipients', async (req, res) => {
+  try {
+    requireSmtp()
+    const campaign = await loadCampaign(Number(req.params.id))
+    const wanted = new Set(normalizeAudience({ memberIds: req.body?.memberIds }).memberIds)
+    const { members } = await missingRecipients(campaign)
+    const adding = members.filter(m => wanted.has(m.id))
+    if (!adding.length) throw new HttpError(400, 'Choose at least one member who has not received this email.')
+
+    const { error } = await supabaseAdmin.from('email_deliveries').upsert(
+      adding.map(m => ({ campaign_id: campaign.id, member_id: m.id, email: m.email, name: m.full_name })),
+      { onConflict: 'campaign_id,email', ignoreDuplicates: true }
+    )
+    if (error) throw error
+
+    const { count, error: countError } = await supabaseAdmin
+      .from('email_deliveries').select('id', { count: 'exact', head: true }).eq('campaign_id', campaign.id)
+    if (countError) throw countError
+    const { error: totalError } = await supabaseAdmin
+      .from('email_campaigns').update({ total: count || 0 }).eq('id', campaign.id)
+    if (totalError) throw totalError
+
+    supabaseAdmin.from('activity_logs').insert({
+      user_id: req.user.id, action: 'emailed', entity_type: 'email_campaigns', entity_id: campaign.id,
+      metadata: { name: campaign.subject, recipients: adding.length, late: true },
+    }).then(() => {}, () => {})
+
+    res.json(await refreshCampaign(campaign.id))
+  } catch (err) {
+    fail(res, err, 'The new recipients were not added.')
+  }
+})
+
+/**
  * Put failed deliveries back in the queue. Rows stuck in "sending" (the
  * browser closed mid-batch) are re-queued too.
  */

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import {
-  Copy, FileText, Loader2, Mail, Pencil, Play, Plus, RotateCcw, Send, Star, Trash2, Users,
+  Copy, FileText, Loader2, Mail, Pencil, Play, Plus, RotateCcw, Send, Star, Trash2, UserPlus, Users,
 } from 'lucide-react'
 import { api, logActivity, read, run, supabase } from '../lib/db'
 import { CAMPAIGN_STATUS, runCampaign } from '../lib/email'
@@ -11,6 +11,7 @@ import { TEMPLATE_KINDS } from '../../lib/emailTemplate'
 import PageHeader, { FilterTabs } from '../components/ui/PageHeader'
 import Panel from '../components/ui/Panel'
 import Drawer from '../components/ui/Drawer'
+import Modal from '../components/ui/Modal'
 import ConfirmDialog from '../components/ui/ConfirmDialog'
 import EmptyState, { ErrorState } from '../components/ui/EmptyState'
 import Button, { IconButton } from '../components/ui/Button'
@@ -40,6 +41,7 @@ export default function EmailPage() {
   const [editor, setEditor] = useState(null)          // { template | null }
   const [pendingDelete, setPendingDelete] = useState(null)
   const [recipientsOf, setRecipientsOf] = useState(null)
+  const [catchUpOf, setCatchUpOf] = useState(null)
   const [running, setRunning] = useState({})          // campaign id → true while this tab drives it
 
   const load = useCallback(async () => {
@@ -192,6 +194,9 @@ export default function EmailPage() {
                     {!unfinished && c.failed > 0 && !busy && (
                       <Button size="sm" icon={RotateCcw} onClick={() => retry(c)}>Retry {c.failed} failed</Button>
                     )}
+                    {!unfinished && !busy && (
+                      <IconButton icon={UserPlus} label="Send to members who missed it" onClick={() => setCatchUpOf(c)} />
+                    )}
                     <IconButton icon={Users} label="Recipients" onClick={() => setRecipientsOf(c)} />
                   </div>
                 </div>
@@ -227,6 +232,12 @@ export default function EmailPage() {
       />
 
       <RecipientsDrawer campaign={recipientsOf} onClose={() => setRecipientsOf(null)} />
+
+      <CatchUpModal
+        campaign={catchUpOf}
+        onClose={() => setCatchUpOf(null)}
+        onQueued={row => { setCatchUpOf(null); patchCampaign(row); drive(row) }}
+      />
     </div>
   )
 }
@@ -278,5 +289,103 @@ function RecipientsDrawer({ campaign, onClose }) {
         </div>
       )}
     </Drawer>
+  )
+}
+
+/**
+ * Send an earlier email to members it never reached, usually people who joined
+ * after it went out. They get the same template and text as the original send.
+ */
+function CatchUpModal({ campaign, onClose, onQueued }) {
+  const addToast = useAdminStore(s => s.addToast)
+  const [result, setResult] = useState(null)          // { handPicked, members } | { error }
+  const [selected, setSelected] = useState(new Set())
+  const [busy, setBusy] = useState(false)
+
+  useEffect(() => {
+    if (!campaign) return
+    setResult(null)
+    api(`/api/email/campaigns/${campaign.id}/missing`).then(({ ok, data, message }) => {
+      if (!ok || !Array.isArray(data?.members)) {
+        setResult({ error: message || 'The server did not answer. Restart it if it was started before this update.' })
+        return
+      }
+      setResult(data)
+      setSelected(new Set(data.handPicked ? [] : data.members.map(m => m.id)))
+    })
+  }, [campaign])
+
+  const members = result?.members || []
+  const toggle = id => setSelected(s => {
+    const next = new Set(s)
+    if (next.has(id)) next.delete(id); else next.add(id)
+    return next
+  })
+  const allOn = members.length > 0 && members.every(m => selected.has(m.id))
+
+  const send = async () => {
+    setBusy(true)
+    const { ok, data, message } = await api(`/api/email/campaigns/${campaign.id}/add-recipients`, {
+      method: 'POST', body: { memberIds: [...selected] },
+    })
+    setBusy(false)
+    if (!ok) { addToast(message, 'error'); return }
+    onQueued(data)
+  }
+
+  return (
+    <Modal
+      open={!!campaign}
+      onClose={busy ? () => {} : onClose}
+      title="Send to members who missed it"
+      description={campaign?.subject}
+      footer={
+        <>
+          <Button onClick={onClose} disabled={busy} data-dialog-dismiss="true">Cancel</Button>
+          <Button variant="primary" icon={Send} onClick={send} busy={busy} busyLabel="Queuing…" disabled={!selected.size}>
+            {selected.size ? `Send to ${selected.size}` : 'Send'}
+          </Button>
+        </>
+      }
+    >
+      {!result ? (
+        <SkeletonPanel rows={3} />
+      ) : result.error ? (
+        <p className="text-sm" style={{ color: 'var(--adm-fault)' }}>{result.error}</p>
+      ) : !members.length ? (
+        <p className="text-sm" style={{ color: 'var(--adm-silk-dim)' }}>
+          Everyone this email was meant for has already received it.
+        </p>
+      ) : (
+        <div className="space-y-3">
+          <p className="text-sm" style={{ color: 'var(--adm-silk-dim)' }}>
+            {result.handPicked
+              ? 'This email went to hand-picked members. Choose the active members who should also get it.'
+              : `${members.length} member${members.length === 1 ? '' : 's'} match this email's audience but never received it, usually because they joined later.`}
+            {' '}They get the same email as everyone else.
+          </p>
+          <label className="flex items-center gap-2 text-sm" style={{ color: 'var(--adm-silk)' }}>
+            <input type="checkbox" className="adm-check" checked={allOn}
+              onChange={() => setSelected(new Set(allOn ? [] : members.map(m => m.id)))} />
+            Select all
+          </label>
+          <ul className="space-y-1.5">
+            {members.map(m => (
+              <li key={m.id}>
+                <label className="flex items-center gap-3 rounded-lg px-3 py-2 cursor-pointer" style={{ border: '1px solid var(--adm-trace)' }}>
+                  <input type="checkbox" className="adm-check" checked={selected.has(m.id)} onChange={() => toggle(m.id)} />
+                  <span className="min-w-0">
+                    <span className="block text-sm adm-truncate" style={{ color: 'var(--adm-silk)' }}>{m.name || m.email}</span>
+                    <span className="adm-data block text-[11px] adm-truncate" style={{ color: 'var(--adm-silk-faint)' }}>
+                      {m.email}{m.code ? ` · ${m.code}` : ''}
+                    </span>
+                  </span>
+                </label>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </Modal>
   )
 }
