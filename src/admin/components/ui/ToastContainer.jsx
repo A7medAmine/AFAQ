@@ -41,6 +41,16 @@ export default function ToastContainer() {
             >
               <Icon size={17} style={{ color: tone.color, flexShrink: 0, marginTop: 1 }} />
               <p className="text-sm flex-1" style={{ color: 'var(--adm-silk)' }}>{toast.message}</p>
+              {toast.action && (
+                <button
+                  type="button"
+                  onClick={() => { removeToast(toast.id); toast.action.onClick() }}
+                  className="shrink-0 text-[13px] font-semibold px-2 py-0.5 rounded-md"
+                  style={{ color: 'var(--adm-signal)', border: '1px solid var(--adm-signal-edge)' }}
+                >
+                  {toast.action.label}
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => removeToast(toast.id)}

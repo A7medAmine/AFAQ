@@ -170,12 +170,13 @@ const store = (set, get) => ({
   setCounts: counts => set({ counts: { ...get().counts, ...counts }, countsLoadedAt: Date.now() }),
 
   // ── Toasts ──────────────────────────────────────────────────────────────
-  addToast: (message, type = 'success') => {
+  /** `action` ({ label, onClick }) adds a button, e.g. Undo, and keeps the toast up longer. */
+  addToast: (message, type = 'success', { action } = {}) => {
     if (!message) return
     const id = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
-    set(s => ({ toasts: [...s.toasts, { id, message, type }] }))
+    set(s => ({ toasts: [...s.toasts, { id, message, type, action }] }))
     // Errors stay long enough to read and act on; confirmations get out of the way.
-    setTimeout(() => get().removeToast(id), type === 'error' ? 7000 : 4000)
+    setTimeout(() => get().removeToast(id), action ? 10000 : type === 'error' ? 7000 : 4000)
   },
   removeToast: id => set(s => ({ toasts: s.toasts.filter(t => t.id !== id) })),
 })

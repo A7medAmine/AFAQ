@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react'
+import { api, logActivity } from './db'
+import useAdminStore from '../store/adminStore'
 
 /** Labels for interest keys, read once per page from the public endpoint. */
 export function useInterestLabels() {
@@ -39,4 +41,35 @@ export const EVENT_LABELS = {
   interview: 'Interview',
   approved: 'Accepted',
   rejected: 'Rejected',
+  restored: 'Restored to pending',
+}
+
+/** Put a rejected application back to pending. Resolves true when it worked. */
+export async function restoreApplication(app, note) {
+  const addToast = useAdminStore.getState().addToast
+  const { ok, message } = await api(`/api/review/applications/${app.id}/restore`, { method: 'POST', body: { note } })
+  if (!ok) { addToast(message, 'error'); return false }
+  logActivity('restored', 'membership_applications', app.id, { name: app.full_name })
+  addToast(`${app.full_name} is back to pending.`)
+  return true
+}
+
+/**
+ * Reject through the server (it logs the event and the reason), then offer
+ * Undo for a few seconds. `onChanged` reloads the caller's list.
+ */
+export async function rejectApplication(app, reason, onChanged) {
+  const addToast = useAdminStore.getState().addToast
+  const { ok, message } = await api(`/api/review/applications/${app.id}/decide`, {
+    method: 'POST', body: { decision: 'rejected', note: reason },
+  })
+  if (!ok) { addToast(message, 'error'); return false }
+  logActivity('rejected', 'membership_applications', app.id, { name: app.full_name })
+  addToast(`${app.full_name} rejected.`, 'success', {
+    action: {
+      label: 'Undo',
+      onClick: async () => { if (await restoreApplication(app, 'Undo right after rejecting.')) onChanged?.() },
+    },
+  })
+  return true
 }

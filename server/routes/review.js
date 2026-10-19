@@ -134,7 +134,7 @@ router.get('/queue', async (req, res) => {
     const visibleDecided = decided.data.filter(a => me.isManager || a.decided_by === me.userId || a.reviewer_id === me.id)
 
     res.json({
-      me: { id: me.id, isManager: me.isManager, teamIds: me.teamIds, available: me.available, capacity: me.capacity },
+      me: { id: me.id, userId: me.userId, isManager: me.isManager, teamIds: me.teamIds, available: me.available, capacity: me.capacity },
       staleDays: settings.data?.stale_days ?? 5,
       intake: { open: settings.data?.applications_open ?? true, note: settings.data?.applications_closed_note || null },
       teams: teams.data.map(t => ({
@@ -190,6 +190,29 @@ router.patch('/intake', requireManager, async (req, res) => {
     res.json({ ok: true, intake: await getIntake() })
   } catch (err) {
     fail(res, err, 'Could not change whether applications are open.')
+  }
+})
+
+/**
+ * Put a rejected application back in the queue. Managers can restore any;
+ * a reviewer can restore one they rejected themselves (the Undo toast).
+ */
+router.post('/applications/:id/restore', async (req, res) => {
+  try {
+    const app = await loadApplication(req, req.params.id)
+    if (app.status !== 'rejected') throw new HttpError(409, 'Only rejected applications can be restored.')
+    if (!req.me.isManager && app.decided_by !== req.user.id) {
+      throw new HttpError(403, 'Only a membership manager or the person who rejected it can restore it.')
+    }
+    const note = String(req.body?.note || '').trim() || null
+    const { error } = await supabaseAdmin.from('membership_applications').update({
+      status: 'pending', decided_at: null, decided_by: null, last_activity_at: new Date().toISOString(),
+    }).eq('id', app.id).eq('status', 'rejected')
+    if (error) throw error
+    await logEvent(app.id, 'restored', { toTeamId: app.team_id, toReviewerId: app.reviewer_id, note, actorId: req.user.id })
+    res.json({ ok: true })
+  } catch (err) {
+    fail(res, err, 'Could not restore the application.')
   }
 })
 
@@ -353,6 +376,7 @@ router.post('/applications/:id/decide', async (req, res) => {
       return res.json({ ok: true, member })
     }
     if (decision === 'rejected') {
+      if (!note || note.length < 3) throw new HttpError(400, 'Give a reason for the rejection.')
       const now = new Date().toISOString()
       const { error } = await supabaseAdmin.from('membership_applications').update({
         status: 'rejected', decided_at: now, decided_by: req.user.id, last_activity_at: now,

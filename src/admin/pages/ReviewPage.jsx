@@ -1,17 +1,20 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
-  ArrowRightLeft, Check, DoorClosed, DoorOpen, Hand, Inbox, Mail, Moon, RefreshCw, Star, Sun, Undo2, UserPlus, X,
+  ArrowRightLeft, Check, DoorClosed, DoorOpen, Hand, Inbox, Mail, Moon, RefreshCw, RotateCcw, Star, Sun, Undo2, UserPlus, X,
 } from 'lucide-react'
 import { api, logActivity } from '../lib/db'
 import useCounts from '../hooks/useCounts'
 import useQueryParam from '../hooks/useQueryParam'
 import { formatDate, formatDateTime } from '../lib/format'
-import { EVENT_LABELS, daysSince, toLocalInput, useInterestLabels } from '../lib/review'
+import {
+  EVENT_LABELS, daysSince, rejectApplication, restoreApplication, toLocalInput, useInterestLabels,
+} from '../lib/review'
 import PageHeader, { FilterTabs } from '../components/ui/PageHeader'
 import DataTable from '../components/ui/DataTable'
 import Drawer, { DetailRow, TagList } from '../components/ui/Drawer'
 import ConfirmDialog from '../components/ui/ConfirmDialog'
+import RejectDialog from '../components/review/RejectDialog'
 import Modal from '../components/ui/Modal'
 import EmptyState, { ErrorState } from '../components/ui/EmptyState'
 import Button from '../components/ui/Button'
@@ -263,6 +266,7 @@ export default function ReviewPage() {
         reviewersById={reviewersById}
         busy={busy}
         act={act}
+        onRefresh={async () => { await load(); refreshCounts() }}
         onClose={() => setDetailId(null)}
       />
 
@@ -318,7 +322,7 @@ function TeamTag({ team }) {
   )
 }
 
-function ReviewDrawer({ app, data, labels, teamsById, reviewersById, busy, act, onClose }) {
+function ReviewDrawer({ app, data, labels, teamsById, reviewersById, busy, act, onRefresh, onClose }) {
   const [form, setForm] = useState({})
   const [events, setEvents] = useState([])
   const [mode, setMode] = useState(null) // null | 'transfer' | 'assign'
@@ -352,6 +356,7 @@ function ReviewDrawer({ app, data, labels, teamsById, reviewersById, busy, act, 
   const open = app?.status === 'pending'
   const mine = app?.reviewer_id === me.id
   const canAct = open && app?.can_act
+  const canRestore = app?.status === 'rejected' && (me.isManager || app.decided_by === me.userId)
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
 
   const save = () => {
@@ -368,13 +373,26 @@ function ReviewDrawer({ app, data, labels, teamsById, reviewersById, busy, act, 
       : 'Review saved.', { method: 'PATCH' })
   }
 
-  const decide = async () => {
+  const accept = async () => {
     const result = await act(`/api/review/applications/${app.id}/decide`, decision,
-      decision.decision === 'approved'
-        ? `${app.full_name} is now a member. A welcome email is on the way.`
-        : `${app.full_name} rejected.`, { close: true })
-    if (result) logActivity(decision.decision, 'membership_applications', app.id, { name: app.full_name })
+      `${app.full_name} is now a member. A welcome email is on the way.`, { close: true })
+    if (result) logActivity('approved', 'membership_applications', app.id, { name: app.full_name })
     setDecision(null)
+  }
+
+  const reject = async reason => {
+    if (!(await rejectApplication(app, reason, onRefresh))) return
+    setDecision(null)
+    onClose()
+    await onRefresh()
+  }
+
+  const [restoring, setRestoring] = useState(false)
+  const restore = async () => {
+    setRestoring(true)
+    const ok = await restoreApplication(app)
+    setRestoring(false)
+    if (ok) await onRefresh()
   }
 
   const submitMove = async () => {
@@ -405,6 +423,8 @@ function ReviewDrawer({ app, data, labels, teamsById, reviewersById, busy, act, 
             <Button icon={X} disabled={busy} onClick={() => setDecision({ decision: 'rejected', note: '' })}>Reject</Button>
             <Button variant="primary" icon={Check} disabled={busy} onClick={() => setDecision({ decision: 'approved', note: '' })}>Accept</Button>
           </>
+        ) : canRestore ? (
+          <Button icon={RotateCcw} busy={restoring} busyLabel="Restoring…" onClick={restore}>Restore to pending</Button>
         ) : null}
       >
         {app && (
@@ -560,16 +580,22 @@ function ReviewDrawer({ app, data, labels, teamsById, reviewersById, busy, act, 
       </Drawer>
 
       <ConfirmDialog
-        open={!!decision}
+        open={decision?.decision === 'approved'}
         onClose={() => setDecision(null)}
-        onConfirm={decide}
-        danger={decision?.decision === 'rejected'}
-        title={decision?.decision === 'approved' ? `Accept ${app?.full_name}?` : `Reject ${app?.full_name}?`}
-        confirmLabel={decision?.decision === 'approved' ? 'Accept' : 'Reject'}
-        busyLabel={decision?.decision === 'approved' ? 'Accepting…' : 'Rejecting…'}
-        message={decision?.decision === 'approved'
-          ? 'They become a club member, get a member number and card, and receive a welcome email.'
-          : 'The application is closed. No email is sent.'}
+        onConfirm={accept}
+        danger={false}
+        title={`Accept ${app?.full_name}?`}
+        confirmLabel="Accept"
+        busyLabel="Accepting…"
+        message="They become a club member, get a member number and card, and receive a welcome email."
+      />
+
+      <RejectDialog
+        open={decision?.decision === 'rejected'}
+        onClose={() => setDecision(null)}
+        onConfirm={reject}
+        title={`Reject ${app?.full_name}?`}
+        message="The application is closed. No email is sent."
       />
     </>
   )

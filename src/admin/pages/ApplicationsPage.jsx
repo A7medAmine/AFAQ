@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Check, Loader2, UserCheck, X } from 'lucide-react'
-import { api, logActivity, read, run, supabase } from '../lib/db'
+import { Check, Loader2, RotateCcw, UserCheck, X } from 'lucide-react'
+import { api, logActivity, read, supabase } from '../lib/db'
+import { rejectApplication, restoreApplication } from '../lib/review'
 import useCounts from '../hooks/useCounts'
 import useQueryParam from '../hooks/useQueryParam'
 import { formatDate, formatDateTime } from '../lib/format'
@@ -9,6 +10,7 @@ import DataTable from '../components/ui/DataTable'
 import Drawer, { DetailRow, TagList } from '../components/ui/Drawer'
 import { instagramUrl } from '../../lib/instagram'
 import ConfirmDialog from '../components/ui/ConfirmDialog'
+import RejectDialog from '../components/review/RejectDialog'
 import EmptyState, { ErrorState } from '../components/ui/EmptyState'
 import Button, { IconButton } from '../components/ui/Button'
 import ExportMenu from '../components/ui/ExportMenu'
@@ -23,12 +25,6 @@ const FILTERS = [
   { value: 'rejected', label: 'Rejected' },
 ]
 
-/** Stamp who decided and when, so the review queue's history and load stats include it. */
-function decisionPatch(status) {
-  const now = new Date().toISOString()
-  return { status, decided_at: now, decided_by: useAdminStore.getState().adminProfile?.user_id ?? null, last_activity_at: now }
-}
-
 export default function ApplicationsPage() {
   const addToast = useAdminStore(s => s.addToast)
   const { refresh: refreshCounts } = useCounts()
@@ -40,6 +36,7 @@ export default function ApplicationsPage() {
 
   const [detail, setDetail] = useState(null)
   const [bulk, setBulk] = useState(null)
+  const [rejecting, setRejecting] = useState(null)
   const [working, setWorking] = useState({})
 
   const load = useCallback(async () => {
@@ -64,30 +61,43 @@ export default function ApplicationsPage() {
     count: f.value === 'all' ? rows.length : rows.filter(r => r.status === f.value).length,
   }))
 
-  const setStatusFor = async (row, next) => {
-    setWorking(w => ({ ...w, [row.id]: true }))
-
-    if (next === 'approved') {
-      const { ok, message } = await api('/api/approve/membership', { method: 'POST', body: { id: row.id } })
-      setWorking(w => ({ ...w, [row.id]: false }))
-      if (!ok) { addToast(message, 'error'); return false }
-      addToast(`${row.full_name} is now a member. A welcome email is on the way.`)
-    } else {
-      const { ok } = await run(
-        supabase.from('membership_applications').update(decisionPatch(next)).eq('id', row.id),
-        { success: `${row.full_name} marked ${next}.`, failure: 'The status did not change.' }
-      )
-      setWorking(w => ({ ...w, [row.id]: false }))
-      if (!ok) return false
-    }
-
-    logActivity(next, 'membership_applications', row.id, { name: row.full_name })
+  const reload = async () => {
     await load()
     refreshCounts()
+  }
+
+  const approve = async row => {
+    setWorking(w => ({ ...w, [row.id]: true }))
+    const { ok, message } = await api('/api/approve/membership', { method: 'POST', body: { id: row.id } })
+    setWorking(w => ({ ...w, [row.id]: false }))
+    if (!ok) { addToast(message, 'error'); return false }
+    addToast(`${row.full_name} is now a member. A welcome email is on the way.`)
+    logActivity('approved', 'membership_applications', row.id, { name: row.full_name })
+    await reload()
     return true
   }
 
-  const runBulk = async () => {
+  const confirmReject = async reason => {
+    const row = rejecting
+    setWorking(w => ({ ...w, [row.id]: true }))
+    const ok = await rejectApplication(row, reason, reload)
+    setWorking(w => ({ ...w, [row.id]: false }))
+    if (!ok) return
+    setDetail(d => (d?.id === row.id ? null : d))
+    setRejecting(null)
+    await reload()
+  }
+
+  const restore = async row => {
+    setWorking(w => ({ ...w, [row.id]: true }))
+    const ok = await restoreApplication(row)
+    setWorking(w => ({ ...w, [row.id]: false }))
+    if (!ok) return
+    setDetail(null)
+    await reload()
+  }
+
+  const runBulk = async reason => {
     const pending = bulk.rows.filter(r => r.status === 'pending')
     if (!pending.length) { addToast('None of the selected rows are still pending.', 'info'); setBulk(null); return }
 
@@ -97,8 +107,10 @@ export default function ApplicationsPage() {
         const { ok } = await api('/api/approve/membership', { method: 'POST', body: { id: row.id } })
         if (ok) done += 1
       } else {
-        const { error } = await supabase.from('membership_applications').update(decisionPatch('rejected')).eq('id', row.id)
-        if (!error) done += 1
+        const { ok } = await api(`/api/review/applications/${row.id}/decide`, {
+          method: 'POST', body: { decision: 'rejected', note: reason },
+        })
+        if (ok) done += 1
       }
     }
 
@@ -107,8 +119,7 @@ export default function ApplicationsPage() {
     else addToast(`${done} of ${pending.length} ${verb}. The rest failed — try them individually.`, 'warning')
 
     setBulk(null)
-    await load()
-    refreshCounts()
+    await reload()
   }
 
   const exportHeaders = ['Name', 'Email', 'Phone', 'Instagram', 'Student ID', 'Department', 'Study year', 'Skills', 'Interests', 'Motivation', 'Status', 'Applied']
@@ -167,8 +178,8 @@ export default function ApplicationsPage() {
         return (
           <div className="flex items-center justify-end gap-0.5" onClick={e => e.stopPropagation()}>
             {busy && <Loader2 size={14} className="adm-spin mr-1" style={{ color: 'var(--adm-silk-faint)' }} />}
-            <IconButton icon={Check} label="Approve" disabled={busy} onClick={() => setStatusFor(r, 'approved')} />
-            <IconButton icon={X} label="Reject" danger disabled={busy} onClick={() => setStatusFor(r, 'rejected')} />
+            <IconButton icon={Check} label="Approve" disabled={busy} onClick={() => approve(r)} />
+            <IconButton icon={X} label="Reject" danger disabled={busy} onClick={() => setRejecting(r)} />
           </div>
         )
       },
@@ -245,16 +256,20 @@ export default function ApplicationsPage() {
         footer={
           detail?.status === 'pending' ? (
             <>
-              <Button icon={X} onClick={async () => { if (await setStatusFor(detail, 'rejected')) setDetail(null) }}>
+              <Button icon={X} onClick={() => setRejecting(detail)}>
                 Reject
               </Button>
               <Button
                 variant="primary" icon={Check} busy={working[detail.id]} busyLabel="Approving…"
-                onClick={async () => { if (await setStatusFor(detail, 'approved')) setDetail(null) }}
+                onClick={async () => { if (await approve(detail)) setDetail(null) }}
               >
                 Approve
               </Button>
             </>
+          ) : detail?.status === 'rejected' ? (
+            <Button icon={RotateCcw} busy={working[detail.id]} busyLabel="Restoring…" onClick={() => restore(detail)}>
+              Restore to pending
+            </Button>
           ) : null
         }
       >
@@ -285,21 +300,32 @@ export default function ApplicationsPage() {
         )}
       </Drawer>
 
+      <RejectDialog
+        open={!!rejecting}
+        onClose={() => setRejecting(null)}
+        onConfirm={confirmReject}
+        title={`Reject ${rejecting?.full_name || 'this application'}?`}
+        message={rejecting ? `${rejecting.full_name} (${rejecting.email}) will not become a member. No email is sent.` : ''}
+      />
+
       <ConfirmDialog
-        open={!!bulk}
+        open={bulk?.action === 'approve'}
+        onClose={() => setBulk(null)}
+        onConfirm={() => runBulk()}
+        danger={false}
+        title="Approve these applications?"
+        confirmLabel="Approve all"
+        busyLabel="Approving…"
+        message={bulk ? `${bulk.rows.filter(r => r.status === 'pending').length} people will join the club and get a welcome email.` : ''}
+      />
+
+      <RejectDialog
+        open={bulk?.action === 'reject'}
         onClose={() => setBulk(null)}
         onConfirm={runBulk}
-        danger={bulk?.action === 'reject'}
-        title={bulk?.action === 'approve' ? 'Approve these applications?' : 'Reject these applications?'}
-        confirmLabel={bulk?.action === 'approve' ? 'Approve all' : 'Reject all'}
-        busyLabel={bulk?.action === 'approve' ? 'Approving…' : 'Rejecting…'}
-        message={
-          bulk
-            ? bulk.action === 'approve'
-              ? `${bulk.rows.filter(r => r.status === 'pending').length} people will join the club and get a welcome email.`
-              : `${bulk.rows.filter(r => r.status === 'pending').length} applications will be rejected. No email is sent.`
-            : ''
-        }
+        title="Reject these applications?"
+        confirmLabel="Reject all"
+        message={bulk ? `${bulk.rows.filter(r => r.status === 'pending').length} applications will be rejected. No email is sent.` : ''}
       />
     </div>
   )

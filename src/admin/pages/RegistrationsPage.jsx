@@ -38,6 +38,7 @@ export default function RegistrationsPage() {
   const [detail, setDetail] = useState(null)
   const [qrFor, setQrFor] = useState(null)
   const [bulk, setBulk] = useState(null)      // { action, rows }
+  const [rejecting, setRejecting] = useState(null)
   const [working, setWorking] = useState({})
   const navigate = useNavigate()
 
@@ -107,6 +108,13 @@ export default function RegistrationsPage() {
     await load()
     refreshCounts()
     return true
+  }
+
+  const confirmReject = async () => {
+    const row = rejecting
+    if (!(await setStatusFor(row, 'rejected'))) return
+    setDetail(d => (d?.id === row.id ? null : d))
+    setRejecting(null)
   }
 
   const runBulk = async () => {
@@ -194,7 +202,7 @@ export default function RegistrationsPage() {
             {r.status === 'pending' && (
               <>
                 <IconButton icon={Check} label="Approve" disabled={busy} onClick={() => setStatusFor(r, 'approved')} />
-                <IconButton icon={X} label="Reject" danger disabled={busy} onClick={() => setStatusFor(r, 'rejected')} />
+                <IconButton icon={X} label="Reject" danger disabled={busy} onClick={() => setRejecting(r)} />
               </>
             )}
           </div>
@@ -303,7 +311,10 @@ export default function RegistrationsPage() {
       <RegistrationDrawer
         registration={detail}
         onClose={() => setDetail(null)}
-        onStatus={async (row, next) => { const ok = await setStatusFor(row, next); if (ok) setDetail(null) }}
+        onStatus={async (row, next) => {
+          if (next === 'rejected') { setRejecting(row); return }
+          if (await setStatusFor(row, next)) setDetail(null)
+        }}
         onShowPass={setQrFor}
         busy={detail ? working[detail.id] : false}
       />
@@ -330,6 +341,18 @@ export default function RegistrationsPage() {
           </div>
         )}
       </Modal>
+
+      <ConfirmDialog
+        open={!!rejecting}
+        onClose={() => setRejecting(null)}
+        onConfirm={confirmReject}
+        title={`Reject ${rejecting?.full_name || 'this registration'}?`}
+        confirmLabel="Reject"
+        busyLabel="Rejecting…"
+        message={rejecting
+          ? `${rejecting.full_name} will not get a place${rejecting.event?.title_en ? ` at ${rejecting.event.title_en}` : ''}. No email is sent.`
+          : ''}
+      />
 
       <ConfirmDialog
         open={!!bulk}
