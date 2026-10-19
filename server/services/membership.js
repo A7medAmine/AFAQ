@@ -1,5 +1,6 @@
 import { supabaseAdmin } from '../db/client.js'
 import { sendEmail } from './mailer.js'
+import { CLUB_NAME, memberVariables, renderEmail } from '../../src/lib/emailTemplate.js'
 
 export const escapeHtml = str => {
   if (typeof str !== 'string') return ''
@@ -10,8 +11,10 @@ export class HttpError extends Error {
   constructor(status, message) { super(message); this.status = status }
 }
 
-/** The club's plain email shell, shared by the membership emails. */
-export function clubEmail(heading, paragraphs) {
+const INSTAGRAM_COMMUNITY_URL = 'https://ig.me/j/7P2FzCrA3F5O5xrP/'
+
+/** The club's plain email shell, shared by the membership emails; `button` adds one call-to-action link. */
+export function clubEmail(heading, paragraphs, button = null) {
   return `
     <div style="font-family: Arial, sans-serif; max-width: 560px; margin: 0 auto;">
       <div style="background: #0F172A; padding: 24px; text-align: center;">
@@ -20,6 +23,10 @@ export function clubEmail(heading, paragraphs) {
       <div style="padding: 32px 24px; background: #f8fafc;">
         <h2 style="margin: 0 0 8px;">${heading}</h2>
         ${paragraphs.map(p => `<p style="color: #475569; font-size: 15px; line-height: 1.6;">${p}</p>`).join('')}
+        ${button ? `
+        <p style="text-align: center; margin: 28px 0;">
+          <a href="${button.url}" target="_blank" rel="noopener" style="display: inline-block; background: #0F172A; color: #fff; text-decoration: none; font-weight: bold; font-size: 15px; padding: 12px 28px; border-radius: 8px;">${button.label}</a>
+        </p>` : ''}
         <p style="color: #94a3b8; font-size: 13px; margin-top: 24px;">
           Best regards,<br/>AFAQ Scientific Club Team
         </p>
@@ -36,15 +43,34 @@ export async function getIntake() {
   return { open: data?.applications_open ?? true, note: data?.applications_closed_note || null }
 }
 
+/**
+ * Send a membership email from the admin-edited template of `kind` (the
+ * default one, else any). When none exists, `fallback()` gives the built-in text.
+ */
+async function sendMembershipEmail(kind, { email, full_name }, fallback) {
+  const { data: template, error } = await supabaseAdmin
+    .from('email_templates').select('*').eq('kind', kind)
+    .order('is_default', { ascending: false }).order('id').limit(1).maybeSingle()
+  if (error) console.error(`Email template (${kind}) lookup error:`, error.message)
+
+  const message = template
+    ? renderEmail(template, {
+      club_name: CLUB_NAME,
+      site_url: String(process.env.VITE_APP_URL || '').replace(/\/+$/, ''),
+      ...memberVariables({ full_name }),
+    })
+    : fallback()
+  return sendEmail({ to: email, ...message })
+}
+
 /** "We got your application" email, sent on submit and on demand from the review queue. */
-export function sendApplicationReceived({ email, full_name }) {
-  return sendEmail({
-    to: email,
+export function sendApplicationReceived(applicant) {
+  return sendMembershipEmail('application_received', applicant, () => ({
     subject: 'Membership Application Received — AFAQ Scientific Club',
-    html: clubEmail(`Thank You, ${escapeHtml(full_name)}!`, [
+    html: clubEmail(`Thank You, ${escapeHtml(applicant.full_name)}!`, [
       'We have received your membership application. Our team will review it and get back to you soon.',
     ]),
-  })
+  }))
 }
 
 /**
@@ -83,15 +109,14 @@ export async function approveApplication(id, { decidedBy = null } = {}) {
     .eq('id', id)
   if (statusErr) throw statusErr
 
-  const safeName = escapeHtml(application.full_name)
-  await sendEmail({
-    to: application.email,
+  await sendMembershipEmail('membership_approved', application, () => ({
     subject: 'Membership Approved — Welcome to AFAQ!',
-    html: clubEmail(`Welcome to AFAQ, ${safeName}!`, [
+    html: clubEmail(`Welcome to AFAQ, ${escapeHtml(application.full_name)}!`, [
       'Your membership application has been <strong>approved</strong>! We are thrilled to have you on board.',
       'Stay tuned for upcoming events, workshops, and projects. You are now part of a community where technology meets innovation.',
-    ]),
-  }).catch(err => console.error('Welcome email error:', err.message))
+      'Join our Instagram community to connect with other members and catch every announcement.',
+    ], { label: 'Join our Instagram community', url: INSTAGRAM_COMMUNITY_URL }),
+  })).catch(err => console.error('Welcome email error:', err.message))
 
   return { application, member }
 }

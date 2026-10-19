@@ -15,7 +15,12 @@ export const TEMPLATE_KINDS = [
   { value: 'announcement', label: 'Announcement' },
   { value: 'event', label: 'Event' },
   { value: 'general', label: 'General' },
+  { value: 'application_received', label: 'Application received' },
+  { value: 'membership_approved', label: 'Membership approved' },
 ]
+
+/** Kinds the server sends on its own; they are not offered in the composer. */
+export const MEMBERSHIP_KINDS = ['application_received', 'membership_approved']
 
 export const EMAIL_LANGUAGES = [
   { value: 'en', label: 'English' },

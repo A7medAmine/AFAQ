@@ -4,7 +4,7 @@ import { api, run, supabase } from '../../lib/db'
 import useAdminStore from '../../store/adminStore'
 import { toForm } from '../../lib/format'
 import {
-  EMAIL_LANGUAGES, SAMPLE_VARIABLES, TEMPLATE_KINDS, TEMPLATE_VARIABLES, renderEmail,
+  EMAIL_LANGUAGES, MEMBERSHIP_KINDS, SAMPLE_VARIABLES, TEMPLATE_KINDS, TEMPLATE_VARIABLES, renderEmail,
 } from '../../../lib/emailTemplate'
 import Modal from '../ui/Modal'
 import Button from '../ui/Button'
@@ -259,7 +259,9 @@ export default function TemplateEditorModal({ open, template, onClose, onSaved, 
           <div className="pt-4" style={{ borderTop: '1px solid var(--adm-trace)' }}>
             <CheckField
               label="Default for this kind"
-              description="Picked automatically when you email members about an announcement or event."
+              description={MEMBERSHIP_KINDS.includes(form.kind)
+                ? 'Sent automatically to applicants. Without a template of this kind, the built-in text is sent.'
+                : 'Picked automatically when you email members about an announcement or event.'}
               checked={form.is_default}
               onChange={v => set('is_default', v)}
             />

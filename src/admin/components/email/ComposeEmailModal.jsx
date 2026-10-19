@@ -5,7 +5,7 @@ import { runCampaign } from '../../lib/email'
 import { MEMBER_STATUSES } from '../../lib/hr'
 import useAdminStore from '../../store/adminStore'
 import {
-  EMAIL_LANGUAGES, buildSharedVariables, memberVariables, renderEmail,
+  EMAIL_LANGUAGES, MEMBERSHIP_KINDS, buildSharedVariables, memberVariables, renderEmail,
 } from '../../../lib/emailTemplate'
 import Modal from '../ui/Modal'
 import Button from '../ui/Button'
@@ -91,7 +91,7 @@ export default function ComposeEmailModal({ open, onClose, source, onSent }) {
       if (cancelled) return
       if (!list.ok) { setLoadError(list.message); return }
       if (!opts.ok) { setLoadError(opts.message); return }
-      const rows = list.data || []
+      const rows = (list.data || []).filter(t => !MEMBERSHIP_KINDS.includes(t.kind))
       setTemplates(rows)
       setOptions(opts.data)
       const pick = rows.find(t => t.kind === kind && t.is_default) || rows.find(t => t.kind === kind) || rows[0]

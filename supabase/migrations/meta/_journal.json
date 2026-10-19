@@ -253,6 +253,13 @@
       "when": 1792186719505,
       "tag": "0035_instagram_to_membership_applications",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1792436951025,
+      "tag": "0036_membership_email_templates",
+      "breakpoints": true
     }
   ]
 }
