@@ -328,6 +328,7 @@ function ReviewDrawer({ app, data, labels, teamsById, reviewersById, busy, act, 
   const [mode, setMode] = useState(null) // null | 'transfer' | 'assign'
   const [move, setMove] = useState({ teamId: '', reviewerId: '', note: '' })
   const [decision, setDecision] = useState(null) // { decision, note }
+  const [restoring, setRestoring] = useState(false)
 
   const id = app?.id
   useEffect(() => {
@@ -387,7 +388,6 @@ function ReviewDrawer({ app, data, labels, teamsById, reviewersById, busy, act, 
     await onRefresh()
   }
 
-  const [restoring, setRestoring] = useState(false)
   const restore = async () => {
     setRestoring(true)
     const ok = await restoreApplication(app)
