@@ -144,6 +144,7 @@ export const NAV_ITEMS = [
   { label: 'Registrations', path: '/admin/registrations', icon: 'ClipboardCheck', group: 'events', permission: 'events.registrations.manage' },
 
   { label: 'My department', path: '/admin/department', icon: 'Building2', group: 'people', permission: 'department.view' },
+  { label: 'Assessment', path: '/admin/assessment', icon: 'ClipboardCheck', group: 'people', permission: 'department.view' },
   { label: 'HR', path: '/admin/hr', icon: 'HeartHandshake', group: 'people', permission: 'hr.manage' },
   { label: 'Points', path: '/admin/points', icon: 'Trophy', group: 'people', permission: 'points.manage' },
   { label: 'Review queue', path: '/admin/review', icon: 'Inbox', group: 'people', permission: 'applications.review' },

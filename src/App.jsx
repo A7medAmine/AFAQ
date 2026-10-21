@@ -30,6 +30,7 @@ const HRPage = lazy(() => import('./admin/pages/HRPage'))
 const PointsPage = lazy(() => import('./admin/pages/PointsPage'))
 const QuickPointsPage = lazy(() => import('./admin/pages/QuickPointsPage'))
 const DepartmentPage = lazy(() => import('./admin/pages/DepartmentPage'))
+const AssessmentPage = lazy(() => import('./admin/pages/AssessmentPage'))
 const EventsPage = lazy(() => import('./admin/pages/EventsPage'))
 const RegistrationsPage = lazy(() => import('./admin/pages/RegistrationsPage'))
 const ApplicationsPage = lazy(() => import('./admin/pages/ApplicationsPage'))
@@ -149,6 +150,9 @@ export default function App() {
             } />
             <Route path="department" element={
               <RoleGuard permission="department.view"><DepartmentPage /></RoleGuard>
+            } />
+            <Route path="assessment" element={
+              <RoleGuard permission="department.view"><AssessmentPage /></RoleGuard>
             } />
             <Route path="review" element={
               <RoleGuard permission="applications.review"><ReviewPage /></RoleGuard>

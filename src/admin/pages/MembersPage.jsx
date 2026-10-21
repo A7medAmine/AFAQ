@@ -32,7 +32,7 @@ import AddAdminModal from '../components/AddAdminModal'
 
 const STATUS_FILTERS = [{ value: 'all', label: 'All' }, ...MEMBER_STATUSES]
 
-const MEMBER_SELECT = '*, member_positions(id, member_id, title, team, term_start, term_end, notes), member_group_members(group_id), member_departments(department_id, source)'
+const MEMBER_SELECT = '*, member_positions(id, member_id, title, team, term_start, term_end, notes), member_group_members(group_id), member_departments(department_id, source), application:membership_applications(motivation)'
 
 export default function MembersPage() {
   const navigate = useNavigate()
@@ -454,6 +454,11 @@ export default function MembersPage() {
 
             <DetailRow label="Skills"><TagList items={detail.skills} empty="None listed" /></DetailRow>
             <DetailRow label="Interests"><TagList items={detail.interests} empty="None listed" /></DetailRow>
+            <DetailRow label="Motivation letter">
+              {detail.application?.motivation
+                ? <p className="whitespace-pre-wrap leading-relaxed">{detail.application.motivation}</p>
+                : <span style={{ color: 'var(--adm-silk-faint)' }}>No motivation letter on file</span>}
+            </DetailRow>
             {detail.notes && (
               <DetailRow label="Internal notes"><p className="whitespace-pre-wrap leading-relaxed">{detail.notes}</p></DetailRow>
             )}

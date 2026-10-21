@@ -833,3 +833,23 @@ export const mediaSnippets = pgTable('media_snippets', {
   sortOrder: integer('sort_order').notNull().default(0),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
 })
+
+// ---------- Department assessments ----------
+// One interview per member per department (the Tech department's skills
+// assessment, see src/admin/lib/assessment.js). `answers` holds one score
+// 0–3 per question, null while unanswered; the total and level are derived.
+export const memberAssessments = pgTable('member_assessments', {
+  id: bigint({ mode: 'number' }).primaryKey().generatedAlwaysAsIdentity(),
+  memberId: bigint('member_id', { mode: 'number' }).notNull().references(() => members.id, { onDelete: 'cascade' }),
+  departmentId: bigint('department_id', { mode: 'number' }).notNull().references(() => departments.id, { onDelete: 'cascade' }),
+  answers: integer().array().notNull().default([]),
+  status: text().notNull().default('pending'),
+  practical: text().notNull().default('not_required'),
+  notes: text(),
+  interviewedBy: uuid('interviewed_by'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+}, t => [
+  unique('member_assessments_member_department_key').on(t.memberId, t.departmentId),
+  index('member_assessments_department_idx').on(t.departmentId),
+])

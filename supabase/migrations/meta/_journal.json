@@ -260,6 +260,13 @@
       "when": 1792436951025,
       "tag": "0036_membership_email_templates",
       "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1792621448567,
+      "tag": "0037_department_assessments",
+      "breakpoints": true
     }
   ]
 }
