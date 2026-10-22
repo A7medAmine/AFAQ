@@ -9,11 +9,12 @@ import LogoSection from '../components/brand/LogoSection'
 import ColorSection from '../components/brand/ColorSection'
 import TypeSection from '../components/brand/TypeSection'
 import BackgroundGenerator from '../components/brand/BackgroundGenerator'
+import SamplesSection from '../components/brand/SamplesSection'
 import { BRAND_ZIP, LOGO_SVG } from '../data/brand'
 import './brand.css'
 
 const spring = { type: 'spring', damping: 28, stiffness: 120 }
-const SECTIONS = ['logo', 'colors', 'typography', 'backgrounds', 'usage']
+const SECTIONS = ['logo', 'colors', 'typography', 'backgrounds', 'usage', 'samples']
 
 function useActiveSection() {
   const [active, setActive] = useState(SECTIONS[0])
@@ -172,6 +173,9 @@ export default function Brand() {
         </Section>
         <Section id="usage" index={5} title={t('usage.title')}>
           <Usage />
+        </Section>
+        <Section id="samples" index={6} title={t('samples.title')} subtitle={t('samples.subtitle')}>
+          <SamplesSection />
         </Section>
       </div>
     </CopyProvider>

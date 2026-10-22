@@ -15,7 +15,8 @@
     "colors": "Colours",
     "typography": "Typography",
     "usage": "Usage",
-    "backgrounds": "Backgrounds"
+    "backgrounds": "Backgrounds",
+    "samples": "Samples"
   },
   "logo": {
     "title": "The mark",
@@ -215,5 +216,75 @@
         "d": "Roughly 60% Midnight or Cloud, 30% Deep Blue / Slate, 10% Afaq Blue or Sky as accent."
       }
     ]
+  },
+  "samples": {
+    "title": "In the wild",
+    "subtitle": "A few real pieces made with the system: print, signage and project sheets.",
+    "items": {
+      "trifold": {
+        "t": "Open Day brochure",
+        "f": "Tri-fold · A4 landscape"
+      },
+      "rollup": {
+        "t": "Welcome roll-up",
+        "f": "Banner · 85 × 200 cm"
+      },
+      "photoBooth": {
+        "t": "Photo Booth project sheet",
+        "f": "Printable · A4"
+      },
+      "espRacer": {
+        "t": "ESP Racer project sheet",
+        "f": "Printable · A4"
+      },
+      "openWeekPoster": {
+        "t": "Open Week poster",
+        "f": "Poster · A4"
+      },
+      "slideWelcome": {
+        "t": "Open Week carousel, slide 1",
+        "f": "Instagram · 4:5"
+      },
+      "slideOpenWeek": {
+        "t": "Open Week carousel, slide 2",
+        "f": "Instagram · 4:5"
+      },
+      "slideWhoWeAre": {
+        "t": "Open Week carousel, slide 3",
+        "f": "Instagram · 4:5"
+      },
+      "badgePresidentFront": {
+        "t": "Club board badge, front",
+        "f": "Badge"
+      },
+      "badgePresidentBack": {
+        "t": "Club board badge, back",
+        "f": "Badge"
+      },
+      "badgeMediaFront": {
+        "t": "Media team badge, front",
+        "f": "Badge"
+      },
+      "badgeMediaBack": {
+        "t": "Media team badge, back",
+        "f": "Badge"
+      },
+      "flyerFront": {
+        "t": "Opening day flyer, front",
+        "f": "Flyer · A5 / A4"
+      },
+      "flyerBack": {
+        "t": "Opening day flyer, back",
+        "f": "Flyer · A5 / A4"
+      },
+      "trifoldRoute": {
+        "t": "Opening day brochure, route map",
+        "f": "Tri-fold · A4 landscape"
+      },
+      "wifi": {
+        "t": "Join AFAQ poster",
+        "f": "Poster · A4"
+      }
+    }
   }
 }
