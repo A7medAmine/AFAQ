@@ -317,6 +317,7 @@
     ],
     "fontsTitle": "Hosted fonts",
     "fontsHint": "The club fonts aren't on Google Fonts, so we host them. Add this line to any HTML page to load every family.",
-    "copyLink": "Copy link tag"
+    "copyLink": "Copy link tag",
+    "copy": "Copy SKILL.md"
   }
 }

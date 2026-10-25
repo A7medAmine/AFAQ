@@ -11,6 +11,11 @@ export default function SkillSection() {
   const inside = t('skill.insideItems', { returnObjects: true })
   const steps = t('skill.steps', { returnObjects: true })
 
+  const copySkill = async () => {
+    const res = await fetch(SKILL_MD)
+    if (res.ok) copy(await res.text())
+  }
+
   return (
     <div className="grid lg:grid-cols-[1.1fr_1fr] gap-6">
       <div className="flex flex-col gap-6">
@@ -18,6 +23,7 @@ export default function SkillSection() {
           <div className="flex flex-wrap gap-3 mb-8">
             <Download href={SKILL_ZIP} className="bk-btn bk-btn-primary bk-btn-lg"><Package size={18} />{t('skill.download')}</Download>
             <a href={SKILL_MD} target="_blank" rel="noreferrer" className="bk-btn bk-btn-lg"><FileText size={18} />{t('skill.view')}</a>
+            <button type="button" className="bk-btn bk-btn-lg" onClick={copySkill}><Copy size={18} />{t('skill.copy')}</button>
           </div>
           <h3 className="bk-title text-lg mb-4">{t('skill.inside')}</h3>
           <ul className="flex flex-col gap-3">
