@@ -167,6 +167,9 @@ def build_skill_zip():
     root = Path("afaq-design-system")
     with zipfile.ZipFile(SKILL / "afaq-design-system.zip", "w", zipfile.ZIP_DEFLATED) as z:
         z.write(SKILL / "SKILL.md", root / "SKILL.md")
+        # Portable versions of the skill for ChatGPT, Gemini and image models.
+        for p in sorted((SKILL / "portable").glob("*")):
+            z.write(p, root / "portable" / p.name)
         z.writestr(str(root / "fonts" / "afaq-fonts.css"), font_face_css(""))
         for _, _, stem, woff2 in FONT_FACES:
             for ext in (["woff2"] if woff2 else []) + ["ttf"]:
