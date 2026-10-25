@@ -24,4 +24,8 @@ No Custom GPT? Create a ChatGPT **Project**, put the same text in "Instructions"
 Paste `AFAQ-design-system-PORTABLE.md` at the start of the chat (or into the system/instructions field) and attach the reference images.
 
 ## Fonts
-All fonts load from https://afaq.club/brand/fonts/afaq-fonts.css (the site must be online). For Photoshop/Canva/Figma install the .ttf files from `fonts/`.
+The fonts are hosted on the club site (not Google Fonts). All of them load from https://afaq.club/brand/fonts/afaq-fonts.css (the site must be online). For Photoshop/Canva/Figma install the .ttf files from `fonts/`, or download them directly:
+- https://afaq.club/brand/fonts/zip/minecraft.zip
+- https://afaq.club/brand/fonts/zip/thmanyah-sans.zip
+- https://afaq.club/brand/fonts/zip/thmanyah-serif-display.zip
+- https://afaq.club/brand/fonts/zip/unixel.zip

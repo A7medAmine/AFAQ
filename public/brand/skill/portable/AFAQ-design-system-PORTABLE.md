@@ -39,6 +39,10 @@ Default = the blue version. No rainbow stripes.
 - **Thmanyah Sans** 500 / 700 / 900 — body text and ALL Arabic (`dir="rtl"`).
 - Optional: **Thmanyah Serif Display** (editorial Arabic headlines), **Unixel** (pixel Arabic headlines).
 - Loaded by `https://afaq.club/brand/fonts/afaq-fonts.css`. Do NOT use Press Start 2P, VT323, Cairo, Tajawal or any other font. For desktop tools, install the .ttf files from the brand kit (afaq.club/brand).
+- The fonts are not on Google Fonts; they are hosted on the club site. Direct links:
+  - Stylesheet (all families): https://afaq.club/brand/fonts/afaq-fonts.css
+  - Single files: `https://afaq.club/brand/fonts/<file>`, e.g. https://afaq.club/brand/fonts/Minecraft.woff2, https://afaq.club/brand/fonts/thmanyahsans-Bold.woff2 (every family also has `.ttf`)
+  - Install packs: https://afaq.club/brand/fonts/zip/minecraft.zip, https://afaq.club/brand/fonts/zip/thmanyah-sans.zip, https://afaq.club/brand/fonts/zip/thmanyah-serif-display.zip, https://afaq.club/brand/fonts/zip/unixel.zip
 
 ## Building blocks (copy these values)
 - **Blue grid background:** `background-color:#233DFF; background-image:linear-gradient(rgba(255,255,255,.10) 2px,transparent 2px),linear-gradient(90deg,rgba(255,255,255,.10) 2px,transparent 2px); background-size:54px 54px`

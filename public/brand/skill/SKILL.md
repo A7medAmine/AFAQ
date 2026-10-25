@@ -29,6 +29,11 @@ No rainbow stripes. Default deliverable = blue version; offer colorful/navy vari
 ## Fonts
 The club fonts are not on Google Fonts or any public CDN. They are self-hosted on the club site and bundled with this skill. Never substitute another font (no Press Start 2P, VT323, Cairo, Tajawal…); if the real font cannot be loaded, stop and say so.
 
+**Hosted fonts (direct links):**
+- Stylesheet with every family: https://afaq.club/brand/fonts/afaq-fonts.css
+- Single files: https://afaq.club/brand/fonts/Minecraft.woff2, https://afaq.club/brand/fonts/thmanyahsans-Bold.woff2 (pattern `https://afaq.club/brand/fonts/<file>`; every family also has `.ttf`)
+- Install packs (.ttf): https://afaq.club/brand/fonts/zip/minecraft.zip, https://afaq.club/brand/fonts/zip/thmanyah-sans.zip, https://afaq.club/brand/fonts/zip/thmanyah-serif-display.zip, https://afaq.club/brand/fonts/zip/unixel.zip
+
 Families:
 - **Minecraft** (400): titles, kickers, labels, tags, numbers, window titles (UPPERCASE). Latin only.
 - **Thmanyah Sans** (300/400/500/700/900): body text and all Arabic (`dir="rtl"`). Use 500/700/900 in designs.
