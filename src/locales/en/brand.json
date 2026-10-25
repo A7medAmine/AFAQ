@@ -16,7 +16,8 @@
     "typography": "Typography",
     "usage": "Usage",
     "backgrounds": "Backgrounds",
-    "samples": "Samples"
+    "samples": "Samples",
+    "skill": "AI skill"
   },
   "logo": {
     "title": "The mark",
@@ -286,5 +287,36 @@
         "f": "Poster · A4"
       }
     }
+  },
+  "skill": {
+    "title": "AI design skill",
+    "subtitle": "Teach Claude (or any AI agent) the AFAQ design system. The skill carries the rules, colours and the club fonts, so generated posters and posts come out on brand.",
+    "download": "Download skill (.zip)",
+    "view": "Read SKILL.md",
+    "inside": "What's inside",
+    "insideItems": [
+      "SKILL.md: style rules, colours, formats and building blocks",
+      "fonts/: Minecraft, Thmanyah Sans, Thmanyah Serif Display and Unixel (WOFF2 + TTF)",
+      "fonts/afaq-fonts.css: ready @font-face rules pointing at the bundled files"
+    ],
+    "install": "Install",
+    "steps": [
+      {
+        "t": "Claude.ai",
+        "d": "Settings → Capabilities → Skills → Upload skill, then pick the .zip as is."
+      },
+      {
+        "t": "Claude Code",
+        "d": "Unzip into your skills folder (or .claude/skills/ inside a project).",
+        "c": "~/.claude/skills/afaq-design-system/"
+      },
+      {
+        "t": "Other agents",
+        "d": "Give them SKILL.md and the fonts/ folder, or just the hosted font link."
+      }
+    ],
+    "fontsTitle": "Hosted fonts",
+    "fontsHint": "The club fonts aren't on Google Fonts, so we host them. Add this line to any HTML page to load every family.",
+    "copyLink": "Copy link tag"
   }
 }

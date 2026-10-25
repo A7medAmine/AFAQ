@@ -3,6 +3,11 @@
 
 export const BRAND_ZIP = '/brand/afaq-brand-kit.zip'
 
+// AI design skill (SKILL.md + bundled fonts) and the hosted font stylesheet.
+export const SKILL_ZIP = '/brand/skill/afaq-design-system.zip'
+export const SKILL_MD = '/brand/skill/SKILL.md'
+export const FONTS_CSS_URL = 'https://afaq.club/brand/fonts/afaq-fonts.css'
+
 export const COLORS = [
   { key: 'midnight', hex: '#050A30', role: 'primary' },
   { key: 'deepBlue', hex: '#12229D', role: 'primary' },

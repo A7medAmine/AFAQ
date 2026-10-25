@@ -6,7 +6,9 @@ Needs: pillow, fonttools, brotli.
 Inputs (committed):  public/brand/logo/afaq-mark-black.png (2000px, transparent)
                      public/brand/fonts/*.woff2 / *.ttf
 Outputs: PNG logo exports, TTF copies of the Thmanyah woff2 files (desktop apps
-can't install woff2), palette files, and one ZIP with everything.
+can't install woff2), palette files, a hosted @font-face stylesheet, the
+AI design skill bundle (public/brand/skill/SKILL.md + fonts), and one ZIP with
+everything.
 """
 import io
 import json
@@ -129,6 +131,48 @@ def build_font_zips():
                 z.write(p, Path(name) / p.name)
 
 
+SITE = "https://afaq.club"
+SKILL = BRAND / "skill"
+
+# (family, weight, file stem, has woff2) — the families designs actually use.
+FONT_FACES = [
+    *[("Thmanyah Sans", w, f"thmanyahsans-{n}", True) for n, w in
+      [("Light", 300), ("Regular", 400), ("Medium", 500), ("Bold", 700), ("Black", 900)]],
+    *[("Thmanyah Serif Display", w, f"thmanyahserifdisplay-{n}", True) for n, w in
+      [("Light", 300), ("Regular", 400), ("Medium", 500), ("Bold", 700), ("Black", 900)]],
+    ("Minecraft", 400, "Minecraft", True),
+    ("Unixel", 400, "unixel-Regular", False),
+]
+
+
+def font_face_css(base):
+    rules = []
+    for family, weight, stem, woff2 in FONT_FACES:
+        src = [f'url("{base}{stem}.woff2") format("woff2")'] if woff2 else []
+        src.append(f'url("{base}{stem}.ttf") format("truetype")')
+        rules.append(
+            f'@font-face {{ font-family: "{family}"; src: {", ".join(src)}; '
+            f"font-weight: {weight}; font-style: normal; font-display: swap; }}"
+        )
+    return "/* AFAQ brand fonts. */\n" + "\n".join(rules) + "\n"
+
+
+def build_font_css():
+    """Hosted stylesheet so any page or tool can use the fonts with one <link>."""
+    (FONTS / "afaq-fonts.css").write_text(font_face_css(f"{SITE}/brand/fonts/"), encoding="utf-8")
+
+
+def build_skill_zip():
+    """AI design skill: SKILL.md plus the fonts, with a CSS file that points at them locally."""
+    root = Path("afaq-design-system")
+    with zipfile.ZipFile(SKILL / "afaq-design-system.zip", "w", zipfile.ZIP_DEFLATED) as z:
+        z.write(SKILL / "SKILL.md", root / "SKILL.md")
+        z.writestr(str(root / "fonts" / "afaq-fonts.css"), font_face_css(""))
+        for _, _, stem, woff2 in FONT_FACES:
+            for ext in (["woff2"] if woff2 else []) + ["ttf"]:
+                z.write(FONTS / f"{stem}.{ext}", root / "fonts" / f"{stem}.{ext}")
+
+
 def build_zip():
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
@@ -143,5 +187,7 @@ if __name__ == "__main__":
     woff2_to_ttf()
     export_palette()
     build_font_zips()
+    build_font_css()
+    build_skill_zip()
     build_zip()
     print("brand kit built:", BRAND)
