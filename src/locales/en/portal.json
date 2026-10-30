@@ -1,0 +1,173 @@
+{
+  "title": "Member area",
+  "hello": "Hello, {{name}}",
+  "signOut": "Sign out",
+  "seeAll": "See all",
+  "loading": "Loading…",
+  "tabs": {
+    "home": "Overview",
+    "points": "Points",
+    "events": "Events",
+    "tasks": "Tasks",
+    "notices": "Notices",
+    "profile": "Profile"
+  },
+  "login": {
+    "title": "Member sign in",
+    "subtitle": "Sign in with the email you joined the club with.",
+    "accessTitle": "Get your password link",
+    "accessSubtitle": "First time here, or forgot your password? Enter your club email and we will send you a link to set one.",
+    "email": "Email",
+    "password": "Password",
+    "show": "Show password",
+    "hide": "Hide password",
+    "submit": "Sign in",
+    "sendLink": "Send me the link",
+    "wait": "Please wait…",
+    "firstTime": "First time, or forgot your password?",
+    "back": "Back to sign in",
+    "sentTitle": "Check your inbox",
+    "sentText": "If {{email}} belongs to a club member, a link to set your password is on its way. It works once and expires soon.",
+    "membersOnly": "The member area is for AFAQ members. Not a member yet? Apply from the Join Us page.",
+    "errors": {
+      "email": "Enter a valid email address.",
+      "invalid": "That email and password do not match. First time here? Ask for a password link below.",
+      "failed": "Sign in failed. Try again in a moment.",
+      "notMember": "This account is not linked to an active club member.",
+      "tooMany": "Too many requests. Try again in a few minutes.",
+      "network": "Cannot reach the server. Check your connection."
+    }
+  },
+  "setPassword": {
+    "title": "Choose your password",
+    "subtitle": "You will use it with your club email to sign in.",
+    "invalid": "This link has expired or was already used. Ask for a new one.",
+    "newLink": "Ask for a new link",
+    "password": "New password",
+    "hint": "At least 8 characters.",
+    "confirm": "Repeat the password",
+    "submit": "Save and sign in",
+    "errors": {
+      "short": "Use at least 8 characters.",
+      "mismatch": "The two passwords do not match.",
+      "same": "Choose a password different from your old one.",
+      "failed": "The password was not saved. Ask for a new link and try again.",
+      "long": "Use at most 72 characters.",
+      "tooMany": "Too many attempts. Try again in a few minutes."
+    },
+    "temporary": "You signed in with a temporary password. Choose your own password to continue."
+  },
+  "home": {
+    "points": "My points",
+    "clubRank": "Club rank",
+    "outOf": "of {{count}} active members",
+    "departmentRank": "Department rank",
+    "noticesUnread": "Notices · {{count}} new",
+    "nextEvents": "Upcoming events",
+    "openTasks": "Open tasks",
+    "rankNote": "Ranks compare your points with active members; other members' points stay private."
+  },
+  "points": {
+    "history": "Points history",
+    "empty": "No points yet. Take part in events and tasks to earn some.",
+    "categories": {
+      "event": "Event",
+      "task": "Task",
+      "contribution": "Contribution",
+      "bonus": "Bonus",
+      "penalty": "Penalty",
+      "reset": "Reset",
+      "other": "Other"
+    }
+  },
+  "events": {
+    "empty": "No upcoming events right now.",
+    "upcoming": "Upcoming",
+    "attended": "Past events I registered for",
+    "register": "Register",
+    "full": "Full",
+    "closed": "Registration closed",
+    "status": {
+      "pending": "Registered · awaiting approval",
+      "approved": "Confirmed",
+      "rejected": "Not accepted",
+      "cancelled": "Cancelled"
+    },
+    "result": {
+      "ok": "You are registered. The team will confirm your place.",
+      "duplicate": "You are already registered for this event.",
+      "full": "Sorry, this event is full.",
+      "closed": "Registration for this event has closed.",
+      "unavailable": "This event is no longer available.",
+      "failed": "The registration did not go through. Try again."
+    }
+  },
+  "tasks": {
+    "empty": "No tasks assigned to you.",
+    "note": "Tasks your team leads assigned to you. Points are added when a task is marked done.",
+    "due": "Due {{date}}",
+    "high": "High priority",
+    "status": {
+      "todo": "To do",
+      "in_progress": "In progress",
+      "done": "Done",
+      "cancelled": "Cancelled"
+    }
+  },
+  "notices": {
+    "empty": "No notices for you yet.",
+    "new": "New",
+    "pinned": "Pinned",
+    "important": "Important"
+  },
+  "profile": {
+    "details": "My details",
+    "name": "Full name",
+    "email": "Email",
+    "memberCode": "Member number",
+    "studentId": "Student ID",
+    "study": "Studies",
+    "status": "Membership",
+    "joined": "Member since",
+    "statuses": {
+      "active": "Active",
+      "inactive": "Inactive",
+      "alumni": "Alumni"
+    },
+    "club": "In the club",
+    "departments": "Departments",
+    "noDepartment": "Not in a department yet.",
+    "interests": "Interests",
+    "positions": "Roles",
+    "groups": "Groups",
+    "edit": "Update my details",
+    "editNote": "For your name, email or department, contact the HR team.",
+    "phone": "Phone",
+    "skills": "Skills",
+    "emails": "Email me club news and event notifications",
+    "save": "Save",
+    "saved": "Saved.",
+    "saveFailed": "Your changes were not saved. Try again.",
+    "card": "Digital member card",
+    "qrAlt": "Member card QR code",
+    "cardNote": "Scanning this code confirms your membership.",
+    "cardStatuses": {
+      "lost": "Card reported lost",
+      "suspended": "Card suspended"
+    },
+    "password": "Password",
+    "passwordNote": "Choose a new password for your member account.",
+    "passwordSaved": "Your password was changed.",
+    "passwordSubmit": "Change password"
+  },
+  "positions": {
+    "president": "President",
+    "vice_president": "Vice president",
+    "secretary_general": "Secretary general",
+    "treasurer": "Treasurer",
+    "head_of_department": "Head of department",
+    "team_lead": "Team lead",
+    "coordinator": "Coordinator",
+    "advisor": "Advisor"
+  }
+}

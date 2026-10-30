@@ -1,14 +1,14 @@
 import { NavLink, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
-  ArrowLeftRight, Boxes, Clapperboard, Frame, Building2, HeartHandshake, Trophy, ChevronDown, Crown, ListChecks, Brain, Calendar, CircuitBoard, ClipboardCheck, ClipboardList, Gauge, IdCard, Images, Inbox, Link2, Mail, Megaphone, Network, QrCode,
+  ArrowLeftRight, Boxes, Clapperboard, Frame, Building2, HeartHandshake, Trophy, ChevronDown, Crown, ListChecks, Brain, Calendar, CircuitBoard, ClipboardCheck, ClipboardList, Gauge, IdCard, Images, Inbox, Link2, Mail, Megaphone, BellRing, Network, QrCode,
   PanelLeftClose, PanelLeftOpen, ScrollText, Send, Shield, SlidersHorizontal, UserCheck, Vote, Wallet, X,
 } from 'lucide-react'
 import useAdminStore from '../../store/adminStore'
 import { NAV_GROUPS, navItemForPath, navItemsFor, extraPermissions } from '../../lib/permissions'
 
 const ICONS = {
-  Gauge, Calendar, ClipboardCheck, UserCheck, IdCard, Mail, Building2, HeartHandshake, Trophy,
+  Gauge, BellRing, Calendar, ClipboardCheck, UserCheck, IdCard, Mail, Building2, HeartHandshake, Trophy,
   CircuitBoard, Clapperboard, Frame, Images, Megaphone, Boxes, ArrowLeftRight, Crown, ListChecks,
   Shield, Brain, ScrollText, SlidersHorizontal, Wallet, Send, Inbox, Network, Link2, QrCode, ClipboardList, Vote,
 }

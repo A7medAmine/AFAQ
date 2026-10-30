@@ -10,7 +10,8 @@
     "announcements": "الإعلانات",
     "join": "انضم إلينا",
     "contact": "التواصل",
-    "brand": "الهوية البصرية"
+    "brand": "الهوية البصرية",
+    "member": "فضاء الأعضاء"
   },
   "theme": { "light": "الوضع النهاري", "dark": "الوضع الليلي" },
   "language": { "en": "English", "ar": "العربية", "fr": "Français" },

@@ -70,6 +70,9 @@ export const eventRegistrations = pgTable('event_registrations', {
   status: text().default('pending'),
   agreedToPolicies: boolean('agreed_to_policies').default(false),
   qrCode: text('qr_code'),
+  // The club member who registered, when known (portal sign-ups, or matched
+  // by email). Public registrations from non-members leave it null.
+  memberId: bigint('member_id', { mode: 'number' }).references(() => members.id, { onDelete: 'set null' }),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
 })
 
@@ -136,6 +139,13 @@ export const members = pgTable('members', {
   cardQrCode: text('card_qr_code'),
   cardIssuedAt: timestamp('card_issued_at', { withTimezone: true }),
   cardStatus: text('card_status').default('active'),
+  // The Supabase Auth account the member signs in to the member portal with
+  // (/portal). Set when an admin invites them or they claim their account.
+  userId: uuid('user_id').unique(),
+  portalInvitedAt: timestamp('portal_invited_at', { withTimezone: true }),
+  // Set when an admin gives a temporary password; the portal makes the member
+  // choose their own before anything else, and the server clears it.
+  portalMustChangePassword: boolean('portal_must_change_password').notNull().default(false),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
 })
@@ -853,3 +863,35 @@ export const memberAssessments = pgTable('member_assessments', {
   unique('member_assessments_member_department_key').on(t.memberId, t.departmentId),
   index('member_assessments_department_idx').on(t.departmentId),
 ])
+
+// ---------- Member portal notices ----------
+// Internal announcements shown to members in the portal (/portal), never on
+// the public site. Who sees one is decided by its targets: no targets means
+// every member; otherwise a member sees it when any target matches them.
+export const memberNotices = pgTable('member_notices', {
+  id: bigint({ mode: 'number' }).primaryKey().generatedAlwaysAsIdentity(),
+  title: text().notNull(),
+  body: text().notNull(),
+  priority: text().notNull().default('normal'),
+  isPinned: boolean('is_pinned').notNull().default(false),
+  expiresAt: timestamp('expires_at', { withTimezone: true }),
+  emailedAt: timestamp('emailed_at', { withTimezone: true }),
+  createdBy: uuid('created_by'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+})
+
+// One row per audience: exactly one of department, group or member is set.
+export const memberNoticeTargets = pgTable('member_notice_targets', {
+  id: bigint({ mode: 'number' }).primaryKey().generatedAlwaysAsIdentity(),
+  noticeId: bigint('notice_id', { mode: 'number' }).notNull().references(() => memberNotices.id, { onDelete: 'cascade' }),
+  departmentId: bigint('department_id', { mode: 'number' }).references(() => departments.id, { onDelete: 'cascade' }),
+  groupId: bigint('group_id', { mode: 'number' }).references(() => memberGroups.id, { onDelete: 'cascade' }),
+  memberId: bigint('member_id', { mode: 'number' }).references(() => members.id, { onDelete: 'cascade' }),
+}, t => [index('member_notice_targets_notice_idx').on(t.noticeId)])
+
+export const memberNoticeReads = pgTable('member_notice_reads', {
+  noticeId: bigint('notice_id', { mode: 'number' }).notNull().references(() => memberNotices.id, { onDelete: 'cascade' }),
+  memberId: bigint('member_id', { mode: 'number' }).notNull().references(() => members.id, { onDelete: 'cascade' }),
+  readAt: timestamp('read_at', { withTimezone: true }).defaultNow(),
+}, t => [primaryKey({ columns: [t.noticeId, t.memberId] })])

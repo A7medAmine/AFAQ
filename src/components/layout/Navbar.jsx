@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Link, NavLink, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { Menu, X } from 'lucide-react'
+import { Menu, UserRound, X } from 'lucide-react'
 import LanguageSwitcher from '../shared/LanguageSwitcher'
 import Logo from '../shared/Logo'
 
@@ -80,6 +80,14 @@ export default function Navbar() {
 
           <div className="flex items-center gap-2">
             <LanguageSwitcher />
+            <Link
+              to="/portal"
+              className="w-10 h-10 rounded-xl flex items-center justify-center transition-colors bg-slate-100 border border-slate-200 text-slate-600 hover:text-blue-700"
+              aria-label={t('nav.member')}
+              title={t('nav.member')}
+            >
+              <UserRound size={18} />
+            </Link>
             <Link
               to="/join"
               className="hidden md:inline-flex items-center px-6 py-2.5 rounded-2xl font-semibold text-sm transition-all duration-200 bg-[#0F172A] text-white hover:bg-blue-700"
@@ -172,6 +180,12 @@ export default function Navbar() {
                     className="block w-full text-center px-4 py-3 rounded-2xl font-semibold text-sm transition-all bg-[#0F172A] text-white"
                   >
                     {t('nav.join')}
+                  </Link>
+                  <Link
+                    to="/portal"
+                    className="flex items-center justify-center gap-2 w-full mt-2 px-4 py-3 rounded-2xl font-semibold text-sm border border-slate-200 text-slate-700"
+                  >
+                    <UserRound size={16} /> {t('nav.member')}
                   </Link>
                 </motion.div>
               </nav>

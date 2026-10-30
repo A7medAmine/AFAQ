@@ -3,14 +3,14 @@ import { useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
   ArrowLeftRight, Boxes, Clapperboard, Frame, Building2, HeartHandshake, Trophy, Crown, ListChecks, Brain, Calendar, CircuitBoard, ClipboardCheck, ClipboardList, CornerDownLeft, Gauge, IdCard, Images, Inbox,
-  Link2, Loader2, Mail, Megaphone, Network, QrCode, ScrollText, Search, Send, Shield, SlidersHorizontal, UserCheck, Vote, Wallet,
+  Link2, Loader2, Mail, Megaphone, BellRing, Network, QrCode, ScrollText, Search, Send, Shield, SlidersHorizontal, UserCheck, Vote, Wallet,
 } from 'lucide-react'
 import useAdminStore from '../../store/adminStore'
 import { hasPermission, navItemsFor, extraPermissions } from '../../lib/permissions'
 import { supabase } from '../../lib/db'
 
 const ICONS = {
-  Gauge, Calendar, ClipboardCheck, UserCheck, IdCard, Mail, Building2, HeartHandshake, Trophy,
+  Gauge, BellRing, Calendar, ClipboardCheck, UserCheck, IdCard, Mail, Building2, HeartHandshake, Trophy,
   CircuitBoard, Clapperboard, Frame, Images, Megaphone, Boxes, ArrowLeftRight, Crown, ListChecks, Shield, Brain, ScrollText, SlidersHorizontal, Wallet, Send, Inbox, Network, Link2, QrCode, ClipboardList, Vote,
 }
 

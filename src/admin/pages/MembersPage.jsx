@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
-  BadgeCheck, Building2, CalendarX, Crown, Sparkles, Eye, KeyRound, FileSpreadsheet, Shield, IdCard, ListChecks, Loader2, Pencil, Plus, Printer, Trash2, UserCheck, UserRoundPlus, Upload, Users, X,
+  BadgeCheck, Building2, CalendarX, Crown, Sparkles, Eye, KeyRound, FileSpreadsheet, Shield, IdCard, ListChecks, Loader2, LogIn, MailPlus, Pencil, Plus, Printer, Trash2, UserCheck, UserRoundPlus, Upload, Users, X,
 } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
-import { logActivity, run, read, supabase, uploadFile } from '../lib/db'
+import { api, logActivity, run, read, supabase, uploadFile } from '../lib/db'
 import useAdminStore from '../store/adminStore'
 import useQueryParam from '../hooks/useQueryParam'
 import { formatDate, formatDateTime, toDateInput } from '../lib/format'
@@ -29,6 +29,7 @@ import GroupsModal from '../components/hr/GroupsModal'
 import AddToGroupModal from '../components/hr/AddToGroupModal'
 import AddToDepartmentModal from '../components/hr/AddToDepartmentModal'
 import AddAdminModal from '../components/AddAdminModal'
+import TempPasswordModal from '../components/hr/TempPasswordModal'
 
 const STATUS_FILTERS = [{ value: 'all', label: 'All' }, ...MEMBER_STATUSES]
 
@@ -149,6 +150,36 @@ export default function MembersPage() {
   const printBadges = members => {
     if (!members.length) return
     navigate(`/admin/members/badges?ids=${members.map(m => m.id).join(',')}`)
+  }
+
+  /** Emails each member a link to set their member-area password, 20 per request. */
+  const inviteToPortal = async (members, clear) => {
+    const list = members.filter(m => (m.status || 'active') !== 'suspended')
+    if (!list.length) { addToast('Suspended members cannot be invited.', 'error'); return }
+    let sent = 0
+    let failed = 0
+    for (let i = 0; i < list.length; i += 20) {
+      const { ok, data, message } = await api('/api/portal/invite', { method: 'POST', body: { member_ids: list.slice(i, i + 20).map(m => m.id) } })
+      if (!ok) { addToast(message || 'The invitations were not sent.', 'error'); break }
+      sent += data.sent
+      failed += data.results.length - data.sent
+    }
+    if (sent) {
+      addToast(`Member-area invitation sent to ${sent} member${sent === 1 ? '' : 's'}${failed ? `; ${failed} failed` : ''}.`, failed ? 'error' : 'success')
+      logActivity('updated', 'members', null, { portal_invites: sent })
+    } else if (failed) {
+      addToast('No invitation could be sent. Check the email addresses.', 'error')
+    }
+    clear?.()
+    load()
+  }
+
+  const revokePortal = async member => {
+    const { ok, message } = await api('/api/portal/revoke', { method: 'POST', body: { member_id: member.id } })
+    if (!ok) { addToast(message || 'Access was not removed.', 'error'); return }
+    addToast(`${member.full_name} can no longer sign in to the member area.`, 'success')
+    logActivity('updated', 'members', member.id, { name: member.full_name, portal: 'revoked' })
+    load()
   }
 
   const setStatusFor = async (members, next, clear) => {
@@ -361,6 +392,7 @@ export default function MembersPage() {
               )}
               <Button size="sm" icon={Users} onClick={() => setGrouping({ members: selected, clear })}>Add to group</Button>
               <Button size="sm" icon={Building2} onClick={() => setPlacing({ members: selected, clear })}>Add to department</Button>
+              <Button size="sm" icon={MailPlus} onClick={() => inviteToPortal(selected, clear)}>Invite to member area</Button>
             </>
           )}
           emptyState={
@@ -421,6 +453,8 @@ export default function MembersPage() {
               {detail.gender && <DetailRow label="Gender">{GENDERS.find(g => g.value === detail.gender)?.label}</DetailRow>}
               <DetailRow label="Card"><StatusBadge status={detail.card_status} /></DetailRow>
             </div>
+
+            <PortalSection member={detail} onInvite={() => inviteToPortal([detail])} onRevoke={() => revokePortal(detail)} onChanged={load} />
 
             <PositionsSection
               member={detail}
@@ -823,6 +857,51 @@ function PhotoUpload({ member, onUpdated }) {
         {member.photo_url ? 'Replace photo' : 'Add photo'}
         <input type="file" accept="image/*" className="sr-only" disabled={busy} onChange={pick} />
       </label>
+    </div>
+  )
+}
+
+/** Whether the member can sign in to the member area (/portal), with invite and revoke. */
+function PortalSection({ member, onInvite, onRevoke, onChanged }) {
+  const [busy, setBusy] = useState(false)
+  const [temp, setTemp] = useState(false)
+  const [confirming, setConfirming] = useState(false)
+  const suspended = member.status === 'suspended'
+  const act = async fn => { setBusy(true); await fn(); setBusy(false) }
+
+  return (
+    <div>
+      <p className="adm-label mb-2">Member area</p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-[13px]" style={{ color: 'var(--adm-silk-dim)' }}>
+          {suspended ? 'Suspended members cannot sign in.'
+            : member.user_id ? (
+              <><Badge tone="ok"><LogIn size={11} /> Account linked</Badge>{member.portal_invited_at && <span className="ml-2">Last link sent {formatDateTime(member.portal_invited_at)}</span>}</>
+            ) : member.portal_invited_at ? `Invited ${formatDateTime(member.portal_invited_at)}`
+            : 'Not invited yet. The member can also ask for a link from the sign-in page.'}
+        </p>
+        {!suspended && (
+          <div className="flex gap-1.5">
+            <Button size="sm" icon={MailPlus} busy={busy} busyLabel="Sending…" onClick={() => act(onInvite)}>
+              {member.user_id || member.portal_invited_at ? 'Send a new link' : 'Send invitation'}
+            </Button>
+            <Button size="sm" icon={KeyRound} onClick={() => setTemp(true)}>Temporary password</Button>
+            {member.user_id && <Button size="sm" variant="danger" onClick={() => setConfirming(true)}>Remove access</Button>}
+          </div>
+        )}
+      </div>
+      {member.portal_must_change_password && member.user_id && !suspended && (
+        <p className="text-[12px] mt-2" style={{ color: 'var(--adm-signal)' }}>Has a temporary password; will choose their own at next sign-in.</p>
+      )}
+      <TempPasswordModal member={temp ? member : null} onClose={() => setTemp(false)} onDone={onChanged} />
+      <ConfirmDialog
+        open={confirming}
+        onClose={() => setConfirming(false)}
+        onConfirm={async () => { setConfirming(false); await act(onRevoke) }}
+        title="Remove member-area access?"
+        message={`${member.full_name} is signed out and can no longer sign in. Sending a new invitation restores access.`}
+        confirmLabel="Remove access"
+      />
     </div>
   )
 }

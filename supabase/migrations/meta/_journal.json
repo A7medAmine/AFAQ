@@ -267,6 +267,20 @@
       "when": 1792621448567,
       "tag": "0037_department_assessments",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1793397262757,
+      "tag": "0038_member_portal",
+      "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1793400572903,
+      "tag": "0039_portal_temp_password",
+      "breakpoints": true
     }
   ]
 }

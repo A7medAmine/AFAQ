@@ -165,6 +165,7 @@ export const NAV_ITEMS = [
   { label: 'Projects', path: '/admin/projects', icon: 'CircuitBoard', group: 'publish', permission: 'projects.manage' },
   { label: 'Gallery', path: '/admin/gallery', icon: 'Images', group: 'publish', permission: 'gallery.manage' },
   { label: 'Announcements', path: '/admin/announcements', icon: 'Megaphone', group: 'publish', permission: 'announcements.manage' },
+  { label: 'Member notices', path: '/admin/notices', icon: 'BellRing', group: 'people', permission: 'announcements.manage' },
   { label: 'Links page', path: '/admin/links', icon: 'Link2', group: 'publish', permission: 'links.manage' },
   { label: 'Polls', path: '/admin/polls', icon: 'Vote', group: 'publish', permission: 'polls.manage' },
   { label: 'QR codes', path: '/admin/qr', icon: 'QrCode', group: 'publish', permission: null },

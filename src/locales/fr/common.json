@@ -10,7 +10,8 @@
     "announcements": "Annonces",
     "join": "Rejoindre",
     "contact": "Contact",
-    "brand": "Identité visuelle"
+    "brand": "Identité visuelle",
+    "member": "Espace membre"
   },
   "theme": { "light": "Mode Clair", "dark": "Mode Sombre" },
   "language": { "en": "English", "ar": "العربية", "fr": "Français" },

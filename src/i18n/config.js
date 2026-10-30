@@ -42,6 +42,10 @@ import enAnnouncements from '../locales/en/announcements.json'
 import arAnnouncements from '../locales/ar/announcements.json'
 import frAnnouncements from '../locales/fr/announcements.json'
 
+import enPortal from '../locales/en/portal.json'
+import arPortal from '../locales/ar/portal.json'
+import frPortal from '../locales/fr/portal.json'
+
 // Brand kit is AR/EN only; French falls back to English.
 import enBrand from '../locales/en/brand.json'
 import arBrand from '../locales/ar/brand.json'
@@ -66,6 +70,7 @@ i18n
         join: enJoin,
         contact: enContact,
         announcements: enAnnouncements,
+        portal: enPortal,
         brand: enBrand,
       },
       ar: {
@@ -79,6 +84,7 @@ i18n
         join: arJoin,
         contact: arContact,
         announcements: arAnnouncements,
+        portal: arPortal,
         brand: arBrand,
       },
       fr: {
@@ -92,11 +98,12 @@ i18n
         join: frJoin,
         contact: frContact,
         announcements: frAnnouncements,
+        portal: frPortal,
       },
     },
     fallbackLng: 'en',
     supportedLngs: ['en', 'ar', 'fr'],
-    ns: ['common', 'home', 'about', 'projects', 'events', 'gallery', 'register', 'join', 'contact', 'announcements', 'brand'],
+    ns: ['common', 'home', 'about', 'projects', 'events', 'gallery', 'register', 'join', 'contact', 'announcements', 'portal', 'brand'],
     defaultNS: 'common',
     detection: {
       order: ['localStorage', 'navigator'],

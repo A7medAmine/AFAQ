@@ -1,0 +1,173 @@
+{
+  "title": "Espace membre",
+  "hello": "Bonjour, {{name}}",
+  "signOut": "Se déconnecter",
+  "seeAll": "Tout voir",
+  "loading": "Chargement…",
+  "tabs": {
+    "home": "Aperçu",
+    "points": "Points",
+    "events": "Événements",
+    "tasks": "Tâches",
+    "notices": "Avis",
+    "profile": "Profil"
+  },
+  "login": {
+    "title": "Connexion membre",
+    "subtitle": "Connectez-vous avec l'e-mail utilisé pour rejoindre le club.",
+    "accessTitle": "Recevoir le lien du mot de passe",
+    "accessSubtitle": "Première visite ou mot de passe oublié ? Entrez votre e-mail du club et nous vous enverrons un lien pour en choisir un.",
+    "email": "E-mail",
+    "password": "Mot de passe",
+    "show": "Afficher le mot de passe",
+    "hide": "Masquer le mot de passe",
+    "submit": "Se connecter",
+    "sendLink": "M'envoyer le lien",
+    "wait": "Veuillez patienter…",
+    "firstTime": "Première fois, ou mot de passe oublié ?",
+    "back": "Retour à la connexion",
+    "sentTitle": "Consultez votre boîte mail",
+    "sentText": "Si {{email}} appartient à un membre du club, un lien pour choisir votre mot de passe est en route. Il ne fonctionne qu'une fois et expire bientôt.",
+    "membersOnly": "L'espace membre est réservé aux membres d'AFAQ. Pas encore membre ? Postulez depuis la page Rejoindre.",
+    "errors": {
+      "email": "Entrez une adresse e-mail valide.",
+      "invalid": "E-mail et mot de passe ne correspondent pas. Première fois ? Demandez un lien ci-dessous.",
+      "failed": "La connexion a échoué. Réessayez dans un instant.",
+      "notMember": "Ce compte n'est lié à aucun membre actif du club.",
+      "tooMany": "Trop de demandes. Réessayez dans quelques minutes.",
+      "network": "Impossible de joindre le serveur. Vérifiez votre connexion."
+    }
+  },
+  "setPassword": {
+    "title": "Choisissez votre mot de passe",
+    "subtitle": "Vous l'utiliserez avec votre e-mail du club pour vous connecter.",
+    "invalid": "Ce lien a expiré ou a déjà été utilisé. Demandez-en un nouveau.",
+    "newLink": "Demander un nouveau lien",
+    "password": "Nouveau mot de passe",
+    "hint": "Au moins 8 caractères.",
+    "confirm": "Répétez le mot de passe",
+    "submit": "Enregistrer et se connecter",
+    "errors": {
+      "short": "Utilisez au moins 8 caractères.",
+      "mismatch": "Les deux mots de passe ne correspondent pas.",
+      "same": "Choisissez un mot de passe différent de l'ancien.",
+      "failed": "Le mot de passe n'a pas été enregistré. Demandez un nouveau lien et réessayez.",
+      "long": "Utilisez au plus 72 caractères.",
+      "tooMany": "Trop de tentatives. Réessayez dans quelques minutes."
+    },
+    "temporary": "Vous êtes connecté avec un mot de passe temporaire. Choisissez le vôtre pour continuer."
+  },
+  "home": {
+    "points": "Mes points",
+    "clubRank": "Rang au club",
+    "outOf": "sur {{count}} membres actifs",
+    "departmentRank": "Rang au département",
+    "noticesUnread": "Avis · {{count}} nouveaux",
+    "nextEvents": "Événements à venir",
+    "openTasks": "Tâches en cours",
+    "rankNote": "Le rang compare vos points à ceux des membres actifs ; les points des autres restent privés."
+  },
+  "points": {
+    "history": "Historique des points",
+    "empty": "Pas encore de points. Participez aux événements et aux tâches pour en gagner.",
+    "categories": {
+      "event": "Événement",
+      "task": "Tâche",
+      "contribution": "Contribution",
+      "bonus": "Bonus",
+      "penalty": "Pénalité",
+      "reset": "Remise à zéro",
+      "other": "Autre"
+    }
+  },
+  "events": {
+    "empty": "Aucun événement à venir pour le moment.",
+    "upcoming": "À venir",
+    "attended": "Événements passés où je me suis inscrit",
+    "register": "S'inscrire",
+    "full": "Complet",
+    "closed": "Inscriptions fermées",
+    "status": {
+      "pending": "Inscrit · en attente de validation",
+      "approved": "Confirmé",
+      "rejected": "Non retenu",
+      "cancelled": "Annulé"
+    },
+    "result": {
+      "ok": "Vous êtes inscrit. L'équipe confirmera votre place.",
+      "duplicate": "Vous êtes déjà inscrit à cet événement.",
+      "full": "Désolé, cet événement est complet.",
+      "closed": "Les inscriptions à cet événement sont fermées.",
+      "unavailable": "Cet événement n'est plus disponible.",
+      "failed": "L'inscription n'a pas abouti. Réessayez."
+    }
+  },
+  "tasks": {
+    "empty": "Aucune tâche ne vous est assignée.",
+    "note": "Les tâches que vos responsables vous ont confiées. Les points sont ajoutés quand une tâche est terminée.",
+    "due": "Échéance {{date}}",
+    "high": "Priorité haute",
+    "status": {
+      "todo": "À faire",
+      "in_progress": "En cours",
+      "done": "Terminée",
+      "cancelled": "Annulée"
+    }
+  },
+  "notices": {
+    "empty": "Aucun avis pour vous pour l'instant.",
+    "new": "Nouveau",
+    "pinned": "Épinglé",
+    "important": "Important"
+  },
+  "profile": {
+    "details": "Mes informations",
+    "name": "Nom complet",
+    "email": "E-mail",
+    "memberCode": "Numéro de membre",
+    "studentId": "Matricule",
+    "study": "Études",
+    "status": "Adhésion",
+    "joined": "Membre depuis",
+    "statuses": {
+      "active": "Actif",
+      "inactive": "Inactif",
+      "alumni": "Ancien membre"
+    },
+    "club": "Au club",
+    "departments": "Départements",
+    "noDepartment": "Pas encore dans un département.",
+    "interests": "Centres d'intérêt",
+    "positions": "Rôles",
+    "groups": "Groupes",
+    "edit": "Mettre à jour mes informations",
+    "editNote": "Pour votre nom, e-mail ou département, contactez l'équipe RH.",
+    "phone": "Téléphone",
+    "skills": "Compétences",
+    "emails": "Recevoir par e-mail les nouvelles du club et les événements",
+    "save": "Enregistrer",
+    "saved": "Enregistré.",
+    "saveFailed": "Vos modifications n'ont pas été enregistrées. Réessayez.",
+    "card": "Carte de membre numérique",
+    "qrAlt": "QR code de la carte de membre",
+    "cardNote": "Scanner ce code confirme votre adhésion.",
+    "cardStatuses": {
+      "lost": "Carte déclarée perdue",
+      "suspended": "Carte suspendue"
+    },
+    "password": "Mot de passe",
+    "passwordNote": "Choisissez un nouveau mot de passe pour votre compte membre.",
+    "passwordSaved": "Votre mot de passe a été modifié.",
+    "passwordSubmit": "Changer le mot de passe"
+  },
+  "positions": {
+    "president": "Président",
+    "vice_president": "Vice-président",
+    "secretary_general": "Secrétaire général",
+    "treasurer": "Trésorier",
+    "head_of_department": "Chef de département",
+    "team_lead": "Chef d'équipe",
+    "coordinator": "Coordinateur",
+    "advisor": "Conseiller"
+  }
+}

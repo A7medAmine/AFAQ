@@ -22,6 +22,18 @@ const Brand = lazy(() => import('./pages/Brand'))
 const Links = lazy(() => import('./pages/Links'))
 const NotFound = lazy(() => import('./pages/NotFound'))
 
+// Member portal: members sign in to see their points, events and notices.
+const PortalRoot = lazy(() => import('./portal/PortalRoot'))
+const PortalShell = lazy(() => import('./portal/PortalShell'))
+const PortalLogin = lazy(() => import('./portal/pages/PortalLogin'))
+const PortalSetPassword = lazy(() => import('./portal/pages/SetPassword'))
+const PortalHome = lazy(() => import('./portal/pages/PortalHome'))
+const PortalPoints = lazy(() => import('./portal/pages/PortalPoints'))
+const PortalEvents = lazy(() => import('./portal/pages/PortalEvents'))
+const PortalTasks = lazy(() => import('./portal/pages/PortalTasks'))
+const PortalNotices = lazy(() => import('./portal/pages/PortalNotices'))
+const PortalProfile = lazy(() => import('./portal/pages/PortalProfile'))
+
 // Admin — none of this should ship to public visitors.
 const Login = lazy(() => import('./admin/pages/Login'))
 const ResetPassword = lazy(() => import('./admin/pages/ResetPassword'))
@@ -37,6 +49,7 @@ const ApplicationsPage = lazy(() => import('./admin/pages/ApplicationsPage'))
 const ReviewPage = lazy(() => import('./admin/pages/ReviewPage'))
 const ReviewTeamsPage = lazy(() => import('./admin/pages/ReviewTeamsPage'))
 const MembersPage = lazy(() => import('./admin/pages/MembersPage'))
+const MemberNoticesPage = lazy(() => import('./admin/pages/MemberNoticesPage'))
 const CardPrintPage = lazy(() => import('./admin/pages/CardPrintPage'))
 const BadgePrintPage = lazy(() => import('./admin/pages/BadgePrintPage'))
 const TasksPage = lazy(() => import('./admin/pages/TasksPage'))
@@ -112,6 +125,18 @@ export default function App() {
             <Route path="/announcements" element={<Announcements />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/brand" element={<Brand />} />
+            <Route path="/portal" element={<PortalRoot />}>
+              <Route path="login" element={<PortalLogin />} />
+              <Route path="set-password" element={<PortalSetPassword />} />
+              <Route element={<PortalShell />}>
+                <Route index element={<PortalHome />} />
+                <Route path="points" element={<PortalPoints />} />
+                <Route path="events" element={<PortalEvents />} />
+                <Route path="tasks" element={<PortalTasks />} />
+                <Route path="notices" element={<PortalNotices />} />
+                <Route path="profile" element={<PortalProfile />} />
+              </Route>
+            </Route>
             <Route path="*" element={<NotFound />} />
           </Route>
 
@@ -223,6 +248,9 @@ export default function App() {
             } />
             <Route path="announcements" element={
               <RoleGuard permission="announcements.manage"><AnnouncementsPage /></RoleGuard>
+            } />
+            <Route path="notices" element={
+              <RoleGuard permission="announcements.manage"><MemberNoticesPage /></RoleGuard>
             } />
             <Route path="links" element={
               <RoleGuard permission="links.manage"><LinksPage /></RoleGuard>
