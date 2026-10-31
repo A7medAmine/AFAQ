@@ -5,6 +5,7 @@ import {
 import { Link, useNavigate } from 'react-router-dom'
 import { api, logActivity, run, read, supabase, uploadFile } from '../lib/db'
 import useAdminStore from '../store/adminStore'
+import CopyButton from '../components/ui/CopyButton'
 import useQueryParam from '../hooks/useQueryParam'
 import { formatDate, formatDateTime, toDateInput } from '../lib/format'
 import {
@@ -251,7 +252,12 @@ export default function MembersPage() {
       ),
     },
     { header: 'Member no.', accessorKey: 'member_code', cell: ({ row }) => (
-      <span className="adm-data text-[12px]">{row.original.member_code || '—'}</span>
+      row.original.member_code ? (
+        <span className="inline-flex items-center gap-1">
+          <span className="adm-data text-[12px]">{row.original.member_code}</span>
+          <CopyButton value={row.original.member_code} label="Copy member number" />
+        </span>
+      ) : <span className="adm-data text-[12px]">—</span>
     )},
     {
       header: 'Role',
@@ -440,7 +446,12 @@ export default function MembersPage() {
         open={!!detail}
         onClose={() => setDetailId(null)}
         title={detail?.full_name || ''}
-        subtitle={detail ? `${detail.member_code || ''} · joined ${formatDate(detail.joined_at || detail.created_at)}` : ''}
+        subtitle={detail ? (
+          <span className="inline-flex items-center gap-1">
+            {detail.member_code && <><span>{detail.member_code}</span><CopyButton value={detail.member_code} label="Copy member number" size={12} /></>}
+            <span>{detail.member_code ? '· ' : ''}joined {formatDate(detail.joined_at || detail.created_at)}</span>
+          </span>
+        ) : ''}
         badge={detail && <StatusBadge status={detail.status || 'active'} />}
         width={520}
         footer={
