@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   ArrowLeft, ChevronLeft, ChevronRight, Download, FlipHorizontal2, FlipVertical2, FolderDown, Frame, ImagePlus, Images,
-  RefreshCcw, RotateCcw, RotateCw, SlidersHorizontal, Trash2, Type, Upload, X,
+  RefreshCcw, RotateCcw, RotateCw, ScanFace, SlidersHorizontal, Trash2, Type, Upload, X,
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { read, run, supabase, uploadFile, deleteUploadedFile } from '../lib/db'
@@ -9,7 +9,8 @@ import useAdminStore from '../store/adminStore'
 import useQueryParam from '../hooks/useQueryParam'
 import { CANVAS_SIZES, FORMATS, downloadZip, saveBlob } from '../lib/media'
 import {
-  NEUTRAL_ADJUST, TEXT_DEFAULTS, exportFrame, hitText, loadImage, loadLogoPath, placement, renderFrame, textsFor,
+  BLUR_DEFAULTS, NEUTRAL_ADJUST, TEXT_DEFAULTS, canvasToPhoto, exportFrame, hitBlur, hitText, loadImage, loadLogoPath, placement,
+  renderFrame, textsFor,
 } from '../lib/frameRender'
 import { DESIGNS, DESIGN_DEFAULTS, designOf } from '../lib/frameDesigns'
 import { ensureFonts } from '../lib/frameFonts'
@@ -20,12 +21,16 @@ import EmptyState from '../components/ui/EmptyState'
 import { TextField } from '../components/ui/Field'
 import TextLayersPanel from '../components/media/TextLayersPanel'
 import FrameAdjustPanel from '../components/media/FrameAdjustPanel'
+import FaceBlurPanel from '../components/media/FaceBlurPanel'
 import DesignPicker from '../components/media/DesignPicker'
 import { Segmented } from '../components/media/FrameControls'
 
 const baseName = name => (name || 'photo').replace(/\.[^.]+$/, '')
+// Frames added in the last week get a "new" tag in the picker.
+const isNew = frame => Date.now() - new Date(frame.created_at) < 7 * 24 * 3600 * 1000
 let nextId = 1
 let nextTextId = 1
+let nextBlurId = 1
 const newText = extra => ({ ...TEXT_DEFAULTS, ...extra, id: `t${Date.now().toString(36)}${nextTextId++}` })
 
 // The side tools, one tab at a time. `key` switches to the tab from the keyboard.
@@ -33,6 +38,7 @@ const TOOL_TABS = [
   { value: 'frame', label: 'Frame', icon: Frame, key: 'F' },
   { value: 'text', label: 'Text', icon: Type, key: 'T' },
   { value: 'edit', label: 'Edit', icon: SlidersHorizontal, key: 'E' },
+  { value: 'blur', label: 'Blur', icon: ScanFace, key: 'B' },
 ]
 
 const DESIGN_PREFIX = 'design:'
@@ -93,6 +99,7 @@ export default function FrameStudioPage() {
   const [adjust, setAdjust] = useState({ ...NEUTRAL_ADJUST, ...saved.adjust })
   const [texts, setTexts] = useState(() => (saved.texts || []).filter(t => t.scope === 'all').map(t => newText(t)))
   const [selected, setSelected] = useState(null) // text layer id
+  const [selectedBlur, setSelectedBlur] = useState(null) // face blur id on the current photo
   const [tool, setTool] = useState('frame') // which side tab is open
   const [design, setDesign] = useState({ ...DESIGN_DEFAULTS, ...saved.design })
   const [frameTab, setFrameTab] = useState(designKeyOf(saved.frameBySize?.post) ? 'designs' : 'club')
@@ -144,7 +151,9 @@ export default function FrameStudioPage() {
   // ---- loading ----
 
   const loadFrames = useCallback(async () => {
-    const { data } = await read(supabase.from('media_frames').select('*').eq('is_active', true).order('sort_order').order('name'))
+    // Newest first, so a frame just uploaded is the first one in the picker.
+    const { data } = await read(supabase.from('media_frames').select('*').eq('is_active', true)
+      .order('created_at', { ascending: false }).order('id', { ascending: false }))
     setFrames(data || [])
   }, [])
 
@@ -255,12 +264,20 @@ export default function FrameStudioPage() {
     canvas.width = width
     canvas.height = height
     const id = requestAnimationFrame(() => {
-      renderFrame(canvas.getContext('2d'), { width, height, ...look, logoPath, texts, adjust, fit, selected })
+      renderFrame(canvas.getContext('2d'), {
+        width, height, ...look, logoPath, texts, adjust, fit, selected, selectedBlur: tool === 'blur' ? selectedBlur : null,
+      })
     })
     return () => cancelAnimationFrame(id)
-  }, [look, logoPath, texts, selected, adjust, fit, width, height, fontTick])
+  }, [look, logoPath, texts, selected, selectedBlur, tool, adjust, fit, width, height, fontTick])
 
   const updatePhoto = patch => setPhotos(p => p.map((ph, i) => (i === current ? { ...ph, ...patch } : ph)))
+  const updateBlur = (id, patch) => setPhotos(p => p.map((ph, i) => (i === current
+    ? { ...ph, blurs: (ph.blurs || []).map(b => (b.id === id ? { ...b, ...patch } : b)) } : ph)))
+  const removeBlur = id => {
+    setPhotos(p => p.map((ph, i) => (i === current ? { ...ph, blurs: (ph.blurs || []).filter(b => b.id !== id) } : ph)))
+    setSelectedBlur(null)
+  }
   const updateText = (id, patch) => setTexts(ts => ts.map(t => (t.id === id ? { ...t, ...patch } : t)))
 
   const addText = extra => {
@@ -333,9 +350,32 @@ export default function FrameStudioPage() {
     return [...visibleTexts].reverse().find(t => hitText(ctx, t, width, height, px, py)) || null
   }
 
+  /** The pointer on the current photo, as fractions of the image (see canvasToPhoto). */
+  const photoPointOf = e => {
+    const { px, py } = pointOf(e)
+    return canvasToPhoto(photo, placement(photo.img, width, height, photo, fit), px, py)
+  }
+  const blurAt = at => [...(photo?.blurs || [])].reverse().find(b => hitBlur(b, at)) || null
+
   const onPointerDown = e => {
     e.currentTarget.setPointerCapture(e.pointerId)
     const { ratio } = pointOf(e)
+    // In the blur tool a click picks up a blur, or drops a new one on the face under it.
+    if (tool === 'blur' && photo) {
+      const at = photoPointOf(e)
+      const hit = blurAt(at)
+      if (hit) {
+        setSelectedBlur(hit.id)
+        drag.current = { blur: hit.id, dx: at.x - hit.x, dy: at.y - hit.y }
+        return
+      }
+      if (at.x < 0 || at.x > 1 || at.y < 0 || at.y > 1) { setSelectedBlur(null); return }
+      const b = { ...BLUR_DEFAULTS, id: `b${nextBlurId++}`, x: at.x, y: at.y }
+      updatePhoto({ blurs: [...(photo.blurs || []), b] })
+      setSelectedBlur(b.id)
+      drag.current = { blur: b.id, dx: 0, dy: 0 }
+      return
+    }
     const hit = textAt(e)
     if (hit) {
       setSelected(hit.id)
@@ -350,6 +390,11 @@ export default function FrameStudioPage() {
   const onPointerMove = e => {
     if (!drag.current) return
     const d = drag.current
+    if (d.blur) {
+      const at = photoPointOf(e)
+      updateBlur(d.blur, { x: at.x - d.dx, y: at.y - d.dy })
+      return
+    }
     const nx = d.x + ((e.clientX - d.sx) * d.ratio) / width
     const ny = d.y + ((e.clientY - d.sy) * d.ratio) / height
     if (d.text) {
@@ -365,6 +410,14 @@ export default function FrameStudioPage() {
   }
   const onPointerUp = () => { drag.current = null }
   const onWheel = e => {
+    // Over a blur in the blur tool, the wheel resizes that blur.
+    const blur = tool === 'blur' && photo && blurAt(photoPointOf(e))
+    if (blur) {
+      e.preventDefault()
+      setSelectedBlur(blur.id)
+      updateBlur(blur.id, { size: Math.min(0.4, Math.max(0.02, blur.size * (e.deltaY < 0 ? 1.06 : 1 / 1.06))) })
+      return
+    }
     // Over the selected text, the wheel resizes it; anywhere else it zooms the photo.
     const hit = selected && textAt(e)
     if (hit?.id === selected) {
@@ -390,6 +443,10 @@ export default function FrameStudioPage() {
   useEffect(() => {
     const onKey = e => {
       if (['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName)) return
+      if (tool === 'blur' && selectedBlur && photo?.blurs?.some(b => b.id === selectedBlur)) {
+        if (e.key === 'Delete' || e.key === 'Backspace') { removeBlur(selectedBlur); return }
+        if (e.key === 'Escape') { setSelectedBlur(null); return }
+      }
       const layer = selected && texts.find(t => t.id === selected)
       if (layer) {
         const step = e.shiftKey ? 0.02 : 0.004
@@ -464,27 +521,46 @@ export default function FrameStudioPage() {
 
   // ---- frame management ----
 
-  const uploadFrame = async file => {
-    if (!file) return
-    if (file.type !== 'image/png') { addToast('Frames must be transparent PNG files.', 'error'); return }
+  /**
+   * Upload one or more frame PNGs. Each goes to the canvas size its shape
+   * matches, whatever size is open, so a mixed batch sorts itself.
+   */
+  const uploadFrames = async fileList => {
+    const files = [...(fileList || [])]
+    if (!files.length) return
     setBusy('frame')
-    try {
-      const img = await loadImage(URL.createObjectURL(file))
-      const ratio = img.naturalWidth / img.naturalHeight
-      if (Math.abs(ratio - width / height) > 0.02) {
-        addToast(`That PNG is ${img.naturalWidth}×${img.naturalHeight}; ${CANVAS_SIZES[size].label} frames are ${width}×${height}.`, 'error')
-        setBusy(null)
-        return
+    const added = {} // size → count
+    for (const file of files) {
+      if (file.type !== 'image/png') { addToast(`${file.name}: frames must be transparent PNG files.`, 'error'); continue }
+      try {
+        const img = await loadImage(URL.createObjectURL(file))
+        const ratio = img.naturalWidth / img.naturalHeight
+        const match = Object.entries(CANVAS_SIZES).find(([, s]) => Math.abs(ratio - s.width / s.height) < 0.02)?.[0]
+        if (!match) {
+          const known = Object.values(CANVAS_SIZES).map(s => `${s.width}×${s.height}`).join(', ')
+          addToast(`${file.name} is ${img.naturalWidth}×${img.naturalHeight}; frames must be ${known}.`, 'error')
+          continue
+        }
+        const url = await uploadFile(file)
+        const name = (files.length === 1 && newFrameName.trim()) || baseName(file.name)
+        const { ok } = await run(supabase.from('media_frames').insert({ name, size: match, url, sort_order: 100 }),
+          { failure: `${file.name} did not save.` })
+        if (ok) added[match] = (added[match] || 0) + 1
+      } catch (err) {
+        addToast(`${file.name}: ${err.message}`, 'error')
       }
-      const url = await uploadFile(file)
-      const { ok } = await run(supabase.from('media_frames').insert({
-        name: newFrameName.trim() || baseName(file.name), size, url, sort_order: 100,
-      }), { success: 'Frame added.', failure: 'The frame did not save.' })
-      if (ok) { setNewFrameName(''); loadFrames() }
-    } catch (err) {
-      addToast(err.message, 'error')
     }
     setBusy(null)
+    const total = Object.values(added).reduce((a, b) => a + b, 0)
+    if (!total) return
+    setNewFrameName('')
+    loadFrames()
+    const where = Object.entries(added).map(([s, n]) => `${n} to ${CANVAS_SIZES[s].label}`).join(', ')
+    addToast(`${total} frame${total === 1 ? '' : 's'} added: ${where}.`)
+    // Show the new frames: jump to their size when they all landed somewhere else.
+    const sizes = Object.keys(added)
+    if (sizes.length === 1 && sizes[0] !== size) setSize(sizes[0])
+    setFrameTab('club')
   }
 
   const removeFrame = async frame => {
@@ -528,7 +604,10 @@ export default function FrameStudioPage() {
 
       <Panel className="flex flex-wrap items-center gap-x-4 gap-y-2 px-3 py-2.5 mb-3">
         <Segmented label="Canvas size" value={size} onChange={setSize}
-          options={Object.entries(CANVAS_SIZES).map(([value, s]) => ({ value, label: s.label }))} />
+          options={Object.entries(CANVAS_SIZES).map(([value, s]) => {
+            const count = frames.filter(f => f.size === value).length
+            return { value, label: count ? `${s.label} · ${count}` : s.label }
+          })} />
         <Segmented label="Photo fit" value={fit}
           onChange={value => { setFit(value); if (value === 'cover') setPhotos(p => p.map(ph => ({ ...ph, zoom: Math.max(1, ph.zoom) }))) }}
           options={[{ value: 'cover', label: 'Fill' }, { value: 'contain', label: 'Fit whole photo' }]} />
@@ -571,7 +650,7 @@ export default function FrameStudioPage() {
                   style={{
                     // Leaves room for the toolbar, the photo controls and the strip below, so nothing needs scrolling.
                     maxWidth: '100%', maxHeight: 'max(320px, calc(100vh - 330px))', width: 'auto', height: 'auto',
-                    aspectRatio: `${width} / ${height}`, cursor: 'grab', touchAction: 'none',
+                    aspectRatio: `${width} / ${height}`, cursor: tool === 'blur' ? 'crosshair' : 'grab', touchAction: 'none',
                     boxShadow: 'var(--adm-shadow-lift)',
                   }}
                   aria-label="Preview. Drag to move the photo or a text."
@@ -616,11 +695,11 @@ export default function FrameStudioPage() {
                       <img src={ph.img.src} alt={ph.name} className="w-full h-full object-cover"
                         style={{ transform: `rotate(${ph.rotate || 0}deg) scale(${ph.flipX ? -1 : 1}, ${ph.flipY ? -1 : 1})` }} />
                     </button>
-                    {(ownFrameOf(ph) != null || ph.adjust) && (
+                    {(ownFrameOf(ph) != null || ph.adjust || ph.blurs?.length > 0) && (
                       <span className="absolute bottom-1 left-1 rounded px-1 text-[9px] font-bold pointer-events-none"
-                        title={[ownFrameOf(ph) != null && 'Own frame', ph.adjust && 'Own edit'].filter(Boolean).join(' · ')}
+                        title={[ownFrameOf(ph) != null && 'Own frame', ph.adjust && 'Own edit', ph.blurs?.length > 0 && 'Faces blurred'].filter(Boolean).join(' · ')}
                         style={{ background: 'var(--adm-signal)', color: '#fff' }}>
-                        {[ownFrameOf(ph) != null && 'F', ph.adjust && 'E'].filter(Boolean).join('')}
+                        {[ownFrameOf(ph) != null && 'F', ph.adjust && 'E', ph.blurs?.length > 0 && 'B'].filter(Boolean).join('')}
                       </span>
                     )}
                     <button type="button" onClick={() => removePhoto(i)} aria-label={`Remove ${ph.name}`}
@@ -642,11 +721,11 @@ export default function FrameStudioPage() {
 
         {/* The tools sit in tabs beside the picture and scroll on their own, so the page itself never has to. */}
         <div className="flex flex-col gap-3 lg:sticky lg:top-4 lg:max-h-[calc(100vh-2rem)]">
-          <div role="tablist" aria-label="Tools" className="grid grid-cols-3 gap-1 rounded-xl p-1 shrink-0"
+          <div role="tablist" aria-label="Tools" className="grid grid-cols-4 gap-1 rounded-xl p-1 shrink-0"
             style={{ background: 'var(--adm-board-sunk)', border: '1px solid var(--adm-trace)' }}>
             {TOOL_TABS.map(t => {
               const on = tool === t.value
-              const count = t.value === 'text' ? texts.length : 0
+              const count = t.value === 'text' ? texts.length : t.value === 'blur' ? photo?.blurs?.length || 0 : 0
               return (
                 <button key={t.value} type="button" role="tab" aria-selected={on} onClick={() => setTool(t.value)}
                   title={`${t.label} (${t.key})`}
@@ -680,7 +759,9 @@ export default function FrameStudioPage() {
                 options={[{ value: 'club', label: 'Club frames' }, { value: 'designs', label: 'Designs' }]} />
 
               {frameTab === 'club' ? (
-                <>
+                <div className="flex flex-col gap-3"
+                  onDragOver={e => { e.preventDefault(); e.stopPropagation() }}
+                  onDrop={e => { e.preventDefault(); e.stopPropagation(); uploadFrames(e.dataTransfer.files) }}>
                   <div className="grid grid-cols-3 gap-2">
                     <button type="button" onClick={() => pickFrame('none')}
                       className="flex items-center justify-center rounded-lg text-[11px] font-semibold"
@@ -691,17 +772,27 @@ export default function FrameStudioPage() {
                       No frame
                     </button>
                     {sizeFrames.map(f => (
-                      <div key={f.id} className="relative">
+                      <div key={f.id} className="relative flex flex-col gap-1 min-w-0">
                         <button type="button" onClick={() => pickFrame(f.id)} title={f.name}
-                          className="block w-full rounded-lg overflow-hidden"
+                          className="relative block w-full rounded-lg overflow-hidden"
                           style={{
                             aspectRatio: `${width} / ${height}`,
                             // Checkerboard, so the transparent window in the frame reads as see-through.
                             background: 'repeating-conic-gradient(#d4d7de 0% 25%, #ffffff 0% 50%) 0 0 / 12px 12px',
                             outline: frameId === f.id ? '2px solid var(--adm-signal)' : '1px solid var(--adm-trace)', outlineOffset: 1,
                           }}>
-                          <img src={f.url} alt={f.name} loading="lazy" className="w-full h-full object-contain" />
+                          {/* The current photo under the frame, so each tile previews the real result. */}
+                          {photo && <img src={photo.img.src} alt="" className="absolute inset-0 w-full h-full object-cover" />}
+                          <img src={f.url} alt={f.name} loading="lazy" className="relative w-full h-full object-contain" />
+                          {isNew(f) && (
+                            <span className="absolute top-1 left-1 rounded px-1 text-[9px] font-bold"
+                              style={{ background: 'var(--adm-signal)', color: '#fff' }}>NEW</span>
+                          )}
                         </button>
+                        <span className="truncate text-[10.5px] leading-tight" title={f.name}
+                          style={{ color: frameId === f.id ? 'var(--adm-silk)' : 'var(--adm-silk-faint)' }}>
+                          {f.name}
+                        </span>
                         {manage && (
                           <IconButton icon={Trash2} label={`Remove ${f.name}`} danger size={12} onClick={() => removeFrame(f)}
                             className="absolute top-1 right-1" style={{ width: 22, height: 22, background: 'var(--adm-panel)' }} />
@@ -709,15 +800,23 @@ export default function FrameStudioPage() {
                       </div>
                     ))}
                   </div>
-                  {manage && (
-                    <div className="flex flex-col gap-2">
-                      <TextField label="New frame name" value={newFrameName} onChange={e => setNewFrameName(e.target.value)} placeholder="Ramadan" />
-                      <Button size="sm" icon={Upload} busy={busy === 'frame'} busyLabel="Uploading…" onClick={() => frameInput.current?.click()}>
-                        Upload {width}×{height} PNG
-                      </Button>
-                    </div>
+                  {!sizeFrames.length && (
+                    <p className="text-[12px]" style={{ color: 'var(--adm-silk-faint)' }}>
+                      No club frames for {CANVAS_SIZES[size].label} yet. Upload one below, or pick a built-in design.
+                    </p>
                   )}
-                </>
+                  {manage && (
+                    <TextField label="Name for the next upload (optional)" value={newFrameName}
+                      onChange={e => setNewFrameName(e.target.value)} placeholder="Ramadan" />
+                  )}
+                  <Button size="sm" icon={Upload} busy={busy === 'frame'} busyLabel="Uploading…" onClick={() => frameInput.current?.click()}>
+                    Upload frame PNGs
+                  </Button>
+                  <p className="text-[11px] -mt-1.5" style={{ color: 'var(--adm-silk-faint)' }}>
+                    Or drop them here. Each one goes to the size it fits:
+                    {' '}{Object.values(CANVAS_SIZES).map(s => `${s.width}×${s.height}`).join(', ')}.
+                  </p>
+                </div>
               ) : (
                 <DesignPicker value={designKey} onPick={key => pickFrame(DESIGN_PREFIX + key)}
                   options={designOptions} setOptions={setDesignOptions} photo={photo} logoPath={logoPath}
@@ -731,6 +830,11 @@ export default function FrameStudioPage() {
               onAdd={addText} photoId={photo?.id} />
           )}
 
+          {tool === 'blur' && (
+            <FaceBlurPanel photo={photo} selected={selectedBlur} setSelected={setSelectedBlur} updateBlur={updateBlur}
+              removeBlur={removeBlur} clearBlurs={() => { updatePhoto({ blurs: [] }); setSelectedBlur(null) }} />
+          )}
+
           {tool === 'edit' && (
             <FrameAdjustPanel photo={photo} adjust={adjust} setAdjust={setAdjust} updatePhoto={updatePhoto} />
           )}
@@ -739,7 +843,7 @@ export default function FrameStudioPage() {
       </div>
 
       <input ref={fileInput} type="file" accept="image/*" multiple hidden onChange={e => { addFiles(e.target.files); e.target.value = '' }} />
-      <input ref={frameInput} type="file" accept="image/png" hidden onChange={e => { uploadFrame(e.target.files?.[0]); e.target.value = '' }} />
+      <input ref={frameInput} type="file" accept="image/png" multiple hidden onChange={e => { uploadFrames(e.target.files); e.target.value = '' }} />
     </div>
   )
 }

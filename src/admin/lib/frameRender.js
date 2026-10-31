@@ -84,15 +84,129 @@ export function placement(img, width, height, { zoom = 1, x = 0, y = 0, rotate =
   return { dx: (width - dw) / 2 + ox, dy: (height - dh) / 2 + oy, dw, dh, ox, oy }
 }
 
-/** Draw the photo into the placed box, turned and flipped. */
-function drawPhoto(ctx, photo, p) {
+/**
+ * Run `fn(w, h)` with the context moved into the photo's own space: the
+ * unturned, unflipped image spans -w/2..w/2 by -h/2..h/2.
+ */
+function inPhotoSpace(ctx, photo, p, fn) {
   ctx.save()
   ctx.translate(p.dx + p.dw / 2, p.dy + p.dh / 2)
   if (photo.rotate) ctx.rotate((photo.rotate * Math.PI) / 180)
   if (photo.flipX || photo.flipY) ctx.scale(photo.flipX ? -1 : 1, photo.flipY ? -1 : 1)
   const [w, h] = turned(photo) ? [p.dh, p.dw] : [p.dw, p.dh]
-  ctx.drawImage(photo.img, -w / 2, -h / 2, w, h)
+  fn(w, h)
   ctx.restore()
+}
+
+/** Draw the photo into the placed box, turned and flipped. */
+function drawPhoto(ctx, photo, p) {
+  inPhotoSpace(ctx, photo, p, (w, h) => ctx.drawImage(photo.img, -w / 2, -h / 2, w, h))
+}
+
+/**
+ * Where a canvas point falls on the photo, as fractions of the image itself
+ * (0..1 across, before turning and flipping). Outside the image gives values
+ * past 0..1.
+ */
+export function canvasToPhoto(photo, p, px, py) {
+  let vx = px - (p.dx + p.dw / 2)
+  let vy = py - (p.dy + p.dh / 2)
+  const a = (-(photo.rotate || 0) * Math.PI) / 180
+  ;[vx, vy] = [vx * Math.cos(a) - vy * Math.sin(a), vx * Math.sin(a) + vy * Math.cos(a)]
+  if (photo.flipX) vx = -vx
+  if (photo.flipY) vy = -vy
+  const [w, h] = turned(photo) ? [p.dh, p.dw] : [p.dw, p.dh]
+  return { x: vx / w + 0.5, y: vy / h + 0.5, w, h }
+}
+
+// ---------- face blurs ----------
+
+export const BLUR_DEFAULTS = {
+  x: 0.5, // centre, as fractions of the image
+  y: 0.5,
+  size: 0.08, // half-width, as a fraction of the image's shorter side
+  shape: 'oval', // 'oval' (taller than wide, like a face) or 'box'
+  style: 'blur', // 'blur' or 'pixelate'
+  strength: 40, // 0..100
+}
+
+/** The blur's box in photo space (see inPhotoSpace). */
+function blurBox(b, w, h) {
+  const rx = b.size * Math.min(w, h)
+  const ry = b.shape === 'oval' ? rx * 1.3 : rx
+  return { cx: (b.x - 0.5) * w, cy: (b.y - 0.5) * h, rx, ry }
+}
+
+function blurPath(ctx, b, w, h) {
+  const { cx, cy, rx, ry } = blurBox(b, w, h)
+  ctx.beginPath()
+  if (b.shape === 'oval') ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2)
+  else ctx.rect(cx - rx, cy - ry, rx * 2, ry * 2)
+}
+
+/** Whether a point in image fractions (see canvasToPhoto) lands on this blur. */
+export function hitBlur(b, at) {
+  const { cx, cy, rx, ry } = blurBox(b, at.w, at.h)
+  const dx = (at.x - 0.5) * at.w - cx
+  const dy = (at.y - 0.5) * at.h - cy
+  return b.shape === 'oval' ? (dx / rx) ** 2 + (dy / ry) ** 2 <= 1 : Math.abs(dx) <= rx && Math.abs(dy) <= ry
+}
+
+let pixelCanvas
+/** Hide faces: redraw each blur area from the photo, blurred or pixelated, clipped to its shape. */
+function drawBlurs(ctx, photo, p, filter) {
+  const img = photo.img
+  const iw = img.naturalWidth || img.width
+  const ih = img.naturalHeight || img.height
+  inPhotoSpace(ctx, photo, p, (w, h) => {
+    for (const b of photo.blurs) {
+      const { cx, cy, rx, ry } = blurBox(b, w, h)
+      const k = 0.15 + (b.strength / 100) * 0.85
+      ctx.save()
+      blurPath(ctx, b, w, h)
+      ctx.clip()
+      if (b.style === 'pixelate') {
+        // Blocks across the area: fewer, bigger blocks as strength goes up.
+        const cells = Math.max(3, Math.round(16 - k * 12))
+        const sx = ((cx - rx) / w + 0.5) * iw
+        const sy = ((cy - ry) / h + 0.5) * ih
+        const sw = ((rx * 2) / w) * iw
+        const sh = ((ry * 2) / h) * ih
+        pixelCanvas ??= document.createElement('canvas')
+        const n = cells
+        const m = Math.max(3, Math.round(cells * (ry / rx)))
+        pixelCanvas.width = n
+        pixelCanvas.height = m
+        const pc = pixelCanvas.getContext('2d')
+        pc.filter = filter
+        pc.drawImage(img, sx, sy, sw, sh, 0, 0, n, m)
+        ctx.imageSmoothingEnabled = false
+        ctx.drawImage(pixelCanvas, 0, 0, n, m, cx - rx, cy - ry, rx * 2, ry * 2)
+      } else {
+        // Draw only the area plus a margin, so the browser blurs a small patch, not the whole photo.
+        const radius = Math.max(rx, ry) * k * 0.6
+        const pad = radius * 3
+        const x0 = cx - rx - pad
+        const y0 = cy - ry - pad
+        const bw = (rx + pad) * 2
+        const bh = (ry + pad) * 2
+        ctx.filter = `${filter} blur(${radius}px)`
+        ctx.drawImage(img, (x0 / w + 0.5) * iw, (y0 / h + 0.5) * ih, (bw / w) * iw, (bh / h) * ih, x0, y0, bw, bh)
+      }
+      ctx.restore()
+    }
+  })
+}
+
+/** Dashed outline round the chosen blur (preview only). */
+function outlineBlur(ctx, photo, p, b, u) {
+  inPhotoSpace(ctx, photo, p, (w, h) => {
+    blurPath(ctx, b, w, h)
+    ctx.setLineDash([10 * u, 8 * u])
+    ctx.lineWidth = 3 * u
+    ctx.strokeStyle = '#5CBCF9'
+    ctx.stroke()
+  })
 }
 
 // ---------- text ----------
@@ -239,9 +353,11 @@ export const textsFor = (texts, photo) => (texts || []).filter(t =>
  * @param adjust    see NEUTRAL_ADJUST; the photo's own adjust wins when it has one
  * @param fit       'cover' fills the canvas; 'contain' shows the whole photo on a blurred copy of itself
  * @param selected  id of the text layer to outline (preview only)
+ * @param selectedBlur  id of the photo's face blur to outline (preview only); photo.blurs holds them (see BLUR_DEFAULTS)
  */
 export function renderFrame(ctx, {
   width, height, photo, frame, design, logoPath, texts, adjust = NEUTRAL_ADJUST, fit = 'cover', background = '#050A30', selected,
+  selectedBlur,
 }) {
   const u = width / 1080
   ctx.save()
@@ -260,8 +376,10 @@ export function renderFrame(ctx, {
       drawPhoto(ctx, photo, { dx: back.dx - 40 * u, dy: back.dy - 40 * u, dw: back.dw + 80 * u, dh: back.dh + 80 * u })
     }
     ctx.filter = filter
-    drawPhoto(ctx, photo, placement(photo.img, width, height, photo, fit))
+    const p = placement(photo.img, width, height, photo, fit)
+    drawPhoto(ctx, photo, p)
     ctx.filter = 'none'
+    if (photo.blurs?.length) drawBlurs(ctx, photo, p, filter)
 
     if (a.fade > 0) {
       ctx.fillStyle = `rgba(235, 235, 240, ${(a.fade / 100) * 0.45})`
@@ -281,6 +399,9 @@ export function renderFrame(ctx, {
   if (design) designOf(design.key)?.draw(ctx, { width, height, u, ...design, logoPath })
 
   for (const t of textsFor(texts, photo)) drawText(ctx, t, width, height, t.id === selected)
+
+  const chosen = selectedBlur && photo?.blurs?.find(b => b.id === selectedBlur)
+  if (chosen) outlineBlur(ctx, photo, placement(photo.img, width, height, photo, fit), chosen, u)
   ctx.restore()
 }
 
@@ -289,7 +410,7 @@ export async function exportFrame(options, type = 'image/jpeg', quality = 0.92) 
   const canvas = document.createElement('canvas')
   canvas.width = options.width
   canvas.height = options.height
-  renderFrame(canvas.getContext('2d'), { ...options, selected: null })
+  renderFrame(canvas.getContext('2d'), { ...options, selected: null, selectedBlur: null })
   return new Promise((resolve, reject) => {
     canvas.toBlob(blob => (blob ? resolve(blob) : reject(new Error('The image could not be exported.'))), type, quality)
   })
