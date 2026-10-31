@@ -7,6 +7,7 @@ import { requireAuth, requirePermission } from '../middleware/auth.js'
 import { sendEmail } from '../services/mailer.js'
 import { clubEmail, escapeHtml } from '../services/membership.js'
 import { memberVariables } from '../../src/lib/emailTemplate.js'
+import { canReviewPhotos } from '../../src/lib/photoReviewer.js'
 
 /**
  * Member portal accounts (/portal). A member signs in with their club email
@@ -314,6 +315,7 @@ router.delete('/photo', requireAuth, async (req, res) => {
 
 /** Console: approve (it becomes the member photo) or refuse a photo waiting for review. */
 router.post('/photo/review', requireAuth, requirePermission('membership.manage', 'super_admin', 'event_manager'), async (req, res) => {
+  if (!canReviewPhotos(req.user?.email)) return res.status(403).json({ error: 'Only the club owner can review profile photos.' })
   const id = Number(req.body?.member_id)
   const approve = req.body?.approve === true
   const note = String(req.body?.note || '').trim().slice(0, 300) || null

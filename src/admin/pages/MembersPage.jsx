@@ -11,6 +11,7 @@ import {
   GENDERS, MEMBER_STATUSES, isCurrentTerm, isOpenTask, isOverdue, positionLabel, rememberRoleNames, roleOptions, sortPositions,
 } from '../lib/hr'
 import { hasPermission } from '../lib/permissions'
+import { canReviewPhotos } from '../../lib/photoReviewer'
 import PageHeader, { FilterTabs } from '../components/ui/PageHeader'
 import DataTable from '../components/ui/DataTable'
 import Drawer, { DetailRow, TagList } from '../components/ui/Drawer'
@@ -41,6 +42,7 @@ export default function MembersPage() {
   const role = useAdminStore(s => s.adminProfile?.role?.name)
   const canTasks = hasPermission(role, 'tasks.manage')
   const canAdmins = hasPermission(role, 'admin_users.manage')
+  const canPhotos = useAdminStore(s => canReviewPhotos(s.user?.email))
   const addToast = useAdminStore(s => s.addToast)
 
   const [rows, setRows] = useState([])
@@ -320,7 +322,7 @@ export default function MembersPage() {
         description="The club roster. Every member gets a number and a card the moment they are added or approved."
         actions={
           <>
-            {pendingPhotos.length > 0 && (
+            {canPhotos && pendingPhotos.length > 0 && (
               <Button variant="primary" icon={Camera} onClick={() => setReviewingPhotos(true)}>
                 {pendingPhotos.length} photo{pendingPhotos.length === 1 ? '' : 's'} to review
               </Button>
