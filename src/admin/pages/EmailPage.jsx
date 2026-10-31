@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import {
-  Copy, FileText, Loader2, Mail, Pencil, Play, Plus, RotateCcw, Search, Send, Star, Trash2, UserPlus, Users,
+  Copy, FileText, Loader2, Mail, Pencil, Play, Plus, RotateCcw, Search, Send, Star, Trash2, UserPlus, Users, X,
 } from 'lucide-react'
 import { api, logActivity, read, run, supabase } from '../lib/db'
 import { CAMPAIGN_STATUS, runCampaign } from '../lib/email'
@@ -339,6 +339,7 @@ function CatchUpModal({ campaign, onClose, onQueued }) {
     return next
   })
   const resendCount = received.filter(m => selected.has(m.id)).length
+  const selectedMembers = [...members, ...received].filter(m => selected.has(m.id))
 
   const send = async () => {
     setBusy(true)
@@ -352,7 +353,12 @@ function CatchUpModal({ campaign, onClose, onQueued }) {
 
   const row = m => (
     <li key={m.id}>
-      <label className="flex items-center gap-3 rounded-lg px-3 py-2 cursor-pointer" style={{ border: '1px solid var(--adm-trace)' }}>
+      <label
+        className="flex items-center gap-3 rounded-lg px-3 py-2 cursor-pointer"
+        style={selected.has(m.id)
+          ? { border: '1px solid var(--adm-signal-edge)', background: 'var(--adm-signal-wash)' }
+          : { border: '1px solid var(--adm-trace)' }}
+      >
         <input type="checkbox" className="adm-check" checked={selected.has(m.id)} onChange={() => toggle(m.id)} />
         <span className="min-w-0 flex-1">
           <span className="block text-sm adm-truncate" style={{ color: 'var(--adm-silk)' }}>{m.name || m.email}</span>
@@ -396,24 +402,55 @@ function CatchUpModal({ campaign, onClose, onQueued }) {
                 : `${members.length} member${members.length === 1 ? '' : 's'} match this email's audience but never received it, usually because they joined later.`}
             {' '}Members who already got it can be sent it again. Everyone gets the same email.
           </p>
-          <div className="relative">
-            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: 'var(--adm-silk-faint)' }} />
-            <input
-              type="search"
-              value={query}
-              onChange={e => setQuery(e.target.value)}
-              placeholder="Search by name, email or number…"
-              aria-label="Search members"
-              className="adm-input"
-              style={{ paddingLeft: 34 }}
-            />
+          {/* Pinned while the list scrolls: search, select all and the picked members. */}
+          <div
+            className="sticky top-0 z-10 space-y-2.5 pt-2 pb-3"
+            style={{ background: 'var(--adm-panel)', borderBottom: '1px solid var(--adm-trace)' }}
+          >
+            <div className="relative">
+              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: 'var(--adm-silk-faint)' }} />
+              <input
+                type="search"
+                value={query}
+                onChange={e => setQuery(e.target.value)}
+                placeholder="Search by name, email or number…"
+                aria-label="Search members"
+                className="adm-input"
+                style={{ paddingLeft: 34 }}
+              />
+            </div>
+            <div className="flex items-center justify-between gap-3">
+              {shown.length > 0 ? (
+                <label className="flex items-center gap-2 text-sm" style={{ color: 'var(--adm-silk)' }}>
+                  <input type="checkbox" className="adm-check" checked={allOn} onChange={toggleAll} />
+                  {q ? `Select all ${shown.length} shown` : 'Select all'}
+                </label>
+              ) : <span />}
+              {selected.size > 0 && (
+                <button type="button" className="text-xs" style={{ color: 'var(--adm-signal)' }} onClick={() => setSelected(new Set())}>
+                  Clear {selected.size} selected
+                </button>
+              )}
+            </div>
+            {selectedMembers.length > 0 && (
+              <ul className="adm-scroll flex flex-wrap gap-1.5 overflow-y-auto" style={{ maxHeight: 76 }} aria-label="Selected members">
+                {selectedMembers.map(m => (
+                  <li key={m.id}>
+                    <button
+                      type="button"
+                      onClick={() => toggle(m.id)}
+                      title={`Remove ${m.name || m.email}`}
+                      className="flex items-center gap-1 rounded-full pl-2.5 pr-1.5 py-0.5 text-xs"
+                      style={{ background: 'var(--adm-signal-wash)', border: '1px solid var(--adm-signal-edge)', color: 'var(--adm-silk)' }}
+                    >
+                      <span className="max-w-[160px] adm-truncate">{m.name || m.email}</span>
+                      <X size={12} style={{ color: 'var(--adm-silk-faint)' }} />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
-          {shown.length > 0 && (
-            <label className="flex items-center gap-2 text-sm" style={{ color: 'var(--adm-silk)' }}>
-              <input type="checkbox" className="adm-check" checked={allOn} onChange={toggleAll} />
-              {q ? `Select all ${shown.length} shown` : 'Select all'}
-            </label>
-          )}
           {shownMissing.length > 0 && (
             <div>
               <p className="adm-data text-[11px] uppercase mb-1.5" style={{ color: 'var(--adm-silk-faint)' }}>Not received · {shownMissing.length}</p>
