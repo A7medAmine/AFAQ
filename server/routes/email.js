@@ -342,16 +342,17 @@ router.post('/campaigns/:id/process', async (req, res) => {
 
       const memberIds = claimed.map(d => d.member_id).filter(Boolean)
       const codes = {}
+      const preferred = {}
       if (memberIds.length) {
-        const { data: rows } = await supabaseAdmin.from('members').select('id, member_code').in('id', memberIds)
-        for (const r of rows || []) codes[r.id] = r.member_code
+        const { data: rows } = await supabaseAdmin.from('members').select('id, member_code, preferred_name').in('id', memberIds)
+        for (const r of rows || []) { codes[r.id] = r.member_code; preferred[r.id] = r.preferred_name }
       }
 
       const deliver = async d => {
         try {
           const { subject, html } = renderEmail(campaign.template, {
             ...campaign.variables,
-            ...memberVariables({ full_name: d.name, member_code: codes[d.member_id] }),
+            ...memberVariables({ full_name: d.name, preferred_name: preferred[d.member_id], member_code: codes[d.member_id] }),
           }, { language: campaign.language })
           await sendEmail({ to: d.email, subject, html })
           await supabaseAdmin.from('email_deliveries')
@@ -373,25 +374,38 @@ router.post('/campaigns/:id/process', async (req, res) => {
 })
 
 /**
- * Members a send has not reached yet — mostly people who joined after it went
- * out. A filtered send re-applies its filters, so they come back pre-selected;
- * a hand-picked send has no filter to re-apply, so every active member it
- * skipped is offered and none is pre-selected.
+ * Who a send can still go to. `members` are the ones it has not reached yet —
+ * mostly people who joined after it went out. A filtered send re-applies its
+ * filters, so they come back pre-selected; a hand-picked send has no filter to
+ * re-apply, so every active member it skipped is offered and none is
+ * pre-selected. `received` are active members it already has a delivery for,
+ * offered for a resend.
  */
-async function missingRecipients(campaign) {
+async function recipientOptions(campaign) {
   const stored = normalizeAudience(campaign.audience)
   const handPicked = stored.memberIds.length > 0
-  const { recipients } = await resolveRecipients(handPicked ? normalizeAudience({}) : stored)
+  const [{ recipients }, { recipients: active }] = await Promise.all([
+    resolveRecipients(handPicked ? normalizeAudience({}) : stored),
+    handPicked ? Promise.resolve({ recipients: null }) : resolveRecipients(normalizeAudience({})),
+  ])
 
-  const emailed = new Set()
+  const delivered = new Map()          // email → delivery status
   for (let from = 0; ; from += 1000) {
     const { data, error } = await supabaseAdmin
-      .from('email_deliveries').select('email').eq('campaign_id', campaign.id).order('id').range(from, from + 999)
+      .from('email_deliveries').select('email, status').eq('campaign_id', campaign.id).order('id').range(from, from + 999)
     if (error) throw error
-    for (const d of data) emailed.add(d.email)
+    for (const d of data) delivered.set(d.email, d.status)
     if (data.length < 1000) break
   }
-  return { handPicked, members: recipients.filter(m => !emailed.has(m.email)) }
+
+  const received = []
+  const seen = new Set()
+  for (const m of [...recipients, ...(active || [])]) {
+    if (!delivered.has(m.email) || seen.has(m.email)) continue
+    seen.add(m.email)
+    received.push({ ...m, delivery: delivered.get(m.email) })
+  }
+  return { handPicked, members: recipients.filter(m => !delivered.has(m.email)), received }
 }
 
 async function loadCampaign(id) {
@@ -401,33 +415,45 @@ async function loadCampaign(id) {
   return data
 }
 
+const memberOption = m => ({ id: m.id, name: m.full_name, email: m.email, code: m.member_code, delivery: m.delivery })
+
 router.get('/campaigns/:id/missing', async (req, res) => {
   try {
-    const { handPicked, members } = await missingRecipients(await loadCampaign(Number(req.params.id)))
-    res.json({
-      handPicked,
-      members: members.map(m => ({ id: m.id, name: m.full_name, email: m.email, code: m.member_code })),
-    })
+    const { handPicked, members, received } = await recipientOptions(await loadCampaign(Number(req.params.id)))
+    res.json({ handPicked, members: members.map(memberOption), received: received.map(memberOption) })
   } catch (err) {
     fail(res, err, 'Could not work out who was missed.')
   }
 })
 
-/** Queue the send for members it missed. The console then drives it like any send. */
+/**
+ * Queue the send for chosen members: ones it missed are added, ones who
+ * already got it are queued again. The console then drives it like any send.
+ */
 router.post('/campaigns/:id/add-recipients', async (req, res) => {
   try {
     requireSmtp()
     const campaign = await loadCampaign(Number(req.params.id))
     const wanted = new Set(normalizeAudience({ memberIds: req.body?.memberIds }).memberIds)
-    const { members } = await missingRecipients(campaign)
+    const { members, received } = await recipientOptions(campaign)
     const adding = members.filter(m => wanted.has(m.id))
-    if (!adding.length) throw new HttpError(400, 'Choose at least one member who has not received this email.')
+    // A delivery still queued or sending is already on its way.
+    const resending = received.filter(m => wanted.has(m.id) && m.delivery !== 'queued' && m.delivery !== 'sending')
+    if (!adding.length && !resending.length) throw new HttpError(400, 'Choose at least one member to send this email to.')
 
-    const { error } = await supabaseAdmin.from('email_deliveries').upsert(
-      adding.map(m => ({ campaign_id: campaign.id, member_id: m.id, email: m.email, name: m.full_name })),
-      { onConflict: 'campaign_id,email', ignoreDuplicates: true }
-    )
-    if (error) throw error
+    if (adding.length) {
+      const { error } = await supabaseAdmin.from('email_deliveries').upsert(
+        adding.map(m => ({ campaign_id: campaign.id, member_id: m.id, email: m.email, name: m.full_name })),
+        { onConflict: 'campaign_id,email', ignoreDuplicates: true }
+      )
+      if (error) throw error
+    }
+    if (resending.length) {
+      const { error } = await supabaseAdmin.from('email_deliveries')
+        .update({ status: 'queued', error: null, sent_at: null })
+        .eq('campaign_id', campaign.id).in('email', resending.map(m => m.email)).in('status', ['sent', 'failed'])
+      if (error) throw error
+    }
 
     const { count, error: countError } = await supabaseAdmin
       .from('email_deliveries').select('id', { count: 'exact', head: true }).eq('campaign_id', campaign.id)
@@ -438,7 +464,7 @@ router.post('/campaigns/:id/add-recipients', async (req, res) => {
 
     supabaseAdmin.from('activity_logs').insert({
       user_id: req.user.id, action: 'emailed', entity_type: 'email_campaigns', entity_id: campaign.id,
-      metadata: { name: campaign.subject, recipients: adding.length, late: true },
+      metadata: { name: campaign.subject, recipients: adding.length + resending.length, late: adding.length, resent: resending.length },
     }).then(() => {}, () => {})
 
     res.json(await refreshCampaign(campaign.id))

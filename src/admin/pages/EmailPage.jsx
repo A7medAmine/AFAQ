@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import {
-  Copy, FileText, Loader2, Mail, Pencil, Play, Plus, RotateCcw, Send, Star, Trash2, UserPlus, Users,
+  Copy, FileText, Loader2, Mail, Pencil, Play, Plus, RotateCcw, Search, Send, Star, Trash2, UserPlus, Users,
 } from 'lucide-react'
 import { api, logActivity, read, run, supabase } from '../lib/db'
 import { CAMPAIGN_STATUS, runCampaign } from '../lib/email'
@@ -195,7 +195,7 @@ export default function EmailPage() {
                       <Button size="sm" icon={RotateCcw} onClick={() => retry(c)}>Retry {c.failed} failed</Button>
                     )}
                     {!unfinished && !busy && (
-                      <IconButton icon={UserPlus} label="Send to members who missed it" onClick={() => setCatchUpOf(c)} />
+                      <IconButton icon={UserPlus} label="Send or resend to members" onClick={() => setCatchUpOf(c)} />
                     )}
                     <IconButton icon={Users} label="Recipients" onClick={() => setRecipientsOf(c)} />
                   </div>
@@ -294,34 +294,51 @@ function RecipientsDrawer({ campaign, onClose }) {
 
 /**
  * Send an earlier email to members it never reached, usually people who joined
- * after it went out. They get the same template and text as the original send.
+ * after it went out, or send it again to members who already got it. They get
+ * the same template and text as the original send.
  */
 function CatchUpModal({ campaign, onClose, onQueued }) {
   const addToast = useAdminStore(s => s.addToast)
-  const [result, setResult] = useState(null)          // { handPicked, members } | { error }
+  const [result, setResult] = useState(null)          // { handPicked, members, received } | { error }
   const [selected, setSelected] = useState(new Set())
+  const [query, setQuery] = useState('')
   const [busy, setBusy] = useState(false)
 
   useEffect(() => {
     if (!campaign) return
     setResult(null)
+    setQuery('')
     api(`/api/email/campaigns/${campaign.id}/missing`).then(({ ok, data, message }) => {
       if (!ok || !Array.isArray(data?.members)) {
         setResult({ error: message || 'The server did not answer. Restart it if it was started before this update.' })
         return
       }
-      setResult(data)
+      setResult({ ...data, received: data.received || [] })
       setSelected(new Set(data.handPicked ? [] : data.members.map(m => m.id)))
     })
   }, [campaign])
 
   const members = result?.members || []
+  const received = result?.received || []
+  const q = query.trim().toLowerCase()
+  const matches = m => !q || [m.name, m.email, m.code].some(v => v && v.toLowerCase().includes(q))
+  const shownMissing = members.filter(matches)
+  const shownReceived = received.filter(matches)
+  const shown = [...shownMissing, ...shownReceived]
+
   const toggle = id => setSelected(s => {
     const next = new Set(s)
     if (next.has(id)) next.delete(id); else next.add(id)
     return next
   })
-  const allOn = members.length > 0 && members.every(m => selected.has(m.id))
+  // "Select all" covers only the rows the search leaves on screen.
+  const allOn = shown.length > 0 && shown.every(m => selected.has(m.id))
+  const toggleAll = () => setSelected(s => {
+    const next = new Set(s)
+    for (const m of shown) if (allOn) next.delete(m.id); else next.add(m.id)
+    return next
+  })
+  const resendCount = received.filter(m => selected.has(m.id)).length
 
   const send = async () => {
     setBusy(true)
@@ -333,11 +350,26 @@ function CatchUpModal({ campaign, onClose, onQueued }) {
     onQueued(data)
   }
 
+  const row = m => (
+    <li key={m.id}>
+      <label className="flex items-center gap-3 rounded-lg px-3 py-2 cursor-pointer" style={{ border: '1px solid var(--adm-trace)' }}>
+        <input type="checkbox" className="adm-check" checked={selected.has(m.id)} onChange={() => toggle(m.id)} />
+        <span className="min-w-0 flex-1">
+          <span className="block text-sm adm-truncate" style={{ color: 'var(--adm-silk)' }}>{m.name || m.email}</span>
+          <span className="adm-data block text-[11px] adm-truncate" style={{ color: 'var(--adm-silk-faint)' }}>
+            {m.email}{m.code ? ` · ${m.code}` : ''}
+          </span>
+        </span>
+        {m.delivery && <Badge tone={DELIVERY_TONE[m.delivery]}>{m.delivery}</Badge>}
+      </label>
+    </li>
+  )
+
   return (
     <Modal
       open={!!campaign}
       onClose={busy ? () => {} : onClose}
-      title="Send to members who missed it"
+      title="Send or resend to members"
       description={campaign?.subject}
       footer={
         <>
@@ -352,38 +384,54 @@ function CatchUpModal({ campaign, onClose, onQueued }) {
         <SkeletonPanel rows={3} />
       ) : result.error ? (
         <p className="text-sm" style={{ color: 'var(--adm-fault)' }}>{result.error}</p>
-      ) : !members.length ? (
-        <p className="text-sm" style={{ color: 'var(--adm-silk-dim)' }}>
-          Everyone this email was meant for has already received it.
-        </p>
+      ) : !members.length && !received.length ? (
+        <p className="text-sm" style={{ color: 'var(--adm-silk-dim)' }}>No active member can get this email.</p>
       ) : (
         <div className="space-y-3">
           <p className="text-sm" style={{ color: 'var(--adm-silk-dim)' }}>
-            {result.handPicked
-              ? 'This email went to hand-picked members. Choose the active members who should also get it.'
-              : `${members.length} member${members.length === 1 ? '' : 's'} match this email's audience but never received it, usually because they joined later.`}
-            {' '}They get the same email as everyone else.
+            {!members.length
+              ? 'Everyone this email was meant for has already received it.'
+              : result.handPicked
+                ? 'This email went to hand-picked members. Choose the active members who should also get it.'
+                : `${members.length} member${members.length === 1 ? '' : 's'} match this email's audience but never received it, usually because they joined later.`}
+            {' '}Members who already got it can be sent it again. Everyone gets the same email.
           </p>
-          <label className="flex items-center gap-2 text-sm" style={{ color: 'var(--adm-silk)' }}>
-            <input type="checkbox" className="adm-check" checked={allOn}
-              onChange={() => setSelected(new Set(allOn ? [] : members.map(m => m.id)))} />
-            Select all
-          </label>
-          <ul className="space-y-1.5">
-            {members.map(m => (
-              <li key={m.id}>
-                <label className="flex items-center gap-3 rounded-lg px-3 py-2 cursor-pointer" style={{ border: '1px solid var(--adm-trace)' }}>
-                  <input type="checkbox" className="adm-check" checked={selected.has(m.id)} onChange={() => toggle(m.id)} />
-                  <span className="min-w-0">
-                    <span className="block text-sm adm-truncate" style={{ color: 'var(--adm-silk)' }}>{m.name || m.email}</span>
-                    <span className="adm-data block text-[11px] adm-truncate" style={{ color: 'var(--adm-silk-faint)' }}>
-                      {m.email}{m.code ? ` · ${m.code}` : ''}
-                    </span>
-                  </span>
-                </label>
-              </li>
-            ))}
-          </ul>
+          <div className="relative">
+            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: 'var(--adm-silk-faint)' }} />
+            <input
+              type="search"
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              placeholder="Search by name, email or number…"
+              aria-label="Search members"
+              className="adm-input"
+              style={{ paddingLeft: 34 }}
+            />
+          </div>
+          {shown.length > 0 && (
+            <label className="flex items-center gap-2 text-sm" style={{ color: 'var(--adm-silk)' }}>
+              <input type="checkbox" className="adm-check" checked={allOn} onChange={toggleAll} />
+              {q ? `Select all ${shown.length} shown` : 'Select all'}
+            </label>
+          )}
+          {shownMissing.length > 0 && (
+            <div>
+              <p className="adm-data text-[11px] uppercase mb-1.5" style={{ color: 'var(--adm-silk-faint)' }}>Not received · {shownMissing.length}</p>
+              <ul className="space-y-1.5">{shownMissing.map(row)}</ul>
+            </div>
+          )}
+          {shownReceived.length > 0 && (
+            <div>
+              <p className="adm-data text-[11px] uppercase mb-1.5" style={{ color: 'var(--adm-silk-faint)' }}>Already received · resend · {shownReceived.length}</p>
+              <ul className="space-y-1.5">{shownReceived.map(row)}</ul>
+            </div>
+          )}
+          {!shown.length && <p className="text-sm" style={{ color: 'var(--adm-silk-faint)' }}>No member matches “{query}”.</p>}
+          {resendCount > 0 && (
+            <p className="text-xs" style={{ color: 'var(--adm-silk-dim)' }}>
+              {resendCount} member{resendCount === 1 ? '' : 's'} will get this email a second time.
+            </p>
+          )}
         </div>
       )}
     </Modal>
