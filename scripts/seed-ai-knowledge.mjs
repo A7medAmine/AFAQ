@@ -48,12 +48,12 @@ The club is open to students of every level, from complete beginners to experien
   {
     title: 'The two sides of AFAQ: Tech Lab and Language Lab',
     category: 'Activities',
-    keywords: ['activities', 'what do you do', 'tech', 'languages', 'english', 'german', 'sub-clubs', 'أنشطة', 'لغات', 'activités'],
+    keywords: ['activities', 'what do you do', 'tech', 'languages', 'english', 'sub-clubs', 'أنشطة', 'لغات', 'activités'],
     content: `AFAQ is one club with two sides.
 
 Tech Lab ("We build"): electronics, Arduino, ESP32/ESP8266, robotics, IoT and software. Members learn by making real things together: workshops, robotics challenges and club projects such as the ESP Racer game, the ESP Game Boy console and a PS4-controlled robot car (see the Projects page).
 
-Language Lab ("We speak"): led by members with strong English and German. It helps students speak with confidence, write CVs, emails and reports, present their work, and prepare to study, travel or work abroad (including study in Germany). Its main activity is the "Chill & Chat" speaking club. It is open to every student, from first words to fluent.
+Language Lab ("We speak"): led by members with strong English. It helps students speak with confidence, write CVs, emails and reports, present their work, and prepare to study, travel or work abroad. Its main activity is the "Chill & Chat" speaking club. It is open to every student, from first words to fluent.
 
 The club also takes part in university events such as open days, Student Day, book fairs, seminars and Global Entrepreneurship Week.`,
   },
@@ -192,7 +192,7 @@ The easiest way to progress is to come to AFAQ's Arduino workshops and join a pr
   {
     title: 'Tips for public speaking and practising a language',
     category: 'Learning',
-    keywords: ['public speaking', 'confidence', 'english practice', 'german', 'presentation', 'التحدث أمام الجمهور', 'prise de parole'],
+    keywords: ['public speaking', 'confidence', 'english practice', 'presentation', 'التحدث أمام الجمهور', 'prise de parole'],
     content: `Advice shared in AFAQ's Language Lab and Chill & Chat sessions:
 - Speak early and often. Mistakes are part of learning; the sessions are made for that.
 - Practise short impromptu talks: pick a topic and speak for one minute without notes.
