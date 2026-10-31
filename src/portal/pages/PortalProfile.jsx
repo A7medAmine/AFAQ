@@ -1,13 +1,27 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import QRCode from 'qrcode'
 import { formatDay, portalRpc, usePortal } from '../lib/portal'
 import { normalizePhone } from '../../lib/contactFormats'
 import joinEn from '../../locales/en/join.json'
 import PasswordForm from '../PasswordForm'
+import PhotoSection from '../PhotoSection'
+import IdCardSection from '../IdCardSection'
+import CopyCode from '../CopyCode'
 
 // The same choices as the join form, stored as keys.
 const SKILLS = Object.keys(joinEn.skillOptions)
+
+/** Indexes of the full-name words the preferred name uses (all of them by default). */
+function chosenWords(words, preferred) {
+  if (!preferred) return words.map((_, i) => i)
+  const wanted = preferred.toLowerCase().split(/\s+/)
+  const picked = []
+  words.forEach((w, i) => {
+    const at = wanted.indexOf(w.toLowerCase())
+    if (at !== -1) { picked.push(i); wanted.splice(at, 1) }
+  })
+  return picked.length ? picked : words.map((_, i) => i)
+}
 
 function Row({ label, children }) {
   return (
@@ -22,16 +36,15 @@ export default function PortalProfile() {
   const { t, i18n } = useTranslation('portal')
   const { t: tJoin } = useTranslation('join')
   const { me, refresh } = usePortal()
-  const [qr, setQr] = useState(null)
-  const [form, setForm] = useState({ phone: me.phone || '', skills: me.skills, emailOptOut: me.email_opt_out })
+  const nameWords = me.full_name.split(/\s+/).filter(Boolean)
+  const [form, setForm] = useState({
+    phone: me.phone || '', skills: me.skills, emailOptOut: me.email_opt_out,
+    nameWords: chosenWords(nameWords, me.preferred_name),
+  })
+  const shownName = form.nameWords.slice().sort((a, b) => a - b).map(i => nameWords[i]).join(' ')
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState(null)
   const [passwordSaved, setPasswordSaved] = useState(false)
-
-  useEffect(() => {
-    QRCode.toDataURL(`${window.location.origin}/verify/${me.member_code}`, { margin: 1, width: 220, errorCorrectionLevel: 'M' })
-      .then(setQr).catch(() => setQr(null))
-  }, [me.member_code])
 
   const save = async e => {
     e.preventDefault()
@@ -41,6 +54,7 @@ export default function PortalProfile() {
       p_phone: normalizePhone(form.phone),
       p_skills: form.skills,
       p_email_opt_out: form.emailOptOut,
+      p_preferred_name: shownName,
     })
     setSaving(false)
     setMessage(error ? { ok: false, text: t('profile.saveFailed') } : { ok: true, text: t('profile.saved') })
@@ -57,7 +71,7 @@ export default function PortalProfile() {
           <dl className="portal-list">
             <Row label={t('profile.name')}>{me.full_name}</Row>
             <Row label={t('profile.email')}><span dir="ltr">{me.email}</span></Row>
-            <Row label={t('profile.memberCode')}><span className="portal-mono">{me.member_code}</span></Row>
+            <Row label={t('profile.memberCode')}><CopyCode code={me.member_code} /></Row>
             <Row label={t('profile.studentId')}><span className="portal-mono">{me.student_id}</span></Row>
             <Row label={t('profile.study')}>{[
               me.study_department && tJoin(`departments.${me.study_department}`, { defaultValue: me.study_department }),
@@ -110,10 +124,30 @@ export default function PortalProfile() {
           </div>
         </section>
 
+        <PhotoSection />
+
         <section className="portal-card">
           <h2 className="font-bold mb-1">{t('profile.edit')}</h2>
           <p className="text-sm portal-muted mb-4">{t('profile.editNote')}</p>
           <form onSubmit={save} className="space-y-4">
+            <fieldset>
+              <legend className="portal-label">{t('profile.shownName')}</legend>
+              <p className="text-xs portal-muted mb-2">{t('profile.shownNameHint')}</p>
+              <div className="flex flex-wrap gap-2">
+                {nameWords.map((word, i) => {
+                  const on = form.nameWords.includes(i)
+                  return (
+                    <button key={i} type="button" aria-pressed={on}
+                      className={`portal-badge ${on ? '' : 'plain'}`} style={{ padding: '0.35rem 0.8rem', cursor: 'pointer' }}
+                      // At least one word stays picked.
+                      onClick={() => setForm(f => ({ ...f, nameWords: on ? (f.nameWords.length > 1 ? f.nameWords.filter(x => x !== i) : f.nameWords) : [...f.nameWords, i] }))}>
+                      {word}
+                    </button>
+                  )
+                })}
+              </div>
+              <p className="text-sm mt-2">{t('profile.shownAs')} <strong>{t('hello', { name: shownName })}</strong></p>
+            </fieldset>
             <div>
               <label className="portal-label" htmlFor="profile-phone">{t('profile.phone')}</label>
               <input id="profile-phone" className="portal-input" dir="ltr" maxLength={40} value={form.phone}
@@ -155,17 +189,7 @@ export default function PortalProfile() {
       </div>
 
       <aside>
-        <section className="portal-card text-center lg:sticky" style={{ top: 'calc(var(--nav-h) + 1rem)' }}>
-          <h2 className="font-bold mb-3">{t('profile.card')}</h2>
-          {me.photo_url && <img src={me.photo_url} alt="" className="w-20 h-20 rounded-full object-cover mx-auto mb-3" />}
-          <p className="font-bold">{me.full_name}</p>
-          <p className="portal-mono text-sm portal-muted mb-3">{me.member_code}</p>
-          {qr && <img src={qr} alt={t('profile.qrAlt')} className="mx-auto rounded-lg bg-white p-2" width={180} height={180} />}
-          <p className="text-xs portal-muted mt-3">{t('profile.cardNote')}</p>
-          {me.card_status && me.card_status !== 'active' && (
-            <p className="portal-badge bad mt-2">{t(`profile.cardStatuses.${me.card_status}`, { defaultValue: me.card_status })}</p>
-          )}
-        </section>
+        <IdCardSection />
       </aside>
     </div>
   )

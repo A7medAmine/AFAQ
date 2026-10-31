@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
-  BadgeCheck, Building2, CalendarX, Crown, Sparkles, Eye, KeyRound, FileSpreadsheet, Shield, IdCard, ListChecks, Loader2, LogIn, MailPlus, Pencil, Plus, Printer, Trash2, UserCheck, UserRoundPlus, Upload, Users, X,
+  BadgeCheck, Building2, Camera, CalendarX, Crown, Sparkles, Eye, KeyRound, FileSpreadsheet, Shield, IdCard, ListChecks, Loader2, LogIn, MailPlus, Pencil, Plus, Printer, Trash2, UserCheck, UserRoundPlus, Upload, Users, X,
 } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { api, logActivity, run, read, supabase, uploadFile } from '../lib/db'
@@ -30,6 +30,7 @@ import AddToGroupModal from '../components/hr/AddToGroupModal'
 import AddToDepartmentModal from '../components/hr/AddToDepartmentModal'
 import AddAdminModal from '../components/AddAdminModal'
 import TempPasswordModal from '../components/hr/TempPasswordModal'
+import PhotoReviewModal from '../components/hr/PhotoReviewModal'
 
 const STATUS_FILTERS = [{ value: 'all', label: 'All' }, ...MEMBER_STATUSES]
 
@@ -67,6 +68,7 @@ export default function MembersPage() {
   const [groupsOpen, setGroupsOpen] = useState(false)
   const [grouping, setGrouping] = useState(null) // { members, clear? }
   const [placing, setPlacing] = useState(null) // { members, clear? } for a department
+  const [reviewingPhotos, setReviewingPhotos] = useState(false)
 
   const load = useCallback(async () => {
     setState(s => ({ ...s, error: null }))
@@ -218,6 +220,11 @@ export default function MembersPage() {
     'Member code', 'Name', 'Email', 'Phone', 'Student ID', 'Field of study', 'Study year', 'Club departments',
     'Roles', 'Status', 'Card', 'Joined', 'Left',
   ]
+  const pendingPhotos = useMemo(
+    () => rows.filter(r => r.photo_pending_url).sort((a, b) => String(a.photo_pending_at).localeCompare(String(b.photo_pending_at))),
+    [rows]
+  )
+
   const exportRows = filtered.map(r => [
     r.member_code, r.full_name, r.email, r.phone, r.student_id, r.department, r.study_year,
     departmentIds(r).map(id => departments.find(d => d.id === id)?.name).filter(Boolean).join(', '),
@@ -300,12 +307,24 @@ export default function MembersPage() {
 
   return (
     <div>
+      <PhotoReviewModal
+        open={reviewingPhotos}
+        members={pendingPhotos}
+        onClose={() => setReviewingPhotos(false)}
+        onChanged={load}
+      />
+
       <PageHeader
         eyebrow="Operate"
         title="Members"
         description="The club roster. Every member gets a number and a card the moment they are added or approved."
         actions={
           <>
+            {pendingPhotos.length > 0 && (
+              <Button variant="primary" icon={Camera} onClick={() => setReviewingPhotos(true)}>
+                {pendingPhotos.length} photo{pendingPhotos.length === 1 ? '' : 's'} to review
+              </Button>
+            )}
             <ExportMenu
               filename={`members-${new Date().toISOString().slice(0, 10)}`}
               title="Members"
@@ -441,6 +460,7 @@ export default function MembersPage() {
               setRows(rs => rs.map(r => r.id === detail.id ? { ...r, photo_url } : r))
             }} />
             <div className="grid grid-cols-2 gap-4">
+              {detail.preferred_name && <DetailRow label="Goes by">{detail.preferred_name}</DetailRow>}
               <DetailRow label="Email" mono>{detail.email}</DetailRow>
               <DetailRow label="Phone" mono>{detail.phone || '—'}</DetailRow>
               <DetailRow label="Student ID" mono>{detail.student_id || '—'}</DetailRow>

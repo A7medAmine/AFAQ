@@ -146,6 +146,14 @@ export const members = pgTable('members', {
   // Set when an admin gives a temporary password; the portal makes the member
   // choose their own before anything else, and the server clears it.
   portalMustChangePassword: boolean('portal_must_change_password').notNull().default(false),
+  // What the member wants to be called (greetings, the portal). Only words
+  // taken from full_name are accepted, so nothing can be typed into it.
+  preferredName: text('preferred_name'),
+  // A photo the member uploaded from the portal, hidden until HR approves it
+  // (it then replaces photo_url). The note says why the last one was refused.
+  photoPendingUrl: text('photo_pending_url'),
+  photoPendingAt: timestamp('photo_pending_at', { withTimezone: true }),
+  photoReviewNote: text('photo_review_note'),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
 })

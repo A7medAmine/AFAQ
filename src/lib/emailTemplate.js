@@ -188,9 +188,12 @@ export function buildSharedVariables({ sourceType, record, message, language = '
 /** Variables that differ per recipient. */
 export function memberVariables(member) {
   const fullName = String(member?.full_name || member?.name || '').trim()
+  // The name the member chose in the portal (e.g. "Omar Kattia" for
+  // "Had Omar Kattia"); otherwise the first word of the registered name.
+  const preferred = String(member?.preferred_name || '').trim()
   return {
     member_name: fullName,
-    first_name: fullName.split(/\s+/)[0] || '',
+    first_name: preferred || fullName.split(/\s+/)[0] || '',
     member_code: member?.member_code || '',
   }
 }

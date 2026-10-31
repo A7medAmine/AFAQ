@@ -281,6 +281,20 @@
       "when": 1793400572903,
       "tag": "0039_portal_temp_password",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1793402524168,
+      "tag": "0040_portal_profile",
+      "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1793402553263,
+      "tag": "0041_preferred_name_trigger",
+      "breakpoints": true
     }
   ]
 }

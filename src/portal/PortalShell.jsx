@@ -2,8 +2,9 @@ import { Navigate, NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Bell, CalendarDays, Home, KeyRound, ListChecks, Loader2, LogOut, Trophy, UserRound } from 'lucide-react'
 import SEO from '../components/SEO'
-import { usePortal } from './lib/portal'
+import { displayName, usePortal } from './lib/portal'
 import PasswordForm from './PasswordForm'
+import CopyCode from './CopyCode'
 import './portal.css'
 
 const TABS = [
@@ -33,7 +34,7 @@ function ForcedPasswordChange() {
       <div className="max-w-md mx-auto px-4">
         <div className="text-center mb-8">
           <KeyRound size={32} className="mx-auto mb-3" style={{ color: 'var(--color-accent)' }} />
-          <h1 className="text-3xl font-bold mb-2">{t('hello', { name: me.full_name.split(/\s+/)[0] })}</h1>
+          <h1 className="text-3xl font-bold mb-2">{t('hello', { name: displayName(me) })}</h1>
           <p className="text-sm portal-muted">{t('setPassword.temporary')}</p>
         </div>
         <div className="portal-card" style={{ padding: '1.75rem' }}>
@@ -67,9 +68,9 @@ export default function PortalShell() {
         <div className="flex flex-wrap items-end justify-between gap-4 mb-6">
           <div className="min-w-0">
             <div className="eyebrow mb-2">{t('title')}</div>
-            <h1 className="text-2xl md:text-3xl font-bold truncate">{t('hello', { name: me.full_name.split(/\s+/)[0] })}</h1>
+            <h1 className="text-2xl md:text-3xl font-bold truncate">{t('hello', { name: displayName(me) })}</h1>
             <p className="text-sm mt-1 portal-muted">
-              <span className="portal-mono">{me.member_code}</span>
+              <CopyCode code={me.member_code} />
               {me.departments.length > 0 && <> · {me.departments.map(d => d.name).join(', ')}</>}
             </p>
           </div>

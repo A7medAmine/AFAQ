@@ -4,6 +4,8 @@
   "signOut": "Se déconnecter",
   "seeAll": "Tout voir",
   "loading": "Chargement…",
+  "copy": "Copier",
+  "copied": "Copié",
   "tabs": {
     "home": "Aperçu",
     "points": "Points",
@@ -158,7 +160,24 @@
     "password": "Mot de passe",
     "passwordNote": "Choisissez un nouveau mot de passe pour votre compte membre.",
     "passwordSaved": "Votre mot de passe a été modifié.",
-    "passwordSubmit": "Changer le mot de passe"
+    "passwordSubmit": "Changer le mot de passe",
+    "photo": "Photo de profil",
+    "photoNote": "Votre photo figure sur votre carte de membre. Toute nouvelle photo est vérifiée par l'équipe RH avant d'être visible.",
+    "photoPending": "En attente de validation",
+    "photoWithdraw": "Annuler cette photo",
+    "photoChange": "Changer la photo",
+    "photoUpload": "Ajouter une photo",
+    "photoRefused": "Votre dernière photo n'a pas été acceptée : {{note}}",
+    "photoRules": "Utilisez une photo nette de votre visage, comme une photo d'identité. Les photos avec d'autres personnes, des logos, des mèmes ou tout contenu offensant sont refusées.",
+    "photoErrors": {
+      "too_big": "Cette image est trop lourde. Essayez une autre photo.",
+      "bad_file": "Choisissez une photo JPG, PNG ou WebP.",
+      "failed": "La photo n'a pas été envoyée. Réessayez.",
+      "tooMany": "Trop de tentatives. Réessayez dans quelques minutes."
+    },
+    "shownName": "Le nom par lequel on vous appelle",
+    "shownNameHint": "Choisissez les mots de votre nom à utiliser dans les salutations et les e-mails. Votre nom complet reste sur votre carte.",
+    "shownAs": "Aperçu :"
   },
   "positions": {
     "president": "Président",
@@ -169,5 +188,33 @@
     "team_lead": "Chef d'équipe",
     "coordinator": "Coordinateur",
     "advisor": "Conseiller"
+  },
+  "card": {
+    "flip": "Touchez pour retourner",
+    "error": "La carte n'a pas pu être générée. Rechargez la page et réessayez.",
+    "notValid": "Votre carte n'est pas active pour le moment et ne sera pas validée. Contactez l'équipe RH.",
+    "downloadImage": "Enregistrer l'image de la carte",
+    "downloadPdf": "Télécharger le PDF à imprimer",
+    "show": "Afficher mon code-barres",
+    "note": "Présentez le code-barres aux événements du club pour pointer et recevoir vos points. Le QR code prouve votre adhésion à quiconque le scanne.",
+    "showHint": "Augmentez la luminosité et tenez le téléphone immobile sous le scanner. Touchez n'importe où pour fermer.",
+    "close": "Fermer",
+    "layout": "Format",
+    "layouts": {
+      "double": "Recto verso",
+      "single": "Une face"
+    },
+    "theme": "Couleur",
+    "themes": {
+      "blue": "Bleu",
+      "navy": "Marine",
+      "royal": "Bleu roi",
+      "pink": "Rose (Média)",
+      "orange": "Orange (Logistique)",
+      "green": "Vert (Tech)",
+      "purple": "Violet (Linguistique)",
+      "cyan": "Cyan (Relex)",
+      "gold": "Or"
+    }
   }
 }

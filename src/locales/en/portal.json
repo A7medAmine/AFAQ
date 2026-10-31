@@ -4,6 +4,8 @@
   "signOut": "Sign out",
   "seeAll": "See all",
   "loading": "Loading…",
+  "copy": "Copy",
+  "copied": "Copied",
   "tabs": {
     "home": "Overview",
     "points": "Points",
@@ -158,7 +160,24 @@
     "password": "Password",
     "passwordNote": "Choose a new password for your member account.",
     "passwordSaved": "Your password was changed.",
-    "passwordSubmit": "Change password"
+    "passwordSubmit": "Change password",
+    "photo": "Profile photo",
+    "photoNote": "Your photo appears on your member card. A new photo is checked by the HR team before anyone sees it.",
+    "photoPending": "Waiting for approval",
+    "photoWithdraw": "Cancel this photo",
+    "photoChange": "Change photo",
+    "photoUpload": "Upload a photo",
+    "photoRefused": "Your last photo was not accepted: {{note}}",
+    "photoRules": "Use a clear photo of your face, like an ID photo. Photos with other people, logos, memes or anything offensive are refused.",
+    "photoErrors": {
+      "too_big": "That image is too large. Try another photo.",
+      "bad_file": "Choose a JPG, PNG or WebP photo.",
+      "failed": "The photo was not sent. Try again.",
+      "tooMany": "Too many attempts. Try again in a few minutes."
+    },
+    "shownName": "Name we call you by",
+    "shownNameHint": "Pick the words of your name to use in greetings and emails. Your full name stays on your card.",
+    "shownAs": "Preview:"
   },
   "positions": {
     "president": "President",
@@ -169,5 +188,33 @@
     "team_lead": "Team lead",
     "coordinator": "Coordinator",
     "advisor": "Advisor"
+  },
+  "card": {
+    "flip": "Tap to flip",
+    "error": "The card could not be drawn. Reload the page and try again.",
+    "notValid": "Your card is not active right now, so it will not verify. Contact the HR team.",
+    "downloadImage": "Save card image",
+    "downloadPdf": "Download PDF to print",
+    "show": "Show my barcode",
+    "note": "Show the barcode at club events to check in and get your points. The QR code proves your membership to anyone who scans it.",
+    "showHint": "Turn your screen brightness up and hold the phone steady under the scanner. Tap anywhere to close.",
+    "close": "Close",
+    "layout": "Layout",
+    "layouts": {
+      "double": "Two sides",
+      "single": "One side"
+    },
+    "theme": "Colour",
+    "themes": {
+      "blue": "Blue",
+      "navy": "Navy",
+      "royal": "Royal blue",
+      "pink": "Pink (Media)",
+      "orange": "Orange (Logistics)",
+      "green": "Green (Tech)",
+      "purple": "Purple (Linguistics)",
+      "cyan": "Cyan (Relex)",
+      "gold": "Gold"
+    }
   }
 }

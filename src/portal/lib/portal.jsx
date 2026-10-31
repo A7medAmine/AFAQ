@@ -91,6 +91,49 @@ export async function changePassword(password) {
   }
 }
 
+/** The name to greet a member with: the one they chose, else the first word of their name. */
+export const displayName = me => me?.preferred_name || (me?.full_name || '').split(/\s+/)[0] || ''
+
+/** Calls our API with the member session; returns { ok, data } and never throws. */
+async function portalApi(path, init = {}) {
+  const { data: { session } } = await portalSupabase.auth.getSession()
+  if (!session) return { ok: false, data: { error: 'failed' } }
+  try {
+    const res = await fetch(path, { ...init, headers: { ...init.headers, Authorization: `Bearer ${session.access_token}` } })
+    const data = await res.json().catch(() => ({}))
+    return { ok: res.ok, data, status: res.status }
+  } catch {
+    return { ok: false, data: { error: 'failed' } }
+  }
+}
+
+/** A square 512px JPEG of the picked image, centre-cropped; re-encoding also drops EXIF (location) data. */
+export async function squarePhoto(file) {
+  const bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' })
+  const side = Math.min(bitmap.width, bitmap.height)
+  const size = Math.min(512, side)
+  const canvas = document.createElement('canvas')
+  canvas.width = size
+  canvas.height = size
+  canvas.getContext('2d').drawImage(bitmap, (bitmap.width - side) / 2, (bitmap.height - side) / 2, side, side, 0, 0, size, size)
+  bitmap.close?.()
+  return new Promise((resolve, reject) => canvas.toBlob(b => (b ? resolve(b) : reject(new Error('encode'))), 'image/jpeg', 0.86))
+}
+
+/** Sends a photo for review. Returns an error key from profile.photoErrors, or null. */
+export async function uploadPhoto(blob) {
+  const body = new FormData()
+  body.append('photo', blob, 'photo.jpg')
+  const { ok, data, status } = await portalApi('/api/portal/photo', { method: 'POST', body })
+  if (ok) return null
+  return status === 429 ? 'tooMany' : ['too_big', 'bad_file'].includes(data.error) ? data.error : 'failed'
+}
+
+export async function withdrawPhoto() {
+  const { ok } = await portalApi('/api/portal/photo', { method: 'DELETE' })
+  return ok
+}
+
 /** Text for the current language, falling back to English. */
 export const localized = (row, field, lang) => row?.[`${field}_${lang}`] || row?.[`${field}_en`] || ''
 

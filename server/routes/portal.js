@@ -1,10 +1,12 @@
 import crypto from 'node:crypto'
 import { Router } from 'express'
+import multer from 'multer'
 import rateLimit from 'express-rate-limit'
 import { supabaseAdmin } from '../db/client.js'
 import { requireAuth, requirePermission } from '../middleware/auth.js'
 import { sendEmail } from '../services/mailer.js'
 import { clubEmail, escapeHtml } from '../services/membership.js'
+import { memberVariables } from '../../src/lib/emailTemplate.js'
 
 /**
  * Member portal accounts (/portal). A member signs in with their club email
@@ -58,7 +60,7 @@ async function sendAccessLink(member, req, { invited }) {
   const { data, error } = await supabaseAdmin.auth.admin.generateLink({ type: 'recovery', email: member.email.trim().toLowerCase() })
   if (error) throw error
   const url = `${siteUrl(req)}/portal/set-password?token_hash=${encodeURIComponent(data.properties.hashed_token)}&type=recovery`
-  const first = escapeHtml((member.full_name || '').split(/\s+/)[0] || 'there')
+  const first = escapeHtml(memberVariables(member).first_name || 'there')
   await sendEmail({
     to: member.email,
     subject: invited ? 'Your AFAQ member account' : 'Set your AFAQ member password',
@@ -88,7 +90,7 @@ router.post('/claim', claimLimiter, async (req, res) => {
   if (!EMAIL.test(email) || email.length > 200) return res.status(400).json({ error: 'Enter a valid email address.' })
   try {
     const { data: member } = await supabaseAdmin
-      .from('members').select('id, full_name, email, status, user_id')
+      .from('members').select('id, full_name, preferred_name, email, status, user_id')
       .ilike('email', email).limit(1).maybeSingle()
     if (member && canSignIn(member)) await sendAccessLink(member, req, { invited: false })
   } catch (err) {
@@ -104,7 +106,7 @@ router.post('/invite', requireAuth, requirePermission('membership.manage', 'supe
   if (ids.length > BATCH_SIZE) return res.status(400).json({ error: `Send at most ${BATCH_SIZE} invitations at a time.` })
 
   const { data: members, error } = await supabaseAdmin
-    .from('members').select('id, full_name, email, status, user_id').in('id', ids)
+    .from('members').select('id, full_name, preferred_name, email, status, user_id').in('id', ids)
   if (error) return res.status(500).json({ error: 'The members could not be loaded.' })
 
   const results = []
@@ -168,7 +170,7 @@ router.post('/temp-password', requireAuth, requirePermission('membership.manage'
 
   try {
     const { data: member } = await supabaseAdmin
-      .from('members').select('id, full_name, email, status, user_id').eq('id', id).maybeSingle()
+      .from('members').select('id, full_name, preferred_name, email, status, user_id').eq('id', id).maybeSingle()
     if (!member) return res.status(404).json({ error: 'That member no longer exists.' })
     if (!canSignIn(member)) return res.status(409).json({ error: 'Suspended members cannot sign in.' })
     if (!EMAIL.test(member.email || '')) return res.status(400).json({ error: 'This member has no valid email address to sign in with.' })
@@ -187,7 +189,7 @@ router.post('/temp-password', requireAuth, requirePermission('membership.manage'
 
     if (!sendByEmail) return res.json({ ok: true, password })
 
-    const first = escapeHtml((member.full_name || '').split(/\s+/)[0] || 'there')
+    const first = escapeHtml(memberVariables(member).first_name || 'there')
     await sendEmail({
       to: member.email,
       subject: 'Your AFAQ member account',
@@ -225,6 +227,112 @@ router.post('/password', claimLimiter, requireAuth, async (req, res) => {
     return res.status(same ? 400 : 500).json({ error: same ? 'Choose a password different from the current one.' : 'The password was not saved.', code: same ? 'same' : undefined })
   }
   await supabaseAdmin.from('members').update({ portal_must_change_password: false }).eq('id', member.id)
+  res.json({ ok: true })
+})
+
+// ---------- Profile photo ----------
+// Members upload from the portal; the photo stays in photo_pending_url, out of
+// sight, until HR approves it in the console. The portal crops and re-encodes
+// it to a 512px JPEG in the browser (which also drops EXIF/location data).
+const PHOTO_BUCKET = 'uploads'
+// Per account, not per IP: members on the campus network share one address.
+const photoLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: req => req.user.id,
+  message: { error: 'tooMany' },
+})
+const photoUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 2 * 1024 * 1024, files: 1 } })
+
+/** Image type from the file's first bytes; the browser-reported type is not trusted. */
+function imageType(buffer) {
+  if (buffer.length > 3 && buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) return { ext: 'jpg', mime: 'image/jpeg' }
+  if (buffer.length > 8 && buffer.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))) return { ext: 'png', mime: 'image/png' }
+  if (buffer.length > 12 && buffer.toString('ascii', 0, 4) === 'RIFF' && buffer.toString('ascii', 8, 12) === 'WEBP') return { ext: 'webp', mime: 'image/webp' }
+  return null
+}
+
+/** Storage path of a file in our bucket, from its public URL. */
+function bucketPath(url) {
+  const marker = `/storage/v1/object/public/${PHOTO_BUCKET}/`
+  const at = typeof url === 'string' ? url.indexOf(marker) : -1
+  return at === -1 ? null : decodeURIComponent(url.slice(at + marker.length).split('?')[0])
+}
+
+async function signedInMember(req, res) {
+  const { data: member } = await supabaseAdmin
+    .from('members').select('id, status, photo_pending_url').eq('user_id', req.user.id).maybeSingle()
+  if (!member || !canSignIn(member)) {
+    res.status(403).json({ error: 'This account is not linked to a club member.' })
+    return null
+  }
+  return member
+}
+
+router.post('/photo', requireAuth, photoLimiter, (req, res, next) => {
+  photoUpload.single('photo')(req, res, err => {
+    if (err) return res.status(400).json({ error: err.code === 'LIMIT_FILE_SIZE' ? 'too_big' : 'bad_file' })
+    if (!req.file) return res.status(400).json({ error: 'bad_file' })
+    next()
+  })
+}, async (req, res) => {
+  const type = imageType(req.file.buffer)
+  if (!type) return res.status(400).json({ error: 'bad_file' })
+  try {
+    const member = await signedInMember(req, res)
+    if (!member) return
+    const path = `members/${member.id}/${crypto.randomBytes(12).toString('hex')}.${type.ext}`
+    const { error } = await supabaseAdmin.storage.from(PHOTO_BUCKET).upload(path, req.file.buffer, { contentType: type.mime })
+    if (error) throw error
+    const { data: { publicUrl } } = supabaseAdmin.storage.from(PHOTO_BUCKET).getPublicUrl(path)
+
+    const { error: updateError } = await supabaseAdmin.from('members').update({
+      photo_pending_url: publicUrl, photo_pending_at: new Date().toISOString(), photo_review_note: null,
+    }).eq('id', member.id)
+    if (updateError) throw updateError
+    // A photo replaced before review is never shown; drop the file.
+    const previous = bucketPath(member.photo_pending_url)
+    if (previous) await supabaseAdmin.storage.from(PHOTO_BUCKET).remove([previous])
+    res.json({ ok: true, url: publicUrl })
+  } catch (err) {
+    console.error('Portal photo error:', err.message)
+    res.status(500).json({ error: 'failed' })
+  }
+})
+
+/** Member: withdraw a photo still waiting for review. */
+router.delete('/photo', requireAuth, async (req, res) => {
+  const member = await signedInMember(req, res)
+  if (!member) return
+  const previous = bucketPath(member.photo_pending_url)
+  await supabaseAdmin.from('members').update({ photo_pending_url: null, photo_pending_at: null }).eq('id', member.id)
+  if (previous) await supabaseAdmin.storage.from(PHOTO_BUCKET).remove([previous])
+  res.json({ ok: true })
+})
+
+/** Console: approve (it becomes the member photo) or refuse a photo waiting for review. */
+router.post('/photo/review', requireAuth, requirePermission('membership.manage', 'super_admin', 'event_manager'), async (req, res) => {
+  const id = Number(req.body?.member_id)
+  const approve = req.body?.approve === true
+  const note = String(req.body?.note || '').trim().slice(0, 300) || null
+  const { data: member } = await supabaseAdmin
+    .from('members').select('id, photo_url, photo_pending_url').eq('id', id).maybeSingle()
+  if (!member?.photo_pending_url) return res.status(404).json({ error: 'There is no photo waiting for this member.' })
+
+  const patch = approve
+    ? { photo_url: member.photo_pending_url, photo_pending_url: null, photo_pending_at: null, photo_review_note: null, updated_at: new Date().toISOString() }
+    : { photo_pending_url: null, photo_pending_at: null, photo_review_note: note || 'This photo was not accepted.' }
+  // Only the photo the reviewer saw: the member may have replaced it meanwhile.
+  const { data: updated, error } = await supabaseAdmin.from('members').update(patch)
+    .eq('id', id).eq('photo_pending_url', member.photo_pending_url).select('id')
+  if (error) return res.status(500).json({ error: 'The review did not save.' })
+  if (!updated.length) return res.status(409).json({ error: 'The member sent a new photo. Reload to review it.' })
+
+  // The file that is no longer used: the old member-uploaded photo, or the refused one.
+  const unused = bucketPath(approve ? member.photo_url : member.photo_pending_url)
+  if (unused?.startsWith(`members/${id}/`)) await supabaseAdmin.storage.from(PHOTO_BUCKET).remove([unused])
   res.json({ ok: true })
 })
 
