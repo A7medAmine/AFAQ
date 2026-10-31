@@ -402,7 +402,7 @@ function drawBack(member, theme, assets) {
   doodles(ctx, theme, [['star', W - u(7), u(6), 1.6], ['heart', W - u(14), u(19.5), 1.4]])
 
   // QR tile, top left, with the lockup and its caption beside it.
-  const qr = u(19)
+  const qr = u(14)
   const qx = u(5)
   const qy = u(3.6)
   box(ctx, theme, qx, qy, qr + u(2.4), qr + u(2.4), '#FFFFFF', u(1.1))
@@ -441,7 +441,7 @@ function drawSingle(member, theme, assets) {
   lockup(ctx, theme, assets, u(4), u(3.4), u(6.6))
 
   // QR tile, top right.
-  const qr = u(14.5)
+  const qr = u(11.5)
   const qx = W - u(5.5) - qr - u(2)
   const qy = u(3)
   box(ctx, theme, qx, qy, qr + u(2), qr + u(2), '#FFFFFF', u(1))
