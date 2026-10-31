@@ -6,6 +6,7 @@ import Modal from '../ui/Modal'
 import Button from '../ui/Button'
 import { CheckField, SelectField, TextArea, TextField } from '../ui/Field'
 import RoleField, { NEW_ROLE, saveRole } from './RoleField'
+import { normalizePhone, normalizeStudentId } from '../../../lib/contactFormats'
 
 const blank = () => ({
   full_name: '', email: '', phone: '', student_id: '', department: '', study_year: '',
@@ -77,8 +78,8 @@ export default function MemberFormModal({ open, member, teams = [], customRoles 
     const payload = {
       full_name: form.full_name.trim(),
       email: form.email.trim(),
-      phone: text(form.phone),
-      student_id: text(form.student_id),
+      phone: text(normalizePhone(form.phone)),
+      student_id: text(normalizeStudentId(form.student_id)),
       department: text(form.department),
       study_year: text(form.study_year),
       team: text(form.team),
@@ -152,7 +153,7 @@ export default function MemberFormModal({ open, member, teams = [], customRoles 
             onChange={e => set('full_name', e.target.value)} placeholder="Ahmed Mansouri" className="sm:col-span-2" />
           <TextField label="Email" type="email" required value={form.email} error={errors.email}
             onChange={e => set('email', e.target.value)} placeholder="ahmed@univ-bouira.dz" />
-          <TextField label="Phone" value={form.phone} onChange={e => set('phone', e.target.value)} placeholder="+213 6XX XXX XXX" />
+          <TextField label="Phone" value={form.phone} onChange={e => set('phone', e.target.value)} placeholder="06XX XX XX XX" />
           <TextField label="Date of birth" type="date" value={form.birth_date} onChange={e => set('birth_date', e.target.value)} />
           <SelectField label="Gender" value={form.gender} onChange={e => set('gender', e.target.value)}>
             {GENDERS.map(g => <option key={g.value} value={g.value}>{g.label}</option>)}

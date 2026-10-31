@@ -5,6 +5,7 @@
  */
 
 import { MEMBER_STATUSES, splitList } from './hr'
+import { normalizePhone, normalizeStudentId } from '../../lib/contactFormats'
 
 /** Import targets in the order the mapping step shows them. */
 export const IMPORT_FIELDS = [
@@ -187,7 +188,7 @@ export function buildImportRows(body, mapping, existing) {
     let fullName = text(cell(row, 'full_name'))
     if (!fullName) fullName = [text(cell(row, 'first_name')), text(cell(row, 'last_name'))].filter(Boolean).join(' ')
     const email = text(cell(row, 'email')).toLowerCase()
-    const studentId = text(cell(row, 'student_id'))
+    const studentId = normalizeStudentId(text(cell(row, 'student_id')))
 
     if (!fullName) errors.push('No name')
     if (!email) errors.push('No email')
@@ -205,7 +206,7 @@ export function buildImportRows(body, mapping, existing) {
     const payload = {
       full_name: fullName,
       email,
-      phone: toPhone(cell(row, 'phone')) || null,
+      phone: normalizePhone(toPhone(cell(row, 'phone'))) || null,
       student_id: studentId || null,
       department: text(cell(row, 'department')) || null,
       study_year: text(cell(row, 'study_year')) || null,

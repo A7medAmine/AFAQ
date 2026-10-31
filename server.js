@@ -23,6 +23,7 @@ import { sendEmail } from './server/services/mailer.js'
 import { TOP_ROLES } from './server/middleware/auth.js'
 import { undeliverableEmailError } from './server/services/emailCheck.js'
 import { isValidInstagram, normalizeInstagram } from './src/lib/instagram.js'
+import { normalizePhone, normalizeStudentId } from './src/lib/contactFormats.js'
 import { approveApplication, getIntake, HttpError, sendApplicationReceived } from './server/services/membership.js'
 import reviewRoutes, { publicReviewRoutes } from './server/routes/review.js'
 import { routeNewApplication } from './server/services/reviewRouting.js'
@@ -524,9 +525,9 @@ app.post("/api/register/event", async (req, res) => {
     const { error: insertErr } = await supabaseAdmin.from("event_registrations").insert([{
       event_id: event.id,
       full_name: fullName,
-      student_id: b.student_id ? String(b.student_id).trim() : null,
+      student_id: normalizeStudentId(b.student_id) || null,
       email,
-      phone: b.phone ? String(b.phone).trim() : null,
+      phone: normalizePhone(b.phone) || null,
       department: b.department || null,
       agreed_to_policies: true,
     }]);
@@ -591,7 +592,7 @@ app.post("/api/register/membership", async (req, res) => {
   const b = req.body || {};
   const email = String(b.email || "").trim().toLowerCase();
   const fullName = String(b.full_name || "").trim();
-  const studentId = b.student_id ? String(b.student_id).trim() : "";
+  const studentId = normalizeStudentId(b.student_id);
   const instagram = normalizeInstagram(b.instagram);
 
   if (!fullName) return res.status(400).json({ error: "Enter your full name." });
@@ -621,7 +622,7 @@ app.post("/api/register/membership", async (req, res) => {
       full_name: fullName,
       student_id: studentId || null,
       email,
-      phone: b.phone ? String(b.phone).trim() : null,
+      phone: normalizePhone(b.phone) || null,
       instagram,
       department: b.department || null,
       study_year: b.study_year || null,
@@ -843,12 +844,12 @@ app.get("/api/progres/student", async (req, res) => {
     );
     const latest = sorted[0];
     res.json({
-      student_id: latest.numeroMatricule || "",
+      student_id: normalizeStudentId(latest.numeroMatricule),
       full_name: `${individu.prenomLatin || ""} ${
         individu.nomLatin || ""
       }`.trim(),
       email: individu.email || "",
-      phone: latest.telephoneBachelier || "",
+      phone: normalizePhone(latest.telephoneBachelier),
       department: latest.llFiliere || latest.ofLlFiliere || "",
       study_year: latest.niveauLibelleLongLt || "",
       university: latest.llEtablissementLatin || "",
