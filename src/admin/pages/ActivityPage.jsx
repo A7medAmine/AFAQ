@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
-  Calendar, CircuitBoard, Crown, IdCard, Images, Link2, ListChecks, Mail, Megaphone, ScrollText, Shield, UserCheck,
+  Calendar, CircuitBoard, GraduationCap, Crown, IdCard, Images, Link2, ListChecks, Mail, Megaphone, ScrollText, Shield, UserCheck,
 } from 'lucide-react'
 import { read, supabase } from '../lib/db'
 import { formatDateTime, relativeTime } from '../lib/format'
@@ -14,6 +14,7 @@ import { SkeletonPanel } from '../components/ui/Skeleton'
 const ENTITY = {
   events: { icon: Calendar, label: 'Event' },
   projects: { icon: CircuitBoard, label: 'Project' },
+  tutorials: { icon: GraduationCap, label: 'Tutorial' },
   announcements: { icon: Megaphone, label: 'Announcement' },
   gallery_albums: { icon: Images, label: 'Album' },
   gallery_images: { icon: Images, label: 'Photo' },

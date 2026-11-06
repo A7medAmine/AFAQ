@@ -1,0 +1,44 @@
+{
+  "hero": {
+    "eyebrow": "Apprendre",
+    "title": "Tutoriels et ateliers",
+    "subtitle": "Des guides pas à pas issus de nos ateliers : le code, le câblage et les liens, à suivre à votre rythme."
+  },
+  "search": "Rechercher un tutoriel",
+  "all": "Tous niveaux",
+  "allTags": "Tous les sujets",
+  "levels": {
+    "beginner": "Débutant",
+    "intermediate": "Intermédiaire",
+    "advanced": "Avancé"
+  },
+  "empty": "Pas encore de tutoriel. Revenez après notre prochain atelier.",
+  "noMatch": "Aucun tutoriel ne correspond à cette recherche.",
+  "minRead": "{{count}} min de lecture",
+  "workshop": "Atelier",
+  "read": "Lire le tutoriel",
+  "detail": {
+    "back": "Tous les tutoriels",
+    "notFound": "Tutoriel introuvable",
+    "notFoundBody": "Il a peut-être été déplacé ou dépublié.",
+    "onThisPage": "Sur cette page",
+    "bring": "Avant de commencer",
+    "resources": "Ressources",
+    "workshop": "Fait partie de l’atelier",
+    "viewEvent": "Voir l’événement",
+    "share": "Partager",
+    "copied": "Lien copié",
+    "published": "Publié",
+    "updated": "Mis à jour",
+    "more": "Autres tutoriels",
+    "englishOnly": "Ce tutoriel est rédigé en anglais."
+  },
+  "kinds": {
+    "link": "Lien",
+    "code": "Code",
+    "slides": "Diapos",
+    "download": "Téléchargement",
+    "video": "Vidéo",
+    "doc": "Docs"
+  }
+}

@@ -16,6 +16,7 @@ const navLinks = [
   { key: 'home', path: '/' },
   { key: 'about', path: '/about' },
   { key: 'projects', path: '/projects' },
+  { key: 'learn', path: '/learn' },
   { key: 'events', path: '/events' },
   { key: 'gallery', path: '/gallery' },
   { key: 'announcements', path: '/announcements' },

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
-import { MapPin, CalendarPlus } from 'lucide-react'
+import { MapPin, CalendarPlus, GraduationCap } from 'lucide-react'
 import Card from '../components/shared/Card'
 import SideImage from '../components/shared/SideImage'
 import { supabase } from '../lib/supabase'
@@ -17,6 +17,8 @@ export default function Events() {
   const [events, setEvents] = useState([])
   const [tab, setTab] = useState('upcoming')
   const [loading, setLoading] = useState(true)
+  // Published tutorials by event, so a workshop links to its materials.
+  const [materials, setMaterials] = useState({})
 
   useEffect(() => {
     supabase
@@ -27,6 +29,17 @@ export default function Events() {
       .then(({ data }) => {
         setEvents(data || [])
         setLoading(false)
+      })
+    supabase
+      .from('tutorials')
+      .select('slug, event_id')
+      .eq('is_published', true)
+      .not('event_id', 'is', null)
+      .order('published_at', { ascending: true })
+      .then(({ data }) => {
+        const map = {}
+        for (const row of data || []) if (!map[row.event_id]) map[row.event_id] = row.slug
+        setMaterials(map)
       })
   }, [])
 
@@ -128,6 +141,15 @@ export default function Events() {
                           <div className="mb-3">
                             <AddToCalendar eventId={e.id} label={t('addToCalendar')} />
                           </div>
+                        )}
+                        {materials[e.id] && (
+                          <Link
+                            to={`/learn/${materials[e.id]}`}
+                            className="inline-flex items-center justify-center gap-1.5 w-full px-4 py-2.5 mb-3 rounded-[100px] font-semibold text-sm transition-opacity hover:opacity-80"
+                            style={{ border: '2px solid var(--color-accent)', color: 'var(--color-accent)' }}
+                          >
+                            <GraduationCap size={15} /> {t('materials')}
+                          </Link>
                         )}
                         {isUpcoming && e.registration_open && (
                           /* Carry the event through, so the form opens with

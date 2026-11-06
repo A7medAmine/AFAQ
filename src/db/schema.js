@@ -903,3 +903,26 @@ export const memberNoticeReads = pgTable('member_notice_reads', {
   memberId: bigint('member_id', { mode: 'number' }).notNull().references(() => members.id, { onDelete: 'cascade' }),
   readAt: timestamp('read_at', { withTimezone: true }).defaultNow(),
 }, t => [primaryKey({ columns: [t.noticeId, t.memberId] })])
+
+// Tutorials and workshop materials for the public Learn section. Written in
+// English only, as Markdown. A tutorial can belong to a workshop (an event).
+export const tutorials = pgTable('tutorials', {
+  id: bigint({ mode: 'number' }).primaryKey().generatedAlwaysAsIdentity(),
+  slug: text().notNull().unique(),
+  title: text().notNull(),
+  summary: text(),
+  content: text(),
+  coverUrl: text('cover_url'),
+  level: text().notNull().default('beginner'),
+  tags: text().array().notNull().default([]),
+  // [{ label, url, kind }] — slides, starter code, downloads, docs.
+  resources: jsonb().notNull().default([]),
+  // What attendees should bring or install before the workshop, one per line.
+  requirements: text(),
+  eventId: bigint('event_id', { mode: 'number' }).references(() => events.id, { onDelete: 'set null' }),
+  isPublished: boolean('is_published').notNull().default(false),
+  publishedAt: timestamp('published_at', { withTimezone: true }),
+  createdBy: uuid('created_by'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+}, t => [index('tutorials_event_idx').on(t.eventId)])

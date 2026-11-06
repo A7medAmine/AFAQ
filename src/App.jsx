@@ -9,6 +9,8 @@ import Home from './pages/Home'
 const About = lazy(() => import('./pages/About'))
 const Projects = lazy(() => import('./pages/Projects'))
 const ProjectDetail = lazy(() => import('./pages/ProjectDetail'))
+const Learn = lazy(() => import('./pages/Learn'))
+const TutorialDetail = lazy(() => import('./pages/TutorialDetail'))
 const Events = lazy(() => import('./pages/Events'))
 const Gallery = lazy(() => import('./pages/Gallery'))
 const JoinUs = lazy(() => import('./pages/JoinUs'))
@@ -64,6 +66,8 @@ const PollsPage = lazy(() => import('./admin/pages/PollsPage'))
 const PollPage = lazy(() => import('./admin/pages/PollPage'))
 const BorrowingPage = lazy(() => import('./admin/pages/BorrowingPage'))
 const ProjectsPage = lazy(() => import('./admin/pages/ProjectsPage'))
+const TutorialsPage = lazy(() => import('./admin/pages/TutorialsPage'))
+const TutorialEditorPage = lazy(() => import('./admin/pages/TutorialEditorPage'))
 const GalleryPage = lazy(() => import('./admin/pages/GalleryPage'))
 const MediaPlannerPage = lazy(() => import('./admin/pages/MediaPlannerPage'))
 const FrameStudioPage = lazy(() => import('./admin/pages/FrameStudioPage'))
@@ -119,6 +123,8 @@ export default function App() {
             <Route path="/about" element={<About />} />
             <Route path="/projects" element={<Projects />} />
             <Route path="/projects/:id" element={<ProjectDetail />} />
+            <Route path="/learn" element={<Learn />} />
+            <Route path="/learn/:slug" element={<TutorialDetail />} />
             <Route path="/events" element={<Events />} />
             <Route path="/gallery" element={<Gallery />} />
             <Route path="/join" element={<JoinUs />} />
@@ -235,6 +241,12 @@ export default function App() {
             } />
             <Route path="projects" element={
               <RoleGuard permission="projects.manage"><ProjectsPage /></RoleGuard>
+            } />
+            <Route path="tutorials" element={
+              <RoleGuard permission="tutorials.manage"><TutorialsPage /></RoleGuard>
+            } />
+            <Route path="tutorials/:id" element={
+              <RoleGuard permission="tutorials.manage"><TutorialEditorPage /></RoleGuard>
             } />
             <Route path="media" element={
               <RoleGuard permission="media.manage"><MediaPlannerPage /></RoleGuard>

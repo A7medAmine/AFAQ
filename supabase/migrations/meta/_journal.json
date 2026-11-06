@@ -309,6 +309,13 @@
       "when": 1793918938113,
       "tag": "0043_portal_member_of_month",
       "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1793920971625,
+      "tag": "0044_tutorials",
+      "breakpoints": true
     }
   ]
 }

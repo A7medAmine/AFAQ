@@ -1,0 +1,44 @@
+{
+  "hero": {
+    "eyebrow": "Learn",
+    "title": "Tutorials & workshops",
+    "subtitle": "Step-by-step guides from our workshops: the code, the wiring and the links, ready to follow at your own pace."
+  },
+  "search": "Search tutorials",
+  "all": "All levels",
+  "allTags": "All topics",
+  "levels": {
+    "beginner": "Beginner",
+    "intermediate": "Intermediate",
+    "advanced": "Advanced"
+  },
+  "empty": "No tutorials yet. Check back after our next workshop.",
+  "noMatch": "No tutorial matches this search.",
+  "minRead": "{{count}} min read",
+  "workshop": "Workshop",
+  "read": "Read the tutorial",
+  "detail": {
+    "back": "All tutorials",
+    "notFound": "Tutorial not found",
+    "notFoundBody": "It may have been moved or unpublished.",
+    "onThisPage": "On this page",
+    "bring": "Before you start",
+    "resources": "Resources",
+    "workshop": "Part of the workshop",
+    "viewEvent": "See the event",
+    "share": "Share",
+    "copied": "Link copied",
+    "published": "Published",
+    "updated": "Updated",
+    "more": "More tutorials",
+    "englishOnly": "This tutorial is written in English."
+  },
+  "kinds": {
+    "link": "Link",
+    "code": "Code",
+    "slides": "Slides",
+    "download": "Download",
+    "video": "Video",
+    "doc": "Docs"
+  }
+}

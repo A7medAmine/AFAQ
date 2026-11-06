@@ -24,6 +24,7 @@ export default function Footer() {
       links: [
         { label: t("nav.about"), to: "/about" },
         { label: t("nav.projects"), to: "/projects" },
+        { label: t("nav.learn"), to: "/learn" },
         { label: t("nav.events"), to: "/events" },
         { label: t("nav.gallery"), to: "/gallery" },
         { label: t("nav.brand"), to: "/brand" },

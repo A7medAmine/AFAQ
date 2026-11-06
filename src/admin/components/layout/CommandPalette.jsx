@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
-  ArrowLeftRight, Boxes, Clapperboard, Frame, Building2, HeartHandshake, Trophy, Crown, ListChecks, Brain, Calendar, CircuitBoard, ClipboardCheck, ClipboardList, CornerDownLeft, Gauge, IdCard, Images, Inbox,
+  ArrowLeftRight, Boxes, Clapperboard, Frame, Building2, HeartHandshake, Trophy, Crown, ListChecks, Brain, Calendar, CircuitBoard, GraduationCap, ClipboardCheck, ClipboardList, CornerDownLeft, Gauge, IdCard, Images, Inbox,
   Link2, Loader2, Mail, Megaphone, BellRing, Network, QrCode, ScrollText, Search, Send, Shield, SlidersHorizontal, UserCheck, Vote, Wallet,
 } from 'lucide-react'
 import useAdminStore from '../../store/adminStore'
@@ -10,7 +10,7 @@ import { hasPermission, navItemsFor, extraPermissions } from '../../lib/permissi
 import { supabase } from '../../lib/db'
 
 const ICONS = {
-  Gauge, BellRing, Calendar, ClipboardCheck, UserCheck, IdCard, Mail, Building2, HeartHandshake, Trophy,
+  GraduationCap, Gauge, BellRing, Calendar, ClipboardCheck, UserCheck, IdCard, Mail, Building2, HeartHandshake, Trophy,
   CircuitBoard, Clapperboard, Frame, Images, Megaphone, Boxes, ArrowLeftRight, Crown, ListChecks, Shield, Brain, ScrollText, SlidersHorizontal, Wallet, Send, Inbox, Network, Link2, QrCode, ClipboardList, Vote,
 }
 
@@ -48,6 +48,12 @@ const SOURCES = [
     icon: CircuitBoard, group: 'Projects',
     columns: 'id, title_en, category', match: 'title_en',
     title: r => r.title_en, subtitle: r => r.category || 'Uncategorised',
+  },
+  {
+    table: 'tutorials', permission: 'tutorials.manage', path: '/admin/tutorials',
+    icon: GraduationCap, group: 'Tutorials',
+    columns: 'id, title, level', match: 'title,slug',
+    title: r => r.title, subtitle: r => r.level,
   },
   {
     table: 'contact_messages', permission: 'messages.view', path: '/admin/messages',

@@ -18,6 +18,10 @@ import enProjects from '../locales/en/projects.json'
 import arProjects from '../locales/ar/projects.json'
 import frProjects from '../locales/fr/projects.json'
 
+import enLearn from '../locales/en/learn.json'
+import arLearn from '../locales/ar/learn.json'
+import frLearn from '../locales/fr/learn.json'
+
 import enEvents from '../locales/en/events.json'
 import arEvents from '../locales/ar/events.json'
 import frEvents from '../locales/fr/events.json'
@@ -64,6 +68,7 @@ i18n
         home: enHome,
         about: enAbout,
         projects: enProjects,
+        learn: enLearn,
         events: enEvents,
         gallery: enGallery,
         register: enRegister,
@@ -78,6 +83,7 @@ i18n
         home: arHome,
         about: arAbout,
         projects: arProjects,
+        learn: arLearn,
         events: arEvents,
         gallery: arGallery,
         register: arRegister,
@@ -92,6 +98,7 @@ i18n
         home: frHome,
         about: frAbout,
         projects: frProjects,
+        learn: frLearn,
         events: frEvents,
         gallery: frGallery,
         register: frRegister,
@@ -103,7 +110,7 @@ i18n
     },
     fallbackLng: 'en',
     supportedLngs: ['en', 'ar', 'fr'],
-    ns: ['common', 'home', 'about', 'projects', 'events', 'gallery', 'register', 'join', 'contact', 'announcements', 'portal', 'brand'],
+    ns: ['common', 'home', 'about', 'projects', 'learn', 'events', 'gallery', 'register', 'join', 'contact', 'announcements', 'portal', 'brand'],
     defaultNS: 'common',
     detection: {
       order: ['localStorage', 'navigator'],

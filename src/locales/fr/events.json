@@ -39,5 +39,6 @@
     "desc": "Un bootcamp intensif de trois jours sur les fondamentaux de la programmation Python.",
     "date": "10 Fevrier 2026",
     "location": "Lab Informatique 3"
-  }
+  },
+  "materials": "Supports de l’atelier"
 }
