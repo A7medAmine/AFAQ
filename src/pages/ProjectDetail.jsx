@@ -18,6 +18,10 @@ const md = {
   ol: ({ children }) => <ol className="list-decimal ps-5 mb-5 space-y-1.5" style={{ color: 'var(--color-text-muted)' }}>{children}</ol>,
   li: ({ children }) => <li className="leading-relaxed ps-1">{children}</li>,
   strong: ({ children }) => <strong className="font-semibold" style={{ color: 'var(--color-text)' }}>{children}</strong>,
+  // Commands stay left-to-right and scroll sideways instead of overflowing the page.
+  pre: ({ children }) => (
+    <pre dir="ltr" className="mb-5 overflow-x-auto rounded-xl p-4 text-sm leading-relaxed text-left [&>code]:p-0" style={{ background: 'var(--color-bg-alt)', color: 'var(--color-text)' }}>{children}</pre>
+  ),
   code: ({ children }) => (
     <code className="text-[0.85em] px-1.5 py-0.5 rounded-md" style={{ background: 'var(--color-bg-alt)', color: 'var(--color-text)' }}>{children}</code>
   ),
