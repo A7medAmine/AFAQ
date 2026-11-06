@@ -504,7 +504,7 @@ function HomeIntroImage({ addToast }) {
         <div className="flex flex-col sm:flex-row gap-5">
           <div
             className="rounded-xl overflow-hidden shrink-0 relative"
-            style={{ width: 'min(100%, 300px)', aspectRatio: '21/9', border: '1px solid var(--adm-trace)' }}
+            style={{ width: 'min(100%, 300px)', aspectRatio: '16/9', border: '1px solid var(--adm-trace)' }}
           >
             {loading ? (
               <Skeleton style={{ width: '100%', height: '100%', borderRadius: 0 }} />

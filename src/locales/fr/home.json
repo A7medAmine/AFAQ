@@ -8,8 +8,27 @@
     "cta2": "Decouvrez Nos Projets"
   },
   "intro": {
-    "title": "Qui Sommes-Nous",
-    "description": "AFAQ est un club etudiant ou la technologie, l'electronique, la creativite, l'innovation et le travail d'equipe se rencontrent. Nous offrons un espace pour apprendre, construire et grandir a travers des projets pratiques et des evenements collaboratifs."
+    "eyebrow": "Club scientifique AFAQ · Bouira",
+    "title": "Qui sommes-nous",
+    "description": "AFAQ est un club étudiant de l'Université Akli Mohand Oulhadj de Bouira, ouvert à tous les départements et à tous les niveaux. Nous nous retrouvons pour apprendre l'électronique et la programmation, construire de vrais projets en équipe et partager nos réalisations avec tout le campus.",
+    "pillars": {
+      "learn": {
+        "title": "Apprendre",
+        "desc": "Des ateliers et formations pratiques, de votre première LED qui clignote aux systèmes embarqués, à l'IoT et à l'IA."
+      },
+      "build": {
+        "title": "Construire",
+        "desc": "Des projets en équipe que l’on peut tenir et utiliser : robots, objets connectés, jeux et outils open source."
+      },
+      "share": {
+        "title": "Partager",
+        "desc": "Des événements, des compétitions et des portes ouvertes où les membres présentent leurs travaux et transmettent ce qu’ils ont appris."
+      }
+    },
+    "story": "Notre histoire",
+    "projects": "Voir nos projets",
+    "nameMeaning": "signifie « horizons »",
+    "imageAlt": "Club scientifique AFAQ"
   },
   "activities": {
     "title": "Nos Activités",

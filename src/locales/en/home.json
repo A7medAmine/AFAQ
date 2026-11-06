@@ -8,8 +8,27 @@
     "cta2": "Discover Our Projects"
   },
   "intro": {
+    "eyebrow": "AFAQ Scientific Club · Bouira",
     "title": "Who We Are",
-    "description": "AFAQ is a student club where technology, electronics, creativity, innovation, and teamwork come together. We provide a space for students to learn, build, and grow through hands-on projects and collaborative events."
+    "description": "AFAQ is a student club at the University of Akli Mohand Oulhadj in Bouira, open to every department and every level. We meet to learn electronics and code, build real projects in teams, and share what we make with the whole campus.",
+    "pillars": {
+      "learn": {
+        "title": "Learn",
+        "desc": "Hands-on workshops and trainings, from your first blinking LED to embedded systems, IoT and AI."
+      },
+      "build": {
+        "title": "Build",
+        "desc": "Team projects you can hold and use: robots, smart devices, games and open-source tools."
+      },
+      "share": {
+        "title": "Share",
+        "desc": "Events, competitions and open weeks where members show their work and teach what they learned."
+      }
+    },
+    "story": "Our story",
+    "projects": "See our projects",
+    "nameMeaning": "means \"horizons\"",
+    "imageAlt": "AFAQ Scientific Club"
   },
   "activities": {
     "title": "Our Activities",
