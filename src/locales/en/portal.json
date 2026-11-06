@@ -9,6 +9,7 @@
   "tabs": {
     "home": "Overview",
     "points": "Points",
+    "achievements": "Achievements",
     "events": "Events",
     "tasks": "Tasks",
     "notices": "Notices",
@@ -80,6 +81,156 @@
       "penalty": "Penalty",
       "reset": "Reset",
       "other": "Other"
+    }
+  },
+  "achievements": {
+    "xp": "XP",
+    "rank": "Rank",
+    "since": "Since",
+    "toNext": "{{count}} XP to {{tier}}",
+    "maxTier": "Top tier reached. You are a legend.",
+    "xpNote": "XP counts every point you have earned. A reset of the points table does not take it away; penalties do.",
+    "badgeCount": "{{done}}/{{total}} badges",
+    "collected": "{{done}}/{{total}} items collected",
+    "equipped": "Equipped",
+    "new": "New",
+    "cards": "Card collection",
+    "cardsNote": "Pick the card shown at the top of this page. Higher tiers unlock rarer designs, and club offices unlock their own.",
+    "frames": "Avatar frames",
+    "framesNote": "Pick the frame around your photo in the member area.",
+    "badgesTitle": "Badges",
+    "badgesNote": "Bronze, silver and gold: take part in events, finish tasks and help out to level them up.",
+    "badgeDone": "Maxed out",
+    "levelOf": "Level {{done}} of {{total}}",
+    "privateNote": "Your card and frame are shown in your member area only and are saved on this device.",
+    "unlockXp": "Reach {{count}} XP",
+    "unlockRole": {
+      "president": "President only",
+      "vice": "Vice president only",
+      "council": "Board and admins only"
+    },
+    "rarity": {
+      "common": "Common",
+      "uncommon": "Uncommon",
+      "rare": "Rare",
+      "epic": "Epic",
+      "legendary": "Legendary",
+      "mythic": "Mythic",
+      "role": "Exclusive"
+    },
+    "tiers": {
+      "rookie": "Rookie",
+      "explorer": "Explorer",
+      "builder": "Builder",
+      "innovator": "Innovator",
+      "visionary": "Visionary",
+      "luminary": "Luminary"
+    },
+    "tierLines": {
+      "rookie": "Every great project starts with a first step.",
+      "explorer": "You are finding your way around the club.",
+      "builder": "You show up and you make things happen.",
+      "innovator": "Your ideas move the club forward.",
+      "visionary": "Members look up to you.",
+      "luminary": "A guiding light of AFAQ."
+    },
+    "cardNames": {
+      "council": "Council",
+      "vanguard": "Vanguard",
+      "sovereign": "Sovereign"
+    },
+    "frameNames": {
+      "none": "No frame",
+      "pixel": "Classic pixel",
+      "window": "Member.exe",
+      "circuit": "Circuit",
+      "spark": "Spark",
+      "arcade": "Arcade",
+      "glitch": "Glitch",
+      "shield": "Council shield",
+      "halo": "Vanguard halo",
+      "crown": "Sovereign crown"
+    },
+    "badges": {
+      "firstSpark": {
+        "name": "First spark",
+        "goal": "Earn your first points"
+      },
+      "eventGoer": {
+        "name": "Event regular",
+        "goal_one": "Earn points at {{count}} event",
+        "goal_other": "Earn points at {{count}} events"
+      },
+      "taskMaster": {
+        "name": "Task master",
+        "goal_one": "Finish {{count}} task",
+        "goal_other": "Finish {{count}} tasks"
+      },
+      "helper": {
+        "name": "Helping hand",
+        "goal_one": "Make {{count}} contribution",
+        "goal_other": "Make {{count}} contributions"
+      },
+      "topRank": {
+        "name": "Top of the club",
+        "goal_one": "Reach rank #1",
+        "goal_other": "Reach the top {{count}}"
+      },
+      "veteran": {
+        "name": "Veteran",
+        "goal_one": "Stay a member for {{count}} month",
+        "goal_other": "Stay a member for {{count}} months"
+      },
+      "faceOfAfaq": {
+        "name": "Face of AFAQ",
+        "goal": "Get a profile photo approved"
+      },
+      "teamPlayer": {
+        "name": "Team player",
+        "goal": "Join a department"
+      },
+      "board": {
+        "name": "On the board",
+        "goal": "Hold a club office"
+      }
+    },
+    "share": {
+      "button": "Share my status",
+      "motmButton": "Share: member of the month",
+      "title": "Share your progress",
+      "edition": "Design",
+      "editions": {
+        "status": "My status",
+        "motm": "Member of the month"
+      },
+      "format": "Size",
+      "formats": {
+        "story": "Story",
+        "post": "Post"
+      },
+      "share": "Share",
+      "download": "Download",
+      "copy": "Copy image",
+      "copied": "Copied",
+      "close": "Close",
+      "error": "The image could not be made. Try again.",
+      "note": "The image shows your name, photo, member number and points. Share it only where you want them seen.",
+      "kicker": "Member status",
+      "maxTier": "Top tier",
+      "tier": "Tier",
+      "monthPoints": "Points",
+      "motmTitle": "Member of the month",
+      "motmKicker": "Hall of fame",
+      "motmLine": "The most active member of AFAQ Scientific Club in {{month}}.",
+      "motmChip": "Member of the month · {{month}}",
+      "shareText": "My AFAQ Scientific Club status: {{tier}}, {{xp}} XP.",
+      "motmShareText": "Member of the month at AFAQ Scientific Club, {{month}}!",
+      "cardKicker": "My member card",
+      "card": "Card",
+      "collectedLine": "{{rarity}} card · {{done}}/{{total}} collected",
+      "rankLine": "Rank #{{rank}} of {{total}}",
+      "sinceLine": "Member since {{year}}",
+      "pointsLine": "+{{count}} points in {{month}}"
     }
   },
   "events": {

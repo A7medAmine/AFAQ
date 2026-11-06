@@ -1,15 +1,18 @@
-import { Navigate, NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { Bell, CalendarDays, Home, KeyRound, ListChecks, Loader2, LogOut, Trophy, UserRound } from 'lucide-react'
+import { Link, Navigate, NavLink, Outlet, useLocation } from 'react-router-dom'
+import { Award, Bell, CalendarDays, Home, KeyRound, ListChecks, Loader2, LogOut, Trophy, UserRound } from 'lucide-react'
 import SEO from '../components/SEO'
 import { displayName, usePortal } from './lib/portal'
 import PasswordForm from './PasswordForm'
 import CopyCode from './CopyCode'
+import { FramedAvatar } from './Collectibles'
+import { resolveLook, useLook, useProgress } from './lib/achievements'
 import './portal.css'
 
 const TABS = [
   { key: 'home', path: '/portal', icon: Home, end: true },
   { key: 'points', path: '/portal/points', icon: Trophy },
+  { key: 'achievements', path: '/portal/achievements', icon: Award },
   { key: 'events', path: '/portal/events', icon: CalendarDays },
   { key: 'tasks', path: '/portal/tasks', icon: ListChecks },
   { key: 'notices', path: '/portal/notices', icon: Bell },
@@ -50,6 +53,19 @@ function ForcedPasswordChange() {
   )
 }
 
+/** The member's photo in the frame they picked; opens their achievements. */
+function HeaderAvatar({ me }) {
+  const { t } = useTranslation('portal')
+  const progress = useProgress(me)
+  const look = useLook(me.id)
+  const { frame } = resolveLook(look, progress)
+  return (
+    <Link to="/portal/achievements" className="shrink-0 m-4" aria-label={t('tabs.achievements')}>
+      <FramedAvatar me={me} frame={frame.key} size={60} />
+    </Link>
+  )
+}
+
 /** Signed-in frame for every portal screen: greeting, tabs, sign out. */
 export default function PortalShell() {
   const { t } = useTranslation('portal')
@@ -66,13 +82,16 @@ export default function PortalShell() {
       <SEO title={t('title')} path="/portal" noindex />
       <div className="max-w-5xl mx-auto px-4 sm:px-6">
         <div className="flex flex-wrap items-end justify-between gap-4 mb-6">
-          <div className="min-w-0">
-            <div className="eyebrow mb-2">{t('title')}</div>
-            <h1 className="text-2xl md:text-3xl font-bold truncate">{t('hello', { name: displayName(me) })}</h1>
-            <p className="text-sm mt-1 portal-muted">
-              <CopyCode code={me.member_code} />
-              {me.departments.length > 0 && <> · {me.departments.map(d => d.name).join(', ')}</>}
-            </p>
+          <div className="min-w-0 flex items-center gap-4">
+            <HeaderAvatar me={me} />
+            <div className="min-w-0">
+              <div className="eyebrow mb-2">{t('title')}</div>
+              <h1 className="text-2xl md:text-3xl font-bold truncate">{t('hello', { name: displayName(me) })}</h1>
+              <p className="text-sm mt-1 portal-muted">
+                <CopyCode code={me.member_code} />
+                {me.departments.length > 0 && <> · {me.departments.map(d => d.name).join(', ')}</>}
+              </p>
+            </div>
           </div>
           <button type="button" onClick={signOut} className="portal-btn">
             <LogOut size={15} /> {t('signOut')}

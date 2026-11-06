@@ -9,6 +9,7 @@
   "tabs": {
     "home": "Aperçu",
     "points": "Points",
+    "achievements": "Succès",
     "events": "Événements",
     "tasks": "Tâches",
     "notices": "Avis",
@@ -80,6 +81,155 @@
       "penalty": "Pénalité",
       "reset": "Remise à zéro",
       "other": "Autre"
+    }
+  },
+  "achievements": {
+    "xp": "XP",
+    "rank": "Rang",
+    "since": "Depuis",
+    "toNext": "{{count}} XP avant {{tier}}",
+    "maxTier": "Palier maximum atteint. Vous êtes une légende.",
+    "xpNote": "L'XP compte tous les points que vous avez gagnés. Une remise à zéro du classement ne l'efface pas ; les pénalités, si.",
+    "badgeCount": "{{done}}/{{total}} badges",
+    "collected": "{{done}}/{{total}} objets collectés",
+    "equipped": "Équipé",
+    "new": "Nouveau",
+    "cards": "Collection de cartes",
+    "cardsNote": "Choisissez la carte affichée en haut de cette page. Les paliers supérieurs débloquent des designs plus rares, et les postes du club ont les leurs.",
+    "frames": "Cadres d'avatar",
+    "framesNote": "Choisissez le cadre autour de votre photo dans l'espace membre.",
+    "badgesTitle": "Badges",
+    "badgesNote": "Bronze, argent et or : participez aux événements, terminez vos tâches et donnez un coup de main pour les faire monter.",
+    "badgeDone": "Niveau maximum",
+    "levelOf": "Niveau {{done}} sur {{total}}",
+    "privateNote": "Votre carte et votre cadre ne sont visibles que dans votre espace membre et sont enregistrés sur cet appareil.",
+    "unlockXp": "Atteindre {{count}} XP",
+    "unlockRole": {
+      "president": "Réservé au président",
+      "vice": "Réservé au vice-président",
+      "council": "Réservé au bureau et aux admins"
+    },
+    "rarity": {
+      "common": "Commune",
+      "uncommon": "Peu commune",
+      "rare": "Rare",
+      "epic": "Épique",
+      "legendary": "Légendaire",
+      "mythic": "Mythique",
+      "role": "Exclusive"
+    },
+    "tiers": {
+      "rookie": "Recrue",
+      "explorer": "Explorateur",
+      "builder": "Bâtisseur",
+      "innovator": "Innovateur",
+      "visionary": "Visionnaire",
+      "luminary": "Lumière"
+    },
+    "tierLines": {
+      "rookie": "Tout grand projet commence par un premier pas.",
+      "explorer": "Vous trouvez vos repères dans le club.",
+      "builder": "Vous êtes là et vous faites avancer les choses.",
+      "innovator": "Vos idées font avancer le club.",
+      "visionary": "Les membres vous prennent en exemple.",
+      "luminary": "Une lumière qui guide AFAQ."
+    },
+    "cardNames": {
+      "council": "Conseil",
+      "vanguard": "Avant-garde",
+      "sovereign": "Souverain"
+    },
+    "frameNames": {
+      "none": "Sans cadre",
+      "pixel": "Pixel classique",
+      "window": "Membre.exe",
+      "circuit": "Circuit",
+      "spark": "Étincelle",
+      "arcade": "Arcade",
+      "glitch": "Glitch",
+      "shield": "Bouclier du conseil",
+      "halo": "Halo d'avant-garde",
+      "crown": "Couronne souveraine"
+    },
+    "badges": {
+      "firstSpark": {
+        "name": "Première étincelle",
+        "goal": "Gagner vos premiers points"
+      },
+      "eventGoer": {
+        "name": "Habitué des événements",
+        "goal_one": "Gagner des points à {{count}} événement",
+        "goal_other": "Gagner des points à {{count}} événements"
+      },
+      "taskMaster": {
+        "name": "Maître des tâches",
+        "goal_one": "Terminer {{count}} tâche",
+        "goal_other": "Terminer {{count}} tâches"
+      },
+      "helper": {
+        "name": "Coup de main",
+        "goal_one": "Faire {{count}} contribution",
+        "goal_other": "Faire {{count}} contributions"
+      },
+      "topRank": {
+        "name": "Au sommet du club",
+        "goal_one": "Atteindre la 1re place",
+        "goal_other": "Entrer dans le top {{count}}"
+      },
+      "veteran": {
+        "name": "Vétéran",
+        "goal": "Être membre depuis {{count}} mois"
+      },
+      "faceOfAfaq": {
+        "name": "Visage d'AFAQ",
+        "goal": "Faire approuver une photo de profil"
+      },
+      "teamPlayer": {
+        "name": "Esprit d'équipe",
+        "goal": "Rejoindre un département"
+      },
+      "board": {
+        "name": "Membre du bureau",
+        "goal": "Occuper un poste au club"
+      }
+    },
+    "share": {
+      "button": "Partager mon statut",
+      "motmButton": "Partager : membre du mois",
+      "title": "Partagez votre progression",
+      "edition": "Design",
+      "editions": {
+        "status": "Mon statut",
+        "motm": "Membre du mois"
+      },
+      "format": "Format",
+      "formats": {
+        "story": "Story",
+        "post": "Publication"
+      },
+      "share": "Partager",
+      "download": "Télécharger",
+      "copy": "Copier l'image",
+      "copied": "Copiée",
+      "close": "Fermer",
+      "error": "Impossible de créer l'image. Réessayez.",
+      "note": "L'image montre votre nom, votre photo, votre numéro de membre et vos points. Partagez-la seulement là où vous le souhaitez.",
+      "kicker": "Statut membre",
+      "maxTier": "Niveau max",
+      "tier": "Niveau",
+      "monthPoints": "Points",
+      "motmTitle": "Membre du mois",
+      "motmKicker": "Tableau d'honneur",
+      "motmLine": "Le membre le plus actif du Club scientifique AFAQ en {{month}}.",
+      "motmChip": "Membre du mois · {{month}}",
+      "shareText": "Mon statut au Club scientifique AFAQ : {{tier}}, {{xp}} XP.",
+      "motmShareText": "Membre du mois au Club scientifique AFAQ, {{month}} !",
+      "cardKicker": "Ma carte de membre",
+      "card": "Carte",
+      "collectedLine": "Carte {{rarity}} · {{done}}/{{total}} collectionnées",
+      "rankLine": "Rang n°{{rank}} sur {{total}}",
+      "sinceLine": "Membre depuis {{year}}",
+      "pointsLine": "+{{count}} points en {{month}}"
     }
   },
   "events": {

@@ -2,9 +2,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Check, Download, FileText, Maximize2, RotateCw, X } from 'lucide-react'
 import { CARD_THEMES, downloadPdf, downloadPng, renderIdCard, themeSwatch } from './lib/idCard'
-import { usePortal } from './lib/portal'
+import { initials, usePortal } from './lib/portal'
 
-const initials = name => name.split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase()
 
 // The look is a personal choice, so it is kept on this device only.
 const STORE = 'afaq.portal.card'

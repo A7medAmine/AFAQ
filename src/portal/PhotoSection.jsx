@@ -1,9 +1,8 @@
 import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Camera, Clock, Upload } from 'lucide-react'
-import { squarePhoto, uploadPhoto, usePortal, withdrawPhoto } from './lib/portal'
+import { initials, squarePhoto, uploadPhoto, usePortal, withdrawPhoto } from './lib/portal'
 
-const initials = name => name.split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase()
 
 /**
  * Profile photo: the approved one, plus a new one waiting for HR. Nothing a

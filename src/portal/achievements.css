@@ -1,0 +1,604 @@
+/* Achievements in the member portal: collectible cards, avatar frames, badges.
+   Cards are sized in em, so one font-size scales the whole card. */
+
+/* ---------- Avatar frames ----------
+   Pixel art in the club's style (see PixelFrames.jsx). The photo is a square
+   with stepped corners; the frame art spans 40% of the photo past each side. */
+
+.ach-avatar {
+  --s: 96px;
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: var(--s);
+  height: var(--s);
+  flex-shrink: 0;
+}
+.ach-avatar-photo {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.ach-avatar-initials {
+  display: grid;
+  place-items: center;
+  font-family: var(--font-heading);
+  font-size: calc(var(--s) * 0.34);
+  color: #fff;
+  text-shadow: calc(var(--s) * 0.03) calc(var(--s) * 0.03) 0 #050a30;
+  background-color: #233dff;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.14) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.14) 1px, transparent 1px);
+  background-size: calc(var(--s) / 5) calc(var(--s) / 5);
+}
+
+.pf-svg {
+  position: absolute;
+  top: calc(var(--s) * -0.4);
+  left: calc(var(--s) * -0.4);
+  width: calc(var(--s) * 1.8);
+  height: calc(var(--s) * 1.8);
+  overflow: visible;
+  pointer-events: none;
+  shape-rendering: crispEdges;
+}
+.pf-back { z-index: 0; }
+/* Navy ink disappears on the dark theme, so the art gets a thin light edge. */
+@media (prefers-color-scheme: dark) {
+  .pf-svg {
+    filter: drop-shadow(0.6px 0 0 rgba(202, 232, 255, 0.55)) drop-shadow(-0.6px 0 0 rgba(202, 232, 255, 0.55))
+      drop-shadow(0 0.6px 0 rgba(202, 232, 255, 0.55)) drop-shadow(0 -0.6px 0 rgba(202, 232, 255, 0.55));
+  }
+}
+.pf-front { z-index: 2; }
+.pf-svg g, .pf-svg rect, .pf-svg path { transform-box: fill-box; transform-origin: center; }
+.pf-title { font-family: 'Minecraft', monospace; font-size: 1.9px; }
+
+/* Member.exe: the pointer clicks now and then. */
+.pf-cursor { animation: pf-click 3.2s steps(1) infinite; }
+@keyframes pf-click { 0%, 78%, 90%, 100% { transform: none; } 82%, 86% { transform: translate(-0.6px, -0.6px) scale(0.9); } }
+
+/* Circuit and Spark: pixels running round the frame. */
+.pf-march3 { animation: pf-march3 0.45s steps(3) infinite; }
+.pf-march4 { animation: pf-march4 0.8s steps(4) infinite; }
+@keyframes pf-march3 { to { stroke-dashoffset: -3; } }
+@keyframes pf-march4 { to { stroke-dashoffset: -4; } }
+.pf-blink { animation: pf-blink 2s steps(1) infinite; }
+@keyframes pf-blink { 50% { fill: #050a30; } }
+
+/* Spark: the bolts flicker like a bad bulb. */
+.pf-flicker { animation: pf-flicker 2.4s steps(1) infinite; }
+@keyframes pf-flicker { 0%, 100% { opacity: 1; } 8% { opacity: 0.2; } 12% { opacity: 1; } 16% { opacity: 0.4; } 20% { opacity: 1; } }
+
+/* Arcade: marquee lights taking turns. */
+.pf-bulb { fill: #fff6c2; animation: pf-bulb 0.9s steps(1) infinite; }
+.pf-bulb-b { animation-delay: -0.45s; }
+@keyframes pf-bulb { 50% { fill: #9a6400; } }
+
+/* Twinkles on the gold and silver frames. */
+.pf-twinkle { animation: pf-twinkle 2.2s steps(1) infinite; }
+@keyframes pf-twinkle { 0%, 100% { opacity: 0; } 20%, 60% { opacity: 1; } 40% { opacity: 0.5; transform: scale(0.6); } }
+
+/* Glitch: colour copies jumping behind the frame, stray pixels, and the photo
+   itself skipping once in a while. */
+.pf-glitch-a { animation: pf-glitch-a 1.3s steps(1) infinite; }
+.pf-glitch-b { animation: pf-glitch-b 1.3s steps(1) infinite; }
+@keyframes pf-glitch-a { 0% { transform: translate(-1px, 0); } 25% { transform: translate(-2px, 1px); } 50% { transform: translate(-1px, -1px); } 75% { transform: translate(-2.5px, 0); } }
+@keyframes pf-glitch-b { 0% { transform: translate(1px, 0); } 25% { transform: translate(2px, -1px); } 50% { transform: translate(1.5px, 1px); } 75% { transform: translate(1px, 0); } }
+.pf-bit { animation: pf-bit 1.6s steps(1) infinite; }
+@keyframes pf-bit { 0%, 100% { opacity: 1; transform: none; } 30% { opacity: 0; } 55% { opacity: 1; transform: translate(1px, 0); } 75% { transform: translate(-1px, 0); } }
+.ach-frame-glitch .ach-avatar-photo { animation: pf-skip 4.5s steps(1) infinite; }
+@keyframes pf-skip {
+  0%, 88%, 96%, 100% { transform: none; filter: none; }
+  90% { transform: translateX(-3%); filter: saturate(1.8) hue-rotate(-25deg); }
+  93% { transform: translateX(2%); filter: contrast(1.3); }
+}
+
+/* Council: the sky band hums. */
+.pf-glow { animation: pf-glow 2.6s steps(1) infinite; }
+@keyframes pf-glow { 50% { fill: #cae8ff; } }
+
+/* Vanguard: the halo bobs in two steps. */
+.pf-float { animation: pf-float 1.6s steps(1) infinite; }
+@keyframes pf-float { 50% { transform: translateY(-0.6px); } }
+
+/* ---------- Cards ---------- */
+
+.ach-card {
+  --rx: 0deg;
+  --ry: 0deg;
+  --mx: 50%;
+  --my: 50%;
+  --edge: rgba(255, 255, 255, 0.25);
+  --ink: #fff;
+  --ink-soft: rgba(255, 255, 255, 0.72);
+  --chip: rgba(255, 255, 255, 0.16);
+  perspective: 900px;
+  width: 18em;
+  max-width: 100%;
+  color: var(--ink);
+}
+.ach-card-lg { font-size: 16px; }
+.ach-card-sm { font-size: 9.5px; width: 100%; }
+
+.ach-card-body {
+  position: relative;
+  aspect-ratio: 5 / 7;
+  display: flex;
+  flex-direction: column;
+  padding: 1.1em;
+  border-radius: 1.1em;
+  overflow: hidden;
+  isolation: isolate;
+  background: var(--card-bg);
+  box-shadow: inset 0 0 0 0.18em var(--edge), 0 1.2em 2.4em -1em rgba(15, 23, 42, 0.55);
+  transform: rotateX(var(--rx)) rotateY(var(--ry));
+  transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.3s;
+  transform-style: preserve-3d;
+}
+.ach-card.is-hover .ach-card-body { transition: transform 0.08s linear; }
+
+.ach-card-pattern { position: absolute; inset: 0; z-index: -1; opacity: 0.5; pointer-events: none; }
+
+.ach-card-top { display: flex; align-items: center; justify-content: space-between; gap: 0.5em; }
+.ach-card-emblem {
+  display: grid;
+  place-items: center;
+  width: 2.2em;
+  height: 2.2em;
+  border-radius: 0.6em;
+  background: var(--chip);
+  box-shadow: inset 0 0 0 1px var(--edge);
+}
+.ach-card-emblem svg { width: 1.25em; height: 1.25em; }
+.ach-card-rarity {
+  padding: 0.3em 0.75em;
+  border-radius: 999px;
+  font-size: 0.72em;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  background: var(--chip);
+  box-shadow: inset 0 0 0 1px var(--edge);
+}
+
+.ach-card-art { flex: 1; display: grid; place-items: center; min-height: 0; }
+.ach-card-lock {
+  display: grid;
+  place-items: center;
+  width: 4.5em;
+  height: 4.5em;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.28);
+  box-shadow: inset 0 0 0 2px var(--edge);
+}
+.ach-card-lock svg { width: 1.8em; height: 1.8em; }
+
+.ach-card-text { text-align: center; margin-bottom: 0.7em; }
+.ach-card-name {
+  font-size: 1.3em;
+  font-weight: 800;
+  line-height: 1.15;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ach-card-title {
+  margin-top: 0.2em;
+  font-size: 0.82em;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.ach-card-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.35em;
+}
+.ach-card-stats div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.45em 0.2em;
+  border-radius: 0.6em;
+  background: var(--chip);
+  box-shadow: inset 0 0 0 1px var(--edge);
+}
+.ach-card-stats b { font-size: 1.05em; font-weight: 800; line-height: 1.1; }
+.ach-card-stats small { font-size: 0.62em; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-soft); }
+.ach-card-code {
+  margin-top: 0.7em;
+  text-align: center;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.7em;
+  letter-spacing: 0.16em;
+  color: var(--ink-soft);
+}
+
+/* The light that follows the pointer; foil on epic and up. */
+.ach-card-shine {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  border-radius: inherit;
+  background: radial-gradient(circle at var(--mx) var(--my), rgba(255, 255, 255, 0.35), transparent 45%);
+  mix-blend-mode: soft-light;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.ach-card.is-hover .ach-card-shine { opacity: 1; }
+
+.ach-rarity-epic .ach-card-shine,
+.ach-rarity-legendary .ach-card-shine,
+.ach-rarity-mythic .ach-card-shine,
+.ach-rarity-role .ach-card-shine {
+  opacity: 0.55;
+  background:
+    radial-gradient(circle at var(--mx) var(--my), rgba(255, 255, 255, 0.45), transparent 40%),
+    linear-gradient(115deg, transparent 20%, rgba(255, 255, 255, 0.5) 30%, transparent 38%, transparent 55%, rgba(255, 255, 255, 0.3) 62%, transparent 70%);
+  background-size: 100% 100%, 250% 250%;
+  animation: ach-foil 6s linear infinite;
+}
+.ach-rarity-mythic .ach-card-shine {
+  mix-blend-mode: color-dodge;
+  background:
+    radial-gradient(circle at var(--mx) var(--my), rgba(255, 255, 255, 0.4), transparent 40%),
+    linear-gradient(125deg, #ff008033, #ffd70033, #00ff8833, #00cfff33, #a855f733, #ff008033);
+  background-size: 100% 100%, 300% 300%;
+}
+
+/* Common — Rookie: brushed steel. */
+.ach-card-rookie {
+  --card-bg: linear-gradient(160deg, #f1f5f9, #cbd5e1 55%, #94a3b8);
+  --ink: #0f172a;
+  --ink-soft: #475569;
+  --chip: rgba(255, 255, 255, 0.55);
+  --edge: rgba(15, 23, 42, 0.15);
+}
+.ach-card-rookie .ach-card-pattern {
+  background: repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.4) 0 1px, transparent 1px 4px);
+}
+
+/* Uncommon — Explorer: forest night with stars. */
+.ach-card-explorer { --card-bg: linear-gradient(165deg, #022c22, #065f46 55%, #10b981); --edge: rgba(167, 243, 208, 0.35); }
+.ach-card-explorer .ach-card-pattern {
+  background: radial-gradient(circle, rgba(209, 250, 229, 0.7) 1px, transparent 1.5px) 0 0 / 1.6em 1.6em;
+}
+
+/* Rare — Builder: blueprint. */
+.ach-card-builder { --card-bg: linear-gradient(160deg, #0b1e4a, #1e40af 60%, #3b82f6); --edge: rgba(147, 197, 253, 0.45); }
+.ach-card-builder .ach-card-pattern {
+  background:
+    linear-gradient(rgba(147, 197, 253, 0.25) 1px, transparent 1px) 0 0 / 1.4em 1.4em,
+    linear-gradient(90deg, rgba(147, 197, 253, 0.25) 1px, transparent 1px) 0 0 / 1.4em 1.4em;
+}
+
+/* Epic — Innovator: neon purple. */
+.ach-card-innovator {
+  --card-bg: linear-gradient(155deg, #1e0546, #6d28d9 50%, #c026d3);
+  --edge: rgba(240, 171, 252, 0.55);
+}
+.ach-card-innovator .ach-card-body { box-shadow: inset 0 0 0 0.18em var(--edge), 0 0 2em -0.4em rgba(192, 38, 211, 0.75), 0 1.2em 2.4em -1em rgba(15, 23, 42, 0.55); }
+.ach-card-innovator .ach-card-pattern {
+  opacity: 0.7;
+  background:
+    radial-gradient(circle at 20% 15%, rgba(34, 211, 238, 0.55), transparent 35%),
+    radial-gradient(circle at 85% 70%, rgba(236, 72, 153, 0.6), transparent 40%);
+}
+
+/* Legendary — Visionary: molten gold. */
+.ach-card-visionary {
+  --card-bg: linear-gradient(155deg, #3b1503, #b45309 45%, #fbbf24 85%, #fff7cc);
+  --edge: rgba(254, 240, 138, 0.75);
+  --chip: rgba(59, 21, 3, 0.35);
+}
+.ach-card-visionary .ach-card-body { box-shadow: inset 0 0 0 0.22em var(--edge), 0 0 2.4em -0.4em rgba(251, 191, 36, 0.8), 0 1.2em 2.4em -1em rgba(15, 23, 42, 0.55); }
+.ach-card-visionary .ach-card-pattern {
+  opacity: 0.35;
+  background: repeating-conic-gradient(from 0deg at 50% 38%, rgba(255, 247, 204, 0.6) 0 5deg, transparent 5deg 15deg);
+  animation: ach-spin-slow 40s linear infinite;
+  inset: -50%;
+}
+
+/* Mythic — Luminary: deep space with a living rainbow border. */
+.ach-card-luminary { --card-bg: radial-gradient(circle at 50% 30%, #312e81, #0b1020 70%); --edge: transparent; }
+.ach-card-luminary .ach-card-body::before {
+  content: '';
+  position: absolute;
+  inset: -50%;
+  z-index: -2;
+  background: conic-gradient(#f43f5e, #f59e0b, #84cc16, #06b6d4, #6366f1, #d946ef, #f43f5e);
+  animation: ach-spin 5s linear infinite;
+}
+.ach-card-luminary .ach-card-body::after {
+  content: '';
+  position: absolute;
+  inset: 0.25em;
+  z-index: -1;
+  border-radius: 0.9em;
+  background: var(--card-bg);
+}
+.ach-card-luminary .ach-card-body { background: none; box-shadow: 0 0 2.6em -0.3em rgba(217, 70, 239, 0.75), 0 1.2em 2.4em -1em rgba(15, 23, 42, 0.55); }
+.ach-card-luminary .ach-card-pattern {
+  z-index: 0;
+  opacity: 0.9;
+  background:
+    radial-gradient(1px 1px at 12% 20%, #fff, transparent),
+    radial-gradient(1.5px 1.5px at 78% 12%, #fff, transparent),
+    radial-gradient(1px 1px at 30% 68%, #fff, transparent),
+    radial-gradient(1.5px 1.5px at 88% 58%, #fff, transparent),
+    radial-gradient(1px 1px at 55% 40%, #fff, transparent),
+    radial-gradient(1px 1px at 20% 88%, #fff, transparent),
+    radial-gradient(1.5px 1.5px at 66% 84%, #fff, transparent);
+  animation: ach-twinkle 4s ease-in-out infinite;
+}
+.ach-card-luminary .ach-card-top,
+.ach-card-luminary .ach-card-art,
+.ach-card-luminary .ach-card-text,
+.ach-card-luminary .ach-card-stats,
+.ach-card-luminary .ach-card-code { position: relative; z-index: 1; }
+
+/* Role — Council: navy with a blue neon edge. */
+.ach-card-council {
+  --card-bg: linear-gradient(165deg, #020617, #0b1e4a 55%, #1d4ed8);
+  --edge: #38bdf8;
+}
+.ach-card-council .ach-card-body { animation: ach-neon 3s ease-in-out infinite; }
+.ach-card-council .ach-card-pattern {
+  background:
+    linear-gradient(30deg, rgba(56, 189, 248, 0.14) 12%, transparent 12.5%, transparent 87%, rgba(56, 189, 248, 0.14) 87.5%) 0 0 / 2.4em 4.2em,
+    linear-gradient(150deg, rgba(56, 189, 248, 0.14) 12%, transparent 12.5%, transparent 87%, rgba(56, 189, 248, 0.14) 87.5%) 0 0 / 2.4em 4.2em;
+}
+
+/* Role — Vanguard (vice president): platinum and ice. */
+.ach-card-vanguard {
+  --card-bg: linear-gradient(160deg, #0f172a, #334155 45%, #cbd5e1 80%, #f8fafc);
+  --edge: #e0f2fe;
+  --chip: rgba(15, 23, 42, 0.35);
+}
+.ach-card-vanguard .ach-card-body { box-shadow: inset 0 0 0 0.2em var(--edge), 0 0 2.4em -0.4em rgba(125, 211, 252, 0.85), 0 1.2em 2.4em -1em rgba(15, 23, 42, 0.55); }
+.ach-card-vanguard .ach-card-pattern {
+  opacity: 0.4;
+  background: repeating-linear-gradient(135deg, rgba(224, 242, 254, 0.35) 0 2px, transparent 2px 0.9em);
+}
+
+/* Role — Sovereign (president): black and gold. */
+.ach-card-sovereign {
+  --card-bg: radial-gradient(circle at 50% 35%, #2a2112, #0a0a0a 70%);
+  --edge: #f5c542;
+  --ink: #fff7d6;
+  --ink-soft: #e9c96b;
+  --chip: rgba(245, 197, 66, 0.14);
+}
+.ach-card-sovereign .ach-card-body {
+  box-shadow: inset 0 0 0 0.15em #f5c542, inset 0 0 0 0.45em #0a0a0a, inset 0 0 0 0.55em #b7791f, 0 0 2.8em -0.3em rgba(245, 197, 66, 0.8), 0 1.2em 2.4em -1em rgba(0, 0, 0, 0.7);
+  padding: 1.4em;
+}
+.ach-card-sovereign .ach-card-pattern {
+  opacity: 0.25;
+  background:
+    linear-gradient(45deg, #f5c542 1px, transparent 1px) 0 0 / 1.2em 1.2em,
+    linear-gradient(-45deg, #f5c542 1px, transparent 1px) 0 0 / 1.2em 1.2em;
+}
+.ach-card-sovereign .ach-card-name {
+  background: linear-gradient(180deg, #fff3b0, #f5c542 55%, #b7791f);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Locked cards in the collection. */
+.ach-card.is-locked .ach-card-body { filter: grayscale(0.85) brightness(0.7); }
+.ach-card.is-locked .ach-card-shine,
+.ach-card.is-locked .ach-card-pattern { animation: none; }
+
+/* ---------- Page pieces ---------- */
+
+.ach-hero {
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  gap: 1.75rem;
+  align-items: center;
+  padding: 1.5rem;
+  border-radius: 20px;
+  background: radial-gradient(circle at 20% 20%, rgba(36, 96, 231, 0.18), transparent 50%), var(--color-card);
+  border: 1px solid var(--color-border-light);
+}
+@media (min-width: 768px) {
+  .ach-hero { grid-template-columns: auto 1fr; padding: 2rem; }
+}
+.ach-hero-card { display: flex; justify-content: center; }
+
+.ach-tier-name { font-size: 1.9rem; font-weight: 900; line-height: 1.1; letter-spacing: -0.01em; }
+.ach-xp-bar {
+  position: relative;
+  height: 14px;
+  border-radius: 999px;
+  background: var(--color-bg-alt);
+  overflow: hidden;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.12);
+}
+.ach-xp-bar > span {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--bar-from, #2460e7), var(--bar-to, #60a5fa));
+  transition: width 1s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.ach-xp-bar > span::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.45), transparent);
+  background-size: 50% 100%;
+  background-repeat: no-repeat;
+  animation: ach-bar 2.2s ease-in-out infinite;
+}
+[dir='rtl'] .ach-xp-bar > span { inset: 0 0 0 auto; }
+
+.ach-road { display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.4rem; }
+.ach-road-step { display: flex; flex-direction: column; align-items: center; gap: 0.3rem; text-align: center; }
+.ach-road-dot {
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.7rem;
+  background: var(--color-bg-alt);
+  color: var(--color-text-muted);
+  border: 2px solid var(--color-border-light);
+}
+.ach-road-dot svg { width: 1rem; height: 1rem; }
+.ach-road-step.done .ach-road-dot { color: #fff; border-color: transparent; background: var(--rarity, #2460e7); box-shadow: 0 0 12px -2px var(--rarity, #2460e7); }
+.ach-road-step.current .ach-road-dot { transform: scale(1.15); outline: 2px solid var(--rarity); outline-offset: 2px; }
+.ach-road-step small { font-size: 0.65rem; line-height: 1.2; color: var(--color-text-muted); }
+.ach-road-step.done small { color: var(--color-text); font-weight: 600; }
+
+/* Rarity colours used for chips, dots and bars. */
+.ach-c-common { --rarity: #64748b; }
+.ach-c-uncommon { --rarity: #10b981; }
+.ach-c-rare { --rarity: #3b82f6; }
+.ach-c-epic { --rarity: #a855f7; }
+.ach-c-legendary { --rarity: #f59e0b; }
+.ach-c-mythic { --rarity: #ec4899; }
+.ach-c-role { --rarity: #eab308; }
+
+.ach-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--rarity);
+  background: color-mix(in srgb, var(--rarity) 14%, transparent);
+}
+.ach-chip-new { --rarity: #ef4444; animation: ach-pop 1.6s ease-in-out infinite; }
+
+.ach-grid-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1rem; }
+.ach-grid-frames { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 0.75rem; }
+.ach-grid-badges { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 0.75rem; }
+
+.ach-pick {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem;
+  border-radius: 16px;
+  border: 2px solid transparent;
+  text-align: center;
+  transition: transform 0.15s, border-color 0.15s, background 0.15s;
+}
+.ach-pick:not(:disabled):hover { transform: translateY(-3px); background: var(--color-bg-alt); }
+.ach-pick.active { border-color: var(--color-accent); background: var(--color-accent-soft); }
+.ach-pick:disabled { cursor: not-allowed; }
+.ach-pick:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+.ach-pick-flag { position: absolute; top: 0.4rem; inset-inline-end: 0.4rem; z-index: 5; }
+.ach-pick.locked .ach-avatar { filter: grayscale(1) opacity(0.45); }
+.ach-frame-cell { padding: 0.9rem 0.4rem 0.6rem; }
+.ach-frame-cell .ach-avatar { margin: calc(var(--s) * 0.3) 0 calc(var(--s) * 0.2); }
+
+.ach-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.85rem;
+  border-radius: 16px;
+  border: 1px solid var(--color-border-light);
+  background: var(--color-card);
+}
+.ach-badge-icon {
+  --metal: #94a3b8;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 3rem;
+  height: 3.3rem;
+  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+  background: linear-gradient(160deg, color-mix(in srgb, var(--metal) 55%, #fff), var(--metal));
+  color: #fff;
+}
+.ach-badge-icon svg { width: 1.35rem; height: 1.35rem; filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.35)); }
+.ach-badge.lvl-0 .ach-badge-icon { --metal: #cbd5e1; color: #64748b; }
+.ach-badge.lvl-0 { opacity: 0.8; }
+.ach-badge.lvl-bronze .ach-badge-icon { --metal: #b45309; }
+.ach-badge.lvl-silver .ach-badge-icon { --metal: #64748b; }
+.ach-badge.lvl-gold .ach-badge-icon { --metal: #d97706; box-shadow: 0 0 14px #fbbf24; }
+.ach-badge-bar { height: 6px; border-radius: 999px; background: var(--color-bg-alt); overflow: hidden; }
+.ach-badge-bar > span { display: block; height: 100%; border-radius: inherit; background: var(--color-accent); }
+.ach-pips { display: inline-flex; gap: 3px; }
+.ach-pips i { width: 7px; height: 7px; border-radius: 50%; background: var(--color-border); }
+.ach-pips i.on:nth-child(1) { background: #b45309; }
+.ach-pips i.on:nth-child(2) { background: #94a3b8; }
+.ach-pips i.on:nth-child(3) { background: #f59e0b; }
+
+/* ---------- Motion ---------- */
+
+@keyframes ach-spin { to { transform: rotate(360deg); } }
+@keyframes ach-spin-slow { to { transform: rotate(360deg); } }
+@keyframes ach-twinkle { 0%, 100% { opacity: 0.35; transform: scale(0.8); } 50% { opacity: 1; transform: scale(1.1); } }
+@keyframes ach-pulse { 0%, 100% { opacity: 0.75; } 50% { opacity: 1; } }
+@keyframes ach-float { 0%, 100% { transform: translate(-50%, 0); } 50% { transform: translate(-50%, -3px); } }
+@keyframes ach-foil { from { background-position: 0 0, 0% 0%; } to { background-position: 0 0, 250% 250%; } }
+@keyframes ach-bar { from { background-position: -100% 0; } to { background-position: 200% 0; } }
+@keyframes ach-pop { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); } }
+@keyframes ach-neon {
+  0%, 100% { box-shadow: inset 0 0 0 0.16em #38bdf8, 0 0 1.4em -0.4em rgba(56, 189, 248, 0.6), 0 1.2em 2.4em -1em rgba(15, 23, 42, 0.55); }
+  50% { box-shadow: inset 0 0 0 0.16em #7dd3fc, 0 0 2.4em -0.2em rgba(56, 189, 248, 0.9), 0 1.2em 2.4em -1em rgba(15, 23, 42, 0.55); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ach-avatar *, .ach-card *, .ach-card-body, .ach-chip-new, .ach-xp-bar * { animation: none !important; }
+  .ach-card-body { transform: none !important; }
+}
+
+/* ---------- Share dialog ---------- */
+
+.ach-share-preview {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  max-height: 72vh;
+  margin-inline: auto;
+  background: var(--color-bg-alt);
+  border: 3px solid #050a30;
+  box-shadow: 6px 6px 0 #233dff, 11px 11px 0 #5cbcf9;
+}
+.ach-share-preview img { width: 100%; height: 100%; object-fit: contain; }
+.ach-share-motm { background: #ffc531; color: #050a30; box-shadow: 3px 3px 0 #050a30; }
+.ach-share-motm:hover { background: #ffd765; }
+.ach-motm-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.75rem;
+  font-family: var(--font-heading);
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #050a30;
+  background: #ffc531;
+  border: 2px solid #050a30;
+  box-shadow: 3px 3px 0 #ff9f1c;
+}
+.ach-share-card {
+  padding: 0.3rem 0.65rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border: 2px solid color-mix(in srgb, var(--rarity) 45%, transparent);
+  color: var(--color-text);
+  background: var(--color-card);
+}
+.ach-share-card.active { background: var(--rarity); border-color: #050a30; color: #050a30; box-shadow: 3px 3px 0 #050a30; }

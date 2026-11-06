@@ -152,3 +152,6 @@ export function formatDay(value, lang, withTime = false) {
 }
 
 export const signedPoints = n => (n > 0 ? `+${n}` : String(n))
+
+/** Up to two capital letters from a name, for avatars without a photo. */
+export const initials = name => (name || '').split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase()

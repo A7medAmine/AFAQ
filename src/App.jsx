@@ -29,6 +29,7 @@ const PortalLogin = lazy(() => import('./portal/pages/PortalLogin'))
 const PortalSetPassword = lazy(() => import('./portal/pages/SetPassword'))
 const PortalHome = lazy(() => import('./portal/pages/PortalHome'))
 const PortalPoints = lazy(() => import('./portal/pages/PortalPoints'))
+const PortalAchievements = lazy(() => import('./portal/pages/PortalAchievements'))
 const PortalEvents = lazy(() => import('./portal/pages/PortalEvents'))
 const PortalTasks = lazy(() => import('./portal/pages/PortalTasks'))
 const PortalNotices = lazy(() => import('./portal/pages/PortalNotices'))
@@ -131,6 +132,7 @@ export default function App() {
               <Route element={<PortalShell />}>
                 <Route index element={<PortalHome />} />
                 <Route path="points" element={<PortalPoints />} />
+                <Route path="achievements" element={<PortalAchievements />} />
                 <Route path="events" element={<PortalEvents />} />
                 <Route path="tasks" element={<PortalTasks />} />
                 <Route path="notices" element={<PortalNotices />} />

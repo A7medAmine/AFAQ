@@ -295,6 +295,20 @@
       "when": 1793402553263,
       "tag": "0041_preferred_name_trigger",
       "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1793747688071,
+      "tag": "0042_portal_achievements",
+      "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1793918938113,
+      "tag": "0043_portal_member_of_month",
+      "breakpoints": true
     }
   ]
 }

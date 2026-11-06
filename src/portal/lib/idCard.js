@@ -76,7 +76,7 @@ export const CARD_THEMES = {
 export const themeSwatch = theme => `linear-gradient(135deg, ${theme.paper} 55%, ${theme.band} 55%)`
 
 let fontsReady = null
-function loadFonts() {
+export function loadFonts() {
   if (!fontsReady) {
     fontsReady = typeof FontFace === 'undefined' || !document.fonts?.add
       ? Promise.resolve()
@@ -86,7 +86,7 @@ function loadFonts() {
   return fontsReady
 }
 
-function loadImage(src) {
+export function loadImage(src) {
   return new Promise(resolve => {
     if (!src) { resolve(null); return }
     const img = new Image()
@@ -484,9 +484,9 @@ export async function renderIdCard(member, { theme: themeKey = 'blue', layout = 
   }
 }
 
-const toBlob = c => new Promise((resolve, reject) => c.toBlob(b => (b ? resolve(b) : reject(new Error('export'))), 'image/png'))
+export const toBlob = c => new Promise((resolve, reject) => c.toBlob(b => (b ? resolve(b) : reject(new Error('export'))), 'image/png'))
 
-function save(blob, filename) {
+export function save(blob, filename) {
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
