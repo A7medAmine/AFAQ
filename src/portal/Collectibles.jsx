@@ -1,22 +1,11 @@
 import { useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Compass, Crown, Flame, Gem, Lock, Rocket, Shield, Sparkles, Swords, Wrench } from 'lucide-react'
 import { currentPositions } from './lib/achievements'
 import { displayName, initials } from './lib/portal'
 import { FrameArt, PHOTO_CLIP } from './PixelFrames'
+import { EMBLEMS, PxLock } from './lib/pixelIcons'
 import './achievements.css'
 
-export const EMBLEMS = {
-  rookie: Sparkles,
-  explorer: Compass,
-  builder: Wrench,
-  innovator: Rocket,
-  visionary: Gem,
-  luminary: Flame,
-  council: Shield,
-  vanguard: Swords,
-  sovereign: Crown,
-}
 
 /**
  * A member's photo (or initials) inside a pixel-art frame, like the profile
@@ -53,7 +42,7 @@ export function cardTitle(card, me, t) {
 export function PlayerCard({ me, card, frame, progress, size = 'lg', locked = false, lockText }) {
   const { t } = useTranslation('portal')
   const ref = useRef(null)
-  const Emblem = EMBLEMS[card.key] || Sparkles
+  const Emblem = EMBLEMS[card.key]
   const tilt = size === 'lg' && !locked
 
   const move = e => {
@@ -95,7 +84,7 @@ export function PlayerCard({ me, card, frame, progress, size = 'lg', locked = fa
 
         <div className="ach-card-art">
           {locked
-            ? <span className="ach-card-lock"><Lock /></span>
+            ? <span className="ach-card-lock"><PxLock /></span>
             : <FramedAvatar me={me} frame={frame} size={size === 'lg' ? 104 : 58} />}
         </div>
 

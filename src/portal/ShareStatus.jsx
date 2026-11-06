@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Check, Copy, Download, Loader2, Share2, Trophy, X } from 'lucide-react'
+import { Check, Copy, Download, Loader2, X } from 'lucide-react'
+import { EMBLEMS, PxShare, PxTrophy } from './lib/pixelIcons'
 import { save, toBlob } from './lib/idCard'
 import { CARDS, isUnlocked, monthLabel } from './lib/achievements'
 import { displayName, initials } from './lib/portal'
-import { cardTitle, EMBLEMS } from './Collectibles'
+import { cardTitle } from './Collectibles'
 
 const loadRenderer = () => import('./lib/statusImage')
 
@@ -48,11 +49,11 @@ export default function ShareStatus({ me, progress, card, frame, badgeCount, mot
       <div className="flex flex-wrap gap-2">
         {motm && (
           <button type="button" className="portal-btn-primary ach-share-motm" onClick={() => setOpen('motm')}>
-            <Trophy size={15} /> {t('achievements.share.motmButton')}
+            <PxTrophy size={12} /> {t('achievements.share.motmButton')}
           </button>
         )}
         <button type="button" className={motm ? 'portal-btn' : 'portal-btn-primary'} onClick={() => setOpen('status')}>
-          <Share2 size={15} /> {t('achievements.share.button')}
+          <PxShare size={12} /> {t('achievements.share.button')}
         </button>
       </div>
       {open && (
@@ -216,7 +217,7 @@ function ShareDialog({ me, progress, initialCard, frame, badgeCount, motm, initi
             <div className="grid gap-2">
               {canShareFiles() && (
                 <button type="button" className="portal-btn-primary" disabled={!image || !!busy} onClick={() => act('share', share)}>
-                  {busy === 'share' ? <Loader2 size={15} className="animate-spin" /> : <Share2 size={15} />} {t('achievements.share.share')}
+                  {busy === 'share' ? <Loader2 size={15} className="animate-spin" /> : <PxShare size={12} />} {t('achievements.share.share')}
                 </button>
               )}
               <button type="button" className={canShareFiles() ? 'portal-btn' : 'portal-btn-primary'} disabled={!image || !!busy}

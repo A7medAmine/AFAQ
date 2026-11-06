@@ -1,5 +1,5 @@
 import { renderToStaticMarkup } from 'react-dom/server'
-import { Award, Crown, Flag, Shield, Sparkles, Star, Trophy } from 'lucide-react'
+import { PxCrown, PxFlag, PxShield, PxSparkles, PxStar, PxTrophy, PxZap } from './pixelIcons'
 import { frameArt, PHOTO_POINTS, TROPHY, VIEW } from '../PixelFrames'
 import { loadFonts, loadImage, toBlob } from './idCard'
 
@@ -857,7 +857,7 @@ export async function renderStatusImage({ edition = 'status', format = 'story', 
     art?.back ? svgImage(art.back, artSize) : null,
     art?.front ? svgImage(art.front, artSize) : null,
     emblem ? iconImage(emblem, 96, theme.ink || '#FFFFFF', 2.2) : null,
-    ...(motm ? [Star, Crown, Trophy, Flag, Shield, Award, Sparkles].map(I => iconImage(I, 96, SKY, 1.6)) : []),
+    ...(motm ? [PxStar, PxCrown, PxTrophy, PxFlag, PxShield, PxZap, PxSparkles].map(I => iconImage(I, 96, SKY, 1.6)) : []),
   ])
   const assets = { photo, mark, back, front, emblem: emblemImg, doodles }
 
