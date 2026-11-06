@@ -1,6 +1,7 @@
 User-agent: *
 Allow: /
 Disallow: /admin
+Disallow: /portal
 Disallow: /register
 
 Sitemap: https://afaq.club/sitemap.xml

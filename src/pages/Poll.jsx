@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
 import { CheckCircle2, Clock, Copy, Loader2, Lock, Share2, Star, XCircle } from 'lucide-react'
+import SEO from '../components/SEO'
 
 /**
  * The page behind a poll's link. No account needed for public polls; members
@@ -156,10 +157,6 @@ export default function Poll() {
   const poll = data?.poll
   const fmt = value => new Intl.DateTimeFormat(LOCALE[lang], { dateStyle: 'long', timeStyle: 'short' }).format(new Date(value))
 
-  useEffect(() => {
-    if (poll?.title) document.title = `${poll.title} · AFAQ`
-  }, [poll?.title])
-
   const setAnswer = (id, value) => {
     setAnswers(a => ({ ...a, [id]: value }))
     if (submit.questionId === id) setSubmit(s => ({ ...s, error: null, questionId: null }))
@@ -205,6 +202,12 @@ export default function Poll() {
 
   return (
     <div className="afp" dir={dir} lang={lang}>
+      <SEO
+        title={poll?.title || 'Poll'}
+        description={poll?.description ? poll.description.slice(0, 200) : 'Take part in this poll from the AFAQ Scientific Club.'}
+        path={`/p/${slug}`}
+        noindex={!poll}
+      />
       <style>{CSS}</style>
       <div className="afp-wrap">
         <header className="afp-brand">

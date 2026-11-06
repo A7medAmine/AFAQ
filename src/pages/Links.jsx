@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { ArrowRight, ArrowUpRight, Loader2 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { PlatformIcon } from '../lib/socialLinks'
+import SEO from '../components/SEO'
 import './links.css'
 
 /**
@@ -16,7 +17,6 @@ export default function Links() {
   const [joinOpen, setJoinOpen] = useState(false)
 
   useEffect(() => {
-    document.title = 'AFAQ · Links'
     let cancelled = false
     supabase
       .from('social_links')
@@ -36,6 +36,7 @@ export default function Links() {
 
   return (
     <main className="lt-page" dir={i18n.dir()}>
+      <SEO title="Links" path="/links" />
       <div className="lt-card">
         <img className="lt-logo" src="/brand/logo/afaq-mark-navy.svg" alt="AFAQ logo" width="88" height="88" />
         <h1 className="lt-title">AFAQ</h1>

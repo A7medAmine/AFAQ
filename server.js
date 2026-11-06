@@ -19,6 +19,7 @@ import needsRoutes from './server/routes/needs.js'
 import mediaRoutes from './server/routes/media.js'
 import pollsRoutes, { pollPreviewHtml } from './server/routes/polls.js'
 import portalRoutes from './server/routes/portal.js'
+import seoRoutes from './server/routes/seo.js'
 import { sendEmail } from './server/services/mailer.js'
 import { TOP_ROLES } from './server/middleware/auth.js'
 import { undeliverableEmailError } from './server/services/emailCheck.js'
@@ -988,6 +989,10 @@ app.use("/api/polls", pollsRoutes);
 // --- Member portal accounts (invites, first sign-in, notice emails) ---
 
 app.use("/api/portal", portalRoutes);
+
+// --- Sitemap (built from published projects and tutorials) ---
+
+app.use(seoRoutes);
 
 // --- SPA fallback (production) ---
 
