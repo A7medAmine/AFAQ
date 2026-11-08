@@ -44,6 +44,25 @@ async function request(cfg, model, userMessage, context, stream, system, history
 
 const isConfigured = (cfg) => cfg.base && cfg.key && cfg.models.length
 
+// Some upstreams behind the router answer 200 with their own error text as the
+// reply (e.g. "This version of Antigravity is no longer supported"). Treat that
+// as a failure so the next model is tried instead of showing it to users.
+const UPSTREAM_ERROR_REPLY = /no longer supported|please (download|upgrade|update) .{0,40}latest version|re-authenticate your/i
+// Arabic UTF-8 decoded as Windows-1252 ("Ø§Ù„..."): some upstreams garble
+// non-Latin text, and some letters are lost for good, so it can't be repaired.
+const MOJIBAKE = /[ØÙ][\u0080-¿Œ-™�]/g
+const SNIFF_CHARS = 160
+
+function assertRealReply(model, text) {
+  const head = text.slice(0, 300)
+  if (UPSTREAM_ERROR_REPLY.test(head)) {
+    throw new Error(`Custom ${model} returned an upstream error as content: ${text.slice(0, 120)}`)
+  }
+  if ((head.match(MOJIBAKE) || []).length >= 3) {
+    throw Object.assign(new Error(`Custom ${model} returned garbled (mis-encoded) text`), { garbled: true })
+  }
+}
+
 export async function* generateCustomStream(userMessage, context, system, history = []) {
   const cfg = getConfig()
   if (!isConfigured(cfg)) return
@@ -54,6 +73,9 @@ export async function* generateCustomStream(userMessage, context, system, histor
     if (isCoolingDown(health)) continue
 
     let yielded = false
+    // Hold back the start of the answer until it can be checked for an
+    // upstream error masquerading as a reply.
+    let head = ''
     try {
       const res = await request(cfg, model, userMessage, context, true, system, history)
       const reader = res.body.getReader()
@@ -74,14 +96,27 @@ export async function* generateCustomStream(userMessage, context, system, histor
           if (payload === '[DONE]') continue
           try {
             const text = JSON.parse(payload).choices?.[0]?.delta?.content
-            if (text) {
-              yielded = true
+            if (!text) continue
+            if (yielded) {
               yield text
+            } else {
+              head += text
+              if (head.length >= SNIFF_CHARS) {
+                assertRealReply(model, head)
+                yielded = true
+                yield head
+              }
             }
-          } catch {
-            /* skip malformed */
+          } catch (error) {
+            if (error instanceof SyntaxError) continue // skip malformed chunk
+            throw error
           }
         }
+      }
+      if (!yielded && head) {
+        assertRealReply(model, head)
+        yielded = true
+        yield head
       }
       if (yielded) {
         markOk(health)
@@ -90,7 +125,7 @@ export async function* generateCustomStream(userMessage, context, system, histor
     } catch (error) {
       // Already streamed partial output: stop rather than duplicate from another model.
       if (yielded) throw error
-      markFailed(health, error)
+      if (!error.garbled) markFailed(health, error) // garbling depends on the text, not provider health
       console.error(`Custom ${model} error:`, error.message)
       lastError = error
     }
@@ -111,11 +146,12 @@ export async function generateCustomResponse(userMessage, context, system, histo
       const data = await res.json()
       const text = data.choices?.[0]?.message?.content
       if (text) {
+        assertRealReply(model, text)
         markOk(health)
         return text
       }
     } catch (error) {
-      markFailed(health, error)
+      if (!error.garbled) markFailed(health, error) // garbling depends on the text, not provider health
       console.error(`Custom ${model} error:`, error.message)
       lastError = error
     }
