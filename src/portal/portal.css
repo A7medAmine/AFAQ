@@ -70,6 +70,14 @@
 }
 .portal-input:focus { outline: 2px solid var(--color-accent); outline-offset: 1px; }
 
+/* Password field with a show/hide toggle. The input itself is dir="ltr", so
+   logical padding would resolve against LTR while the button follows the page
+   direction — use physical sides keyed off <html dir> so both always match. */
+.portal-input-toggle { padding-right: 2.75rem; }
+.portal-input-toggle-btn { right: 0.8rem; }
+[dir='rtl'] .portal-input-toggle { padding-right: 0.9rem; padding-left: 2.75rem; }
+[dir='rtl'] .portal-input-toggle-btn { right: auto; left: 0.8rem; }
+
 .portal-label { display: block; font-size: 0.8rem; font-weight: 600; margin-bottom: 0.35rem; }
 
 .portal-badge {

@@ -32,10 +32,10 @@ export default function PasswordForm({ submitLabel, onDone }) {
       <div>
         <label className="portal-label" htmlFor="new-password">{t('setPassword.password')}</label>
         <div className="relative">
-          <input id="new-password" type={show ? 'text' : 'password'} autoComplete="new-password" className="portal-input" dir="ltr"
-            style={{ paddingInlineEnd: '2.75rem' }} value={password} onChange={e => setPassword(e.target.value)} />
+          <input id="new-password" type={show ? 'text' : 'password'} autoComplete="new-password" className="portal-input portal-input-toggle" dir="ltr"
+            value={password} onChange={e => setPassword(e.target.value)} />
           <button type="button" onClick={() => setShow(s => !s)} aria-label={t(show ? 'login.hide' : 'login.show')}
-            className="absolute top-1/2 -translate-y-1/2 portal-muted" style={{ insetInlineEnd: '0.8rem' }}>
+            className="absolute top-1/2 -translate-y-1/2 portal-muted portal-input-toggle-btn">
             {show ? <EyeOff size={16} /> : <Eye size={16} />}
           </button>
         </div>

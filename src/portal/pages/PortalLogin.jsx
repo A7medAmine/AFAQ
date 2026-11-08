@@ -82,10 +82,10 @@ export default function PortalLogin() {
                 <div>
                   <label className="portal-label" htmlFor="portal-password">{t('login.password')}</label>
                   <div className="relative">
-                    <input id="portal-password" type={show ? 'text' : 'password'} autoComplete="current-password" className="portal-input" dir="ltr"
-                      style={{ paddingInlineEnd: '2.75rem' }} value={password} onChange={e => setPassword(e.target.value)} />
+                    <input id="portal-password" type={show ? 'text' : 'password'} autoComplete="current-password" className="portal-input portal-input-toggle" dir="ltr"
+                      value={password} onChange={e => setPassword(e.target.value)} />
                     <button type="button" onClick={() => setShow(s => !s)} aria-label={t(show ? 'login.hide' : 'login.show')}
-                      className="absolute top-1/2 -translate-y-1/2 portal-muted" style={{ insetInlineEnd: '0.8rem' }}>
+                      className="absolute top-1/2 -translate-y-1/2 portal-muted portal-input-toggle-btn">
                       {show ? <EyeOff size={16} /> : <Eye size={16} />}
                     </button>
                   </div>
