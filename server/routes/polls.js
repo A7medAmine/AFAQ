@@ -79,7 +79,7 @@ async function loadPoll(slug) {
   if (!SLUG.test(slug || '')) return { poll: null }
   const { data: poll, error } = await supabaseAdmin
     .from('polls')
-    .select('id, slug, title, description, language, audience, status, opens_at, closes_at, results_visibility, collect_identity, max_responses, thank_you_message')
+    .select('id, slug, title, description, translations, language, audience, status, opens_at, closes_at, results_visibility, collect_identity, max_responses, thank_you_message')
     .eq('slug', slug)
     .maybeSingle()
   if (error) throw error
@@ -154,6 +154,7 @@ const publicPoll = (poll, state) => ({
   slug: poll.slug,
   title: poll.title,
   description: poll.description,
+  translations: poll.translations || {},
   language: poll.language,
   audience: poll.audience,
   collect_identity: poll.collect_identity,

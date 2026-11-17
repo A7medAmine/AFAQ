@@ -124,10 +124,11 @@ const T = {
 }
 
 const LOCALE = { en: 'en-GB', fr: 'fr-FR', ar: 'ar-DZ' }
+const LANGS = [{ value: 'en', label: 'EN' }, { value: 'fr', label: 'FR' }, { value: 'ar', label: 'AR' }]
 
 export default function Poll() {
   const { slug } = useParams()
-  const [params] = useSearchParams()
+  const [params, setParams] = useSearchParams()
   const source = params.get('src') || undefined
   const [state, setState] = useState({ loading: true, error: null })
   const [data, setData] = useState(null)
@@ -151,11 +152,48 @@ export default function Poll() {
     return () => { cancelled = true }
   }, [slug])
 
-  const lang = data?.poll?.language || 'en'
+  const [langOverride, setLangOverride] = useState(() => {
+    const fromUrl = params.get('lang')
+    if (LANGS.some(l => l.value === fromUrl)) return fromUrl
+    try {
+      const saved = localStorage.getItem('afaq_poll_lang')
+      if (LANGS.some(l => l.value === saved)) return saved
+    } catch {}
+    return null
+  })
+  const lang = langOverride || data?.poll?.language || 'en'
   const t = T[lang] || T.en
   const dir = lang === 'ar' ? 'rtl' : 'ltr'
   const poll = data?.poll
   const fmt = value => new Intl.DateTimeFormat(LOCALE[lang], { dateStyle: 'long', timeStyle: 'short' }).format(new Date(value))
+
+  const chooseLang = value => {
+    setLangOverride(value)
+    try { localStorage.setItem('afaq_poll_lang', value) } catch {}
+    const next = new URLSearchParams(params)
+    next.set('lang', value)
+    setParams(next, { replace: true })
+  }
+
+  const displayed = useMemo(() => {
+    const pack = data?.poll?.translations?.[lang] || {}
+    const questions = (data?.questions || []).map((q, i) => {
+      const entry = pack.questions?.[i]
+      if (!entry) return q
+      return {
+        ...q,
+        prompt: entry.prompt || q.prompt,
+        help: entry.help === undefined ? q.help : entry.help,
+        options: q.options.map((o, j) => ({ ...o, label: entry.options?.[j] || o.label })),
+      }
+    })
+    return {
+      title: pack.title || data?.poll?.title || '',
+      description: pack.description || data?.poll?.description || '',
+      thankYou: pack.thank_you_message || data?.poll?.thank_you_message || '',
+      questions,
+    }
+  }, [data, lang])
 
   const setAnswer = (id, value) => {
     setAnswers(a => ({ ...a, [id]: value }))
@@ -203,8 +241,8 @@ export default function Poll() {
   return (
     <div className="afp" dir={dir} lang={lang}>
       <SEO
-        title={poll?.title || 'Poll'}
-        description={poll?.description ? poll.description.slice(0, 200) : 'Take part in this poll from the AFAQ Scientific Club.'}
+        title={displayed.title || 'Poll'}
+        description={displayed.description ? displayed.description.slice(0, 200) : 'Take part in this poll from the AFAQ Scientific Club.'}
         path={`/p/${slug}`}
         noindex={!poll}
       />
@@ -213,6 +251,14 @@ export default function Poll() {
         <header className="afp-brand">
           <img src="/brand/logo/afaq-mark-white.svg" alt="" width="28" height="28" />
           <span>{t.club}</span>
+          {poll && (
+            <div className="afp-langs" role="group" aria-label="Language">
+              {LANGS.map(l => (
+                <button key={l.value} type="button" className="afp-lang" data-on={lang === l.value || undefined}
+                  aria-pressed={lang === l.value} onClick={() => chooseLang(l.value)}>{l.label}</button>
+              ))}
+            </div>
+          )}
         </header>
 
         {state.loading && <div className="afp-card afp-center"><Loader2 size={28} className="animate-spin" /></div>}
@@ -229,8 +275,8 @@ export default function Poll() {
           <>
             <div className="afp-card">
               <p className="afp-eyebrow">{t.poll}</p>
-              <h1 className="afp-h1" dir="auto">{poll.title}</h1>
-              {poll.description && <p className="afp-desc" dir="auto">{poll.description}</p>}
+              <h1 className="afp-h1" dir="auto">{displayed.title}</h1>
+              {displayed.description && <p className="afp-desc" dir="auto">{displayed.description}</p>}
               {poll.state === 'open' && poll.closes_at && <p className="afp-note"><Clock size={14} /> {t.closesAt(fmt(poll.closes_at))}</p>}
             </div>
 
@@ -238,7 +284,7 @@ export default function Poll() {
               <div className="afp-card afp-center">
                 <CheckCircle2 size={44} color="#16A34A" />
                 <h2 className="afp-h2" style={{ marginTop: 10 }}>{done && !submit.error ? t.thanks : t.already}</h2>
-                <p className="afp-muted" dir="auto">{done && !submit.error ? poll.thank_you_message || t.thanksBody : ''}</p>
+                <p className="afp-muted" dir="auto">{done && !submit.error ? displayed.thankYou || t.thanksBody : ''}</p>
                 <button type="button" className="afp-btn-ghost" onClick={share}>
                   {copied ? <><Copy size={15} /> {t.copied}</> : <><Share2 size={15} /> {t.share}</>}
                 </button>
@@ -255,7 +301,7 @@ export default function Poll() {
 
             {showForm && (
               <form onSubmit={send} noValidate>
-                {data.questions.map((q, i) => (
+                {displayed.questions.map((q, i) => (
                   <Question key={q.id} q={q} index={i} t={t} value={answers[q.id]} onChange={v => setAnswer(q.id, v)}
                     error={submit.questionId === q.id ? submit.error : null} />
                 ))}
@@ -298,7 +344,7 @@ export default function Poll() {
             )}
 
             {data.results ? (
-              <Results results={data.results} questions={data.questions} t={t} />
+              <Results results={data.results} questions={displayed.questions} t={t} />
             ) : (done || data.voted) && poll.results_visibility === 'after_close' ? (
               <p className="afp-muted afp-center" style={{ padding: 12 }}>{t.resultsLater}</p>
             ) : null}
@@ -442,6 +488,9 @@ const CSS = `
 .afp * { box-sizing: border-box; }
 .afp-wrap { max-width: 640px; margin: 0 auto; }
 .afp-brand { display: flex; align-items: center; gap: 10px; color: #CAE8FF; font-weight: 600; font-size: 14px; margin-bottom: 18px; }
+.afp-langs { display: flex; gap: 2px; margin-inline-start: auto; padding: 2px; border: 1px solid rgba(202,232,255,.35); border-radius: 9px; }
+.afp-lang { border: 0; background: transparent; color: #CAE8FF; font: inherit; font-size: 11px; font-weight: 700; letter-spacing: .04em; padding: 4px 7px; border-radius: 6px; cursor: pointer; }
+.afp-lang[data-on] { background: #fff; color: #12229D; }
 .afp-card { background: #fff; border: 1px solid #E2E8F0; border-radius: 16px; padding: 20px; margin: 0 0 14px; box-shadow: 0 1px 2px rgba(5,10,48,.06); min-width: 0; }
 .afp-center { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 28px 20px; }
 .afp-eyebrow { font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #233DFF; margin: 0 0 6px; }
@@ -468,7 +517,7 @@ const CSS = `
 .afp-star[data-on] svg { fill: #F59E0B; }
 .afp-num { width: 44px; height: 44px; border-radius: 10px; border: 1.5px solid #E2E8F0; background: #fff; font-weight: 700; font-size: 15px; cursor: pointer; color: #0F172A; }
 .afp-num[data-on] { background: #233DFF; border-color: #233DFF; color: #fff; }
-.afp-star:focus-visible, .afp-num:focus-visible, .afp-btn:focus-visible, .afp-btn-ghost:focus-visible { outline: 3px solid #5CBCF9; outline-offset: 2px; }
+.afp-star:focus-visible, .afp-num:focus-visible, .afp-btn:focus-visible, .afp-btn-ghost:focus-visible, .afp-lang:focus-visible { outline: 3px solid #5CBCF9; outline-offset: 2px; }
 .afp-input { width: 100%; border: 1.5px solid #E2E8F0; border-radius: 10px; padding: 10px 12px; font: inherit; color: inherit; background: #fff; }
 .afp-input:focus { outline: none; border-color: #233DFF; box-shadow: 0 0 0 3px rgba(35,61,255,.15); }
 .afp-grid { display: grid; gap: 12px; }

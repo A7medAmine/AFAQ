@@ -50,6 +50,10 @@ import enPortal from '../locales/en/portal.json'
 import arPortal from '../locales/ar/portal.json'
 import frPortal from '../locales/fr/portal.json'
 
+import enCampus from '../locales/en/campus.json'
+import arCampus from '../locales/ar/campus.json'
+import frCampus from '../locales/fr/campus.json'
+
 // Brand kit is AR/EN only; French falls back to English.
 import enBrand from '../locales/en/brand.json'
 import arBrand from '../locales/ar/brand.json'
@@ -76,6 +80,7 @@ i18n
         contact: enContact,
         announcements: enAnnouncements,
         portal: enPortal,
+        campus: enCampus,
         brand: enBrand,
       },
       ar: {
@@ -91,6 +96,7 @@ i18n
         contact: arContact,
         announcements: arAnnouncements,
         portal: arPortal,
+        campus: arCampus,
         brand: arBrand,
       },
       fr: {
@@ -106,11 +112,12 @@ i18n
         contact: frContact,
         announcements: frAnnouncements,
         portal: frPortal,
+        campus: frCampus,
       },
     },
     fallbackLng: 'en',
     supportedLngs: ['en', 'ar', 'fr'],
-    ns: ['common', 'home', 'about', 'projects', 'learn', 'events', 'gallery', 'register', 'join', 'contact', 'announcements', 'portal', 'brand'],
+    ns: ['common', 'home', 'about', 'projects', 'learn', 'events', 'gallery', 'register', 'join', 'contact', 'announcements', 'portal', 'campus', 'brand'],
     defaultNS: 'common',
     detection: {
       order: ['localStorage', 'navigator'],

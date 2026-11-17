@@ -17,6 +17,7 @@ import Skeleton from '../components/ui/Skeleton'
 import ConfirmDialog from '../components/ui/ConfirmDialog'
 import ExportMenu from '../components/ui/ExportMenu'
 import QuestionEditor from '../components/polls/QuestionEditor'
+import PollTranslations from '../components/polls/PollTranslations'
 import PollSettings, { settingsForm, settingsValues } from '../components/polls/PollSettings'
 import PollResults from '../components/polls/PollResults'
 import SharePollModal from '../components/polls/SharePollModal'
@@ -31,6 +32,7 @@ export default function PollPage() {
   const [poll, setPoll] = useState(null)
   const [questions, setQuestions] = useState([]) // saved rows
   const [draft, setDraft] = useState([]) // editor copy
+  const [translations, setTranslations] = useState({})
   const [form, setForm] = useState(null)
   const [events, setEvents] = useState([])
   const [data, setData] = useState({ responses: [], answers: [] })
@@ -69,6 +71,7 @@ export default function PollPage() {
     if (!pollRes.data) { setState({ loading: false, error: 'This poll does not exist any more.' }); return }
     setPoll(pollRes.data)
     setForm(settingsForm(pollRes.data))
+    setTranslations(pollRes.data.translations || {})
     setQuestions(qRes.data || [])
     let editable = toEditable(qRes.data || [])
     // A poll just made from a starter opens with its questions ready to fill in.
@@ -101,14 +104,18 @@ export default function PollPage() {
     [draft, questions]
   )
   const settingsDirty = useMemo(() => poll && form && JSON.stringify(form) !== JSON.stringify(settingsForm(poll)), [poll, form])
+  const translationsDirty = useMemo(
+    () => poll && JSON.stringify(translations) !== JSON.stringify(poll.translations || {}),
+    [poll, translations]
+  )
 
   // Unsaved edits survive a slip of the back button.
   useEffect(() => {
-    if (!questionsDirty && !settingsDirty) return
+    if (!questionsDirty && !settingsDirty && !translationsDirty) return
     const warn = e => { e.preventDefault(); e.returnValue = '' }
     window.addEventListener('beforeunload', warn)
     return () => window.removeEventListener('beforeunload', warn)
-  }, [questionsDirty, settingsDirty])
+  }, [questionsDirty, settingsDirty, translationsDirty])
 
   const saveQuestions = async () => {
     const { errors: errs, payload } = prepareQuestions(draft)
@@ -143,10 +150,26 @@ export default function PollPage() {
     return true
   }
 
+  const saveTranslations = async () => {
+    setSaving(true)
+    const { ok, data: row } = await run(
+      supabase.from('polls').update({ translations, updated_at: new Date().toISOString() }).eq('id', id).select('*').single(),
+      { success: 'Translations saved.', failure: 'The translations were not saved.' }
+    )
+    setSaving(false)
+    if (!ok) return false
+    logActivity('updated', 'polls', Number(id), { name: poll.title, translations: Object.keys(translations) })
+    setPoll(row)
+    setTranslations(row.translations || {})
+    return true
+  }
+
   const setStatus = async status => {
     if (status === 'open') {
-      if (questionsDirty || settingsDirty) {
-        const saved = (!questionsDirty || await saveQuestions()) && (!settingsDirty || await saveSettings())
+      if (questionsDirty || settingsDirty || translationsDirty) {
+        const saved = (!questionsDirty || await saveQuestions())
+          && (!settingsDirty || await saveSettings())
+          && (!translationsDirty || await saveTranslations())
         if (!saved) return
       }
       if (!draft.length) { setTab('questions'); setErrors({ _poll: 'Add at least one question before publishing.' }); return }
@@ -196,6 +219,13 @@ export default function PollPage() {
 
   const exportData = useMemo(() => exportTable(questions, data.responses, data.answers), [questions, data])
 
+  const discard = () => {
+    if (tab === 'questions') { setDraft(toEditable(questions)); setErrors({}) }
+    else if (tab === 'languages') setTranslations(poll?.translations || {})
+    else { setForm(settingsForm(poll)); setSettingsErrors({}) }
+  }
+  const saveTab = () => (tab === 'questions' ? saveQuestions() : tab === 'languages' ? saveTranslations() : saveSettings())
+
   if (state.loading) {
     return <div className="space-y-4"><Skeleton style={{ height: 28, width: 280 }} /><Panel className="p-5"><Skeleton style={{ height: 160 }} /></Panel></div>
   }
@@ -211,10 +241,11 @@ export default function PollPage() {
   const badge = STATE_BADGE[current]
   const tabs = [
     { value: 'questions', label: 'Questions', count: draft.length },
+    { value: 'languages', label: 'Languages' },
     { value: 'settings', label: 'Settings' },
     { value: 'results', label: 'Results', count: responseCount },
   ]
-  const dirty = tab === 'questions' ? questionsDirty : tab === 'settings' ? settingsDirty : false
+  const dirty = tab === 'questions' ? questionsDirty : tab === 'settings' ? settingsDirty : tab === 'languages' ? translationsDirty : false
 
   return (
     <div>
@@ -274,8 +305,8 @@ export default function PollPage() {
         {dirty && (
           <div className="flex items-center gap-2 ml-auto">
             <span className="text-xs" style={{ color: 'var(--adm-wait)' }}>Unsaved changes</span>
-            <Button size="sm" onClick={() => (tab === 'questions' ? (setDraft(toEditable(questions)), setErrors({})) : (setForm(settingsForm(poll)), setSettingsErrors({})))}>Discard</Button>
-            <Button size="sm" variant="primary" icon={Save} busy={saving} busyLabel="Saving…" onClick={tab === 'questions' ? saveQuestions : saveSettings}>Save</Button>
+            <Button size="sm" onClick={discard}>Discard</Button>
+            <Button size="sm" variant="primary" icon={Save} busy={saving} busyLabel="Saving…" onClick={saveTab}>Save</Button>
           </div>
         )}
       </div>
@@ -292,6 +323,17 @@ export default function PollPage() {
           )}
           <QuestionEditor questions={draft} onChange={setDraft} errors={errors} locked={locked} />
         </>
+      )}
+
+      {tab === 'languages' && poll && (
+        <PollTranslations
+          baseLang={poll.language}
+          poll={poll}
+          questions={draft}
+          value={translations}
+          onChange={setTranslations}
+          locked={locked}
+        />
       )}
 
       {tab === 'settings' && form && (

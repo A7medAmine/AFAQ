@@ -1,0 +1,36 @@
+{
+  "eyebrow": "AFAQ × Incubateur universitaire",
+  "title": "Voix des étudiants",
+  "subtitle": "Chaque étudiant connaît les petits problèmes du quotidien à l’université. Choisissez-en un, répondez à quelques questions et proposez votre solution.",
+  "missed": "Vous avez manqué notre stand ? Vous pouvez toujours répondre en ligne ci-dessous.",
+  "how": {
+    "title": "Comment ça marche",
+    "scan": {
+      "title": "Scannez",
+      "desc": "Scannez le QR code du problème qui vous concerne."
+    },
+    "answer": {
+      "title": "Répondez",
+      "desc": "Quelques questions rapides — environ une minute."
+    },
+    "suggest": {
+      "title": "Proposez",
+      "desc": "Partagez votre idée de solution. Les meilleures iront plus loin."
+    }
+  },
+  "problemsTitle": "Les problèmes",
+  "problemsSub": "Répondez à autant que vous voulez.",
+  "answer": "Répondre et proposer",
+  "soon": "Ouvert le jour de l’événement",
+  "print": "Imprimer les cadres QR",
+  "privacy": "Les réponses sont anonymes sauf si vous laissez votre nom. AFAQ ne partage que les résultats globaux.",
+  "frame": {
+    "scan": "Scannez, répondez et proposez une solution"
+  },
+  "banner": {
+    "text": "Aidez-nous à recenser les problèmes du campus — scannez, répondez et proposez des solutions.",
+    "cta": "Participer"
+  },
+  "loadError": "Impossible de charger les problèmes. Vérifiez votre connexion et actualisez.",
+  "empty": "Les problèmes seront publiés bientôt."
+}

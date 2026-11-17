@@ -1926,3 +1926,35 @@ select.form-input {
     background: rgba(96, 165, 250, 0.12);
   }
 }
+
+/* Student Voice: printable QR frames, one problem per page. The frames are
+   portalled into <body>; printing hides the app and shows only them. */
+.cv-print { display: none; }
+@media print {
+  @page { size: A5 portrait; margin: 10mm; }
+  body > #app { display: none !important; }
+  .cv-print { display: block; color: #0a1220; background: #fff; }
+  .cv-frame {
+    break-after: page;
+    page-break-after: always;
+    height: 188mm;
+    box-sizing: border-box;
+    border: 3px solid #2460e7;
+    border-radius: 6mm;
+    padding: 8mm;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 3mm;
+  }
+  .cv-frame:last-child { break-after: auto; page-break-after: auto; }
+  .cv-frame-top { display: flex; align-items: center; gap: 3mm; font: 600 10pt "Minecraft", sans-serif; letter-spacing: .08em; text-transform: uppercase; color: #2460e7; }
+  .cv-frame-top img { height: 9mm; }
+  .cv-frame-num { font: 700 28pt "Minecraft", sans-serif; color: #2460e7; margin-top: 2mm; }
+  .cv-frame h2 { font-size: 20pt; font-weight: 800; margin: 0; }
+  .cv-frame p { font-size: 11pt; color: #374151; margin: 0; max-width: 110mm; }
+  .cv-frame-qr { margin-top: auto; padding: 3mm; border: 1px solid #e5e7eb; border-radius: 3mm; }
+  .cv-frame strong { font-size: 13pt; }
+  .cv-frame small { font-size: 9pt; color: #6b7280; margin-bottom: auto; }
+}

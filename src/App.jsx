@@ -20,6 +20,7 @@ const Contact = lazy(() => import('./pages/Contact'))
 const VerifyMember = lazy(() => import('./pages/VerifyMember'))
 const SharedNeeds = lazy(() => import('./pages/SharedNeeds'))
 const Poll = lazy(() => import('./pages/Poll'))
+const CampusVoice = lazy(() => import('./pages/CampusVoice'))
 const Brand = lazy(() => import('./pages/Brand'))
 const Links = lazy(() => import('./pages/Links'))
 const NotFound = lazy(() => import('./pages/NotFound'))
@@ -64,6 +65,7 @@ const NeedsPage = lazy(() => import('./admin/pages/NeedsPage'))
 const NeedListPage = lazy(() => import('./admin/pages/NeedListPage'))
 const PollsPage = lazy(() => import('./admin/pages/PollsPage'))
 const PollPage = lazy(() => import('./admin/pages/PollPage'))
+const StudentVoicePage = lazy(() => import('./admin/pages/StudentVoicePage'))
 const BorrowingPage = lazy(() => import('./admin/pages/BorrowingPage'))
 const ProjectsPage = lazy(() => import('./admin/pages/ProjectsPage'))
 const TutorialsPage = lazy(() => import('./admin/pages/TutorialsPage'))
@@ -131,6 +133,7 @@ export default function App() {
             <Route path="/register" element={<Registration />} />
             <Route path="/announcements" element={<Announcements />} />
             <Route path="/contact" element={<Contact />} />
+            <Route path="/student-voice" element={<CampusVoice />} />
             <Route path="/brand" element={<Brand />} />
             <Route path="/portal" element={<PortalRoot />}>
               <Route path="login" element={<PortalLogin />} />
@@ -274,6 +277,9 @@ export default function App() {
             } />
             <Route path="polls/:id" element={
               <RoleGuard permission="polls.manage"><PollPage /></RoleGuard>
+            } />
+            <Route path="student-voice" element={
+              <RoleGuard permission="polls.manage"><StudentVoicePage /></RoleGuard>
             } />
             <Route path="qr" element={<QrGeneratorPage />} />
             <Route path="email" element={

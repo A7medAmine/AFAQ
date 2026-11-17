@@ -6,6 +6,7 @@ import UpcomingEvents from '../components/home/UpcomingEvents'
 import ProjectHighlights from '../components/home/ProjectHighlights'
 {/* import StatisticsSection from '../components/home/StatisticsSection' */}
 import GalleryPreview from '../components/home/GalleryPreview'
+import CampusVoiceBanner from '../components/home/CampusVoiceBanner'
 import { useTranslation } from 'react-i18next'
 import { ArrowRight } from 'lucide-react'
 import { Link } from 'react-router-dom'
@@ -77,6 +78,7 @@ export default function Home() {
           }}
         />
         <div className="relative z-10">
+          <CampusVoiceBanner />
           <IntroSection />
           <ActivitiesSection />
           <UpcomingEvents />

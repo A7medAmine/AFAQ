@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
-import { MapPin, CalendarPlus, GraduationCap } from 'lucide-react'
+import { MapPin, CalendarPlus, GraduationCap, Megaphone } from 'lucide-react'
 import Card from '../components/shared/Card'
 import SideImage from '../components/shared/SideImage'
 import { supabase } from '../lib/supabase'
@@ -75,6 +75,9 @@ export default function Events() {
           <a href="/api/events/calendar.ics" className="inline-flex items-center gap-1.5 text-xs font-semibold" style={{ color: 'var(--color-accent)' }}>
             <CalendarPlus size={13} /> {t('subscribe')}
           </a>
+          <Link to="/student-voice" className="inline-flex items-center gap-1.5 text-xs font-semibold ms-4" style={{ color: 'var(--color-accent)' }}>
+            <Megaphone size={13} /> {t('studentVoice')}
+          </Link>
         </div>
       </section>
 

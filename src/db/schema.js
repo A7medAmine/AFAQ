@@ -642,6 +642,7 @@ export const polls = pgTable('polls', {
   slug: text().notNull().unique(),
   title: text().notNull(),
   description: text(),
+  translations: jsonb().notNull().default({}),
   // Language of the public page's own wording (buttons, notices).
   language: text().notNull().default('en'),
   audience: text().notNull().default('public'),
@@ -926,3 +927,35 @@ export const tutorials = pgTable('tutorials', {
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
 }, t => [index('tutorials_event_idx').on(t.eventId)])
+
+// "Student Voice" at /student-voice: the club's table of campus problems at
+// an event. One settings row (id 1) holds the event details; each problem
+// links to the poll students answer when they scan its QR code.
+export const campusVoiceSettings = pgTable('campus_voice_settings', {
+  id: integer().primaryKey().default(1),
+  eventDate: date('event_date'),
+  startTime: text('start_time'),
+  endTime: text('end_time'),
+  placeEn: text('place_en'),
+  placeAr: text('place_ar'),
+  placeFr: text('place_fr'),
+  // The home page banner; it also hides itself a week after the event.
+  showOnHome: boolean('show_on_home').notNull().default(true),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+})
+
+export const campusProblems = pgTable('campus_problems', {
+  id: bigint({ mode: 'number' }).primaryKey().generatedAlwaysAsIdentity(),
+  titleEn: text('title_en').notNull(),
+  titleAr: text('title_ar'),
+  titleFr: text('title_fr'),
+  descriptionEn: text('description_en'),
+  descriptionAr: text('description_ar'),
+  descriptionFr: text('description_fr'),
+  icon: text().notNull().default('Lightbulb'),
+  pollId: bigint('poll_id', { mode: 'number' }).references(() => polls.id, { onDelete: 'set null' }),
+  isActive: boolean('is_active').notNull().default(true),
+  sortOrder: integer('sort_order').notNull().default(0),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+})

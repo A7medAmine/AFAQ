@@ -27,3 +27,6 @@ dist-ssr
 # Uploaded files
 upload/
 .vercel
+
+# Database backups
+backups/

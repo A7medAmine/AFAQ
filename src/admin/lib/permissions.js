@@ -173,6 +173,7 @@ export const NAV_ITEMS = [
   { label: 'Member notices', path: '/admin/notices', icon: 'BellRing', group: 'people', permission: 'announcements.manage' },
   { label: 'Links page', path: '/admin/links', icon: 'Link2', group: 'publish', permission: 'links.manage' },
   { label: 'Polls', path: '/admin/polls', icon: 'Vote', group: 'publish', permission: 'polls.manage' },
+  { label: 'Student Voice', path: '/admin/student-voice', icon: 'Megaphone', group: 'publish', permission: 'polls.manage' },
   { label: 'QR codes', path: '/admin/qr', icon: 'QrCode', group: 'publish', permission: null },
   { label: 'Email', path: '/admin/email', icon: 'Send', group: 'publish', permission: 'email.send' },
 

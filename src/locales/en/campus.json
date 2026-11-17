@@ -1,0 +1,36 @@
+{
+  "eyebrow": "AFAQ × University Incubator",
+  "title": "Student Voice",
+  "subtitle": "Every student knows the daily struggles of campus life. Pick a problem, answer a few quick questions and tell us how you would fix it.",
+  "missed": "Missed our table? You can still answer online below.",
+  "how": {
+    "title": "How it works",
+    "scan": {
+      "title": "Scan",
+      "desc": "Scan the QR code of the problem that matters to you."
+    },
+    "answer": {
+      "title": "Answer",
+      "desc": "A few quick questions — it takes about a minute."
+    },
+    "suggest": {
+      "title": "Suggest",
+      "desc": "Share your idea for a solution. The best ones go further."
+    }
+  },
+  "problemsTitle": "The problems",
+  "problemsSub": "Answer as many as you like.",
+  "answer": "Answer & suggest",
+  "soon": "Opens at the event",
+  "print": "Print QR frames",
+  "privacy": "Answers are anonymous unless you choose to leave your name. AFAQ only shares overall results.",
+  "frame": {
+    "scan": "Scan, answer, and suggest a solution"
+  },
+  "banner": {
+    "text": "Help us map campus problems — scan, answer and suggest solutions.",
+    "cta": "Join Student Voice"
+  },
+  "loadError": "The problems could not be loaded. Check your connection and refresh.",
+  "empty": "The problems will be posted soon."
+}
